@@ -1,0 +1,87 @@
+Oui, si tu veux respecter le sujet Matcha, tu vas devoir gérer **toute la chaîne d’authentification à la main**, et ça comprend :
+
+* **Inscription** (avec vérification email unique, hash du mot de passe, envoi d’email de confirmation)
+* **Connexion** (vérification hash + création d’un token de session)
+* **Gestion de session** (JWT ou session côté serveur + cookie sécurisé)
+* **Réinitialisation de mot de passe** (avec lien unique envoyé par email)
+* **Déconnexion** (invalidation du token/session)
+
+---
+
+## 1. **Concepts à maîtriser**
+
+Avant de plonger dans le code, assure-toi de bien comprendre :
+
+* **Hashage sécurisé des mots de passe**
+  → `bcrypt` ou `argon2`, jamais de stockage en clair.
+* **Sessions vs JWT**
+
+  * **Session** = identifiant stocké côté serveur en mémoire/BDD + cookie côté client.
+  * **JWT** = token signé côté serveur, stocké côté client (cookie ou localStorage).
+  * Pour un projet type Matcha, **JWT + cookie HTTPOnly** est un bon compromis.
+* **Sécurité des cookies**
+  → `HttpOnly`, `Secure`, `SameSite=strict`
+* **Flux email de confirmation et reset password**
+  → envoi d’un lien avec un token à usage unique (table `email_tokens` en BDD).
+* **Protection brute force**
+  → limiter les tentatives de login (rate limiting).
+
+---
+
+## 2. **Ressources conseillées**
+
+### 📖 Articles pédagogiques
+
+* [OWASP – Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+  *(Référence ultime pour la sécurité auth, avec les bonnes pratiques à suivre.)*
+* [JWT Best Practices](https://fusionauth.io/learn/expert-advice/tokens/best-practices)
+  *(Comprendre comment stocker et sécuriser les tokens JWT.)*
+* [bcrypt en Node.js](https://www.npmjs.com/package/bcrypt)
+  *(Exemple simple de hash et vérification de mot de passe.)*
+
+### 📹 Vidéos
+
+* [JWT Authentication Tutorial – Node.js & Express](https://www.youtube.com/watch?v=mbsmsi7l3r4) *(très clair sur JWT, adaptable à Next.js API routes)*
+* [Build an Auth System from Scratch in Node.js](https://www.youtube.com/watch?v=Ud5xKCYQTjM) *(montre toute la chaîne : register, login, reset, email)*
+
+### 📦 Packages utiles (mais autorisés par le sujet)
+
+* `bcrypt` → hashage des mots de passe.
+* `jsonwebtoken` → signer et vérifier les JWT.
+* `nodemailer` → envoi d’emails de confirmation / reset.
+* `cookie` ou `cookies` → gérer les cookies dans Next.js API routes.
+
+---
+
+## 3. **Exemple de workflow JWT + Cookie HTTPOnly**
+
+*(en pseudo-Next.js API routes, SQL brut au lieu de Prisma)*
+
+**Inscription**
+
+1. Vérifier que l’email n’existe pas.
+2. Hasher le mot de passe avec bcrypt.
+3. Insérer l’utilisateur en base avec statut `pending`.
+4. Générer un token de confirmation (UUID stocké en base).
+5. Envoyer un email avec `https://site.com/confirm?token=...`.
+
+**Connexion**
+
+1. Vérifier l’email et comparer hash bcrypt.
+2. Générer un JWT signé (`jsonwebtoken.sign`).
+3. L’envoyer au client dans un cookie `HttpOnly Secure SameSite=Strict`.
+
+**Middleware auth**
+
+1. Lire le cookie côté serveur.
+2. Vérifier la signature du JWT.
+3. Charger l’utilisateur depuis la BDD.
+
+**Déconnexion**
+
+1. Supprimer le cookie côté client.
+
+---
+
+Si tu veux, je peux te préparer un **guide “pas à pas” avec code complet** pour l’auth manuelle en Next.js API routes + SQL pur (sans Prisma), qui serait directement compatible Matcha et respectueux du sujet.
+Tu veux que je te le fasse ?
