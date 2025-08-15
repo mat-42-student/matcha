@@ -1,0 +1,12 @@
+Matcha non hierarchical nor temporal steps
+
+0. devops
+1. Database design (postgreSQL)
+2. Populate DB
+3. Auth system (+OAuth bonus ?)
+4. CRUD for users
+5. geoloc system
+6. Browsing / mmaking
+7. History
+8. Chat
+9. Notifs

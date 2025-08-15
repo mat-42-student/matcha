@@ -1,0 +1,37 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table likes {
+  following_user_id integer
+  followed_user_id integer
+  created_at timestamp
+  status varchar
+}
+
+Table matches {
+  user1 integer
+  user2 integer
+  created_at timestamp
+}
+
+Table users {
+  id integer [primary key]
+  username varchar
+  password varchar
+  created_at timestamp
+  bio tinytext
+  pictures image[]
+  interests integer
+}
+
+Table interests {
+  id integer [primary key]
+  name varchar
+}
+
+
+Ref: "users"."interests" < "interests"."id"
+
+Ref: "likes"."following_user_id" < "users"."id"
+
+Ref: "likes"."followed_user_id" < "users"."id"
