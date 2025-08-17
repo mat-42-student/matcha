@@ -1,37 +1,71 @@
-// Use DBML to define your database structure
-// Docs: https://dbml.dbdiagram.io/docs
+// https://dbdiagram.io/d/matcha-66c45599a346f9518c8b4959
 
-Table likes {
-  following_user_id integer
-  followed_user_id integer
-  created_at timestamp
-  status varchar
-}
-
-Table matches {
-  user1 integer
-  user2 integer
-  created_at timestamp
-}
+// https://dbdiagram.io/d/matcha-66c45599a346f9518c8b4959
 
 Table users {
-  id integer [primary key]
-  username varchar
-  password varchar
-  created_at timestamp
-  bio tinytext
-  pictures image[]
-  interests integer
+  id uuid [pk, default: `gen_random_uuid()`] // uuid v7
+  email varchar(255) [not null, unique]
+  passwd varchar(255) [not null]
+  username varchar(50) [not null, unique]
+  bio text
+  created_at timestamp [default: `current_timestamp`]
+}
+
+Table pictures {
+  // max 5 pictures per user, must handle in app logic
+  id int [pk, increment]
+  user_id uuid [not null, ref: > users.id]
+  url varchar(255) [not null]
+  created_at timestamp [default: `current_timestamp`]
 }
 
 Table interests {
-  id integer [primary key]
-  name varchar
+  id int [pk, increment]
+  name varchar(50) [not null, unique]
 }
 
+Table user_interests {
+  user_id uuid [not null, ref: > users.id]
+  interest_id int [not null, ref: > interests.id]
 
-Ref: "users"."interests" < "interests"."id"
+  indexes {
+    (user_id, interest_id) [unique]
+  }
+}
 
-Ref: "likes"."following_user_id" < "users"."id"
+Table likes {
+  id int [pk, increment]
+  user1_id uuid [not null, ref: > users.id]
+  user2_id uuid [not null, ref: > users.id]
+  created_at timestamp [default: `current_timestamp`]
 
-Ref: "likes"."followed_user_id" < "users"."id"
+  indexes {
+    (user1_id, user2_id) [unique]
+  }
+}
+
+Table matches {
+  id int [pk, increment]
+  user1_id uuid [not null, ref: > users.id]
+  user2_id uuid [not null, ref: > users.id]
+  created_at timestamp [default: `current_timestamp`]
+
+  indexes {
+    (user1_id, user2_id) [unique]
+  }
+}
+
+Table chat {
+  id int [pk, increment]
+  sender_id uuid [not null, ref: > users.id]
+  recipient_id uuid [not null, ref: > users.id]
+  message text [not null]
+  created_at timestamp [default: `current_timestamp`]
+}
+
+Table notifications {
+  id int [pk, increment]
+  user_id uuid [not null, ref: > users.id]
+  message text [not null]
+  created_at timestamp [default: `current_timestamp`]
+}

@@ -1,12 +1,13 @@
 Matcha non hierarchical nor temporal steps
 
-0. server ws + next
-1. Database design (postgreSQL)
-2. Populate DB
-3. Auth system (+OAuth bonus ?)
-4. CRUD for users
-5. geoloc system
-6. Browsing / mmaking
-7. History
-8. Chat
-9. Notifs
+- devops (2 containers ? : server + db)
+- server ws + next + https
+- Database design (postgreSQL)
+- Populate DB
+- Auth system (+OAuth bonus ?)
+- CRUD for users
+- geoloc system
+- Browsing / mmaking
+- History
+- Chat
+- Notifs
