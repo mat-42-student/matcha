@@ -1,7 +1,5 @@
 // https://dbdiagram.io/d/matcha-66c45599a346f9518c8b4959
 
-// https://dbdiagram.io/d/matcha-66c45599a346f9518c8b4959
-
 Table users {
   id uuid [pk, default: `gen_random_uuid()`] // uuid v7
   email varchar(255) [not null, unique]

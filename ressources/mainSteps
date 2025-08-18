@@ -1,7 +1,7 @@
 Matcha non hierarchical nor temporal steps
 
-- devops (2 containers ? : server + db)
-- server ws + next + https
+- devops (3 containers ? : nginx + server + db)
+- server ws + next
 - Database design (postgreSQL)
 - Populate DB
 - Auth system (+OAuth bonus ?)
