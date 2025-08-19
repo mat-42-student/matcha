@@ -36,21 +36,6 @@ services:
     networks:
       - main-network
 
-    # container_name: server
-    # build:
-    #   context: ./matcha
-    #   dockerfile: Dockerfile
-    # volumes:
-    #   - ./matcha:/app
-    #   - node_modules:/app/node_modules  # éviter que node_modules de l’hôte écrase ceux du conteneur
-    # expose:
-    #   - "3000"
-    # networks:
-    #   - main-network
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy  
-
   postgres:
     container_name: postgres
     image: postgres:alpine
