@@ -1,25 +1,24 @@
-const { createServer } = require("http");
-const { Server } = require("socket.io");
-const next = require("next");
+import { createServer } from "http";
+import next from "next";
+import { Server } from "socket.io";
 
 const dev = process.env.NODE_ENV !== "production";
-const app = next({ dev });
-const handle = app.getRequestHandler();
+const hostname = "localhost";
+const port = 3000;
 
-const PORT = 3000;
+const app = next({ dev, hostname, port });
+const handler = app.getRequestHandler();
 
 app.prepare().then(() => {
-  const server = createServer((req, res) => {
-    handle(req, res); // Next.js gère les routes
-  });
+  const httpServer = createServer(handler);
 
-  const io = new Server(server, {
-    cors: {
-      origin: "https://localhost:8443", // l'URL exposée par Nginx
-      methods: ["GET", "POST"],
-      credentials: true
-    }
-  });
+const io = new Server(httpServer, {
+  cors: {
+    origin: true, // accepte l'origin du client tel quel (pratique en dev)
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
   io.on("connection", (socket) => {
     console.log("A user connected");
@@ -30,11 +29,16 @@ app.prepare().then(() => {
 
     socket.on("chat-message", (msg) => {
       console.log("Received message:", msg);
-      io.emit("chat-message", msg); // broadcast à tous
+      io.emit("chat-message", msg);
     });
   });
 
-  server.listen(PORT, () => {
-    console.log(`> Server ready on http://localhost:${PORT}`);
-  });
+  httpServer
+    .once("error", (err) => {
+      console.error(err);
+      process.exit(1);
+    })
+    .listen(port, () => {
+      console.log(`> Ready on http://${hostname}:${port}`);
+    });
 });
