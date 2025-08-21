@@ -1,9 +1,9 @@
-import { LoginForm } from "@/components/forms/LoginForm"
+import Login from "@/components/ui/Login"
 
 export default function() {
     return (
         <>
-            <LoginForm />
+            <Login />
         </>
     )
 }
