@@ -14,7 +14,7 @@ down:
 fclean: clean
 	docker system prune -a -f
 
-clean: stop
+clean: down
 	docker compose down -v
 
 .PHONY: all build run re clean fclean
