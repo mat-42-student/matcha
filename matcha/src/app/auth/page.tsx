@@ -1,9 +1,9 @@
-import Login from "@/components/ui/Login"
+import { Login } from "@/components/ui/Login";
 
-export default function() {
-    return (
-        <>
-            <Login />
-        </>
-    )
+export default function Page() {
+  return (
+    <>
+      <Login />
+    </>
+  );
 }

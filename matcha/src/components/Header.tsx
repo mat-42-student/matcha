@@ -1,4 +1,4 @@
-export default function Header() {
+export function Header() {
   return (
     <header className="w-full bg-pink-800 text-white shadow-lg">
       <div className="max-w-5xl mx-auto flex items-center justify-between p-4">
