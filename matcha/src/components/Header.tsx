@@ -6,6 +6,7 @@ export function Header() {
           <a href="/">Matcha</a>
         </h1>
         <nav className="flex gap-4">
+          
           <a href="/browse" className="hover:underline">Découvrir</a>
           <a href="/profile" className="hover:underline">Profile</a>
           <a href="/chat" className="hover:underline transition duration-300">Chat</a>
