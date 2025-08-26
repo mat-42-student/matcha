@@ -1,46 +1,31 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { users } from "@/lib/db";
-import { createSession } from "@/lib/auth";
+// src/app/api/signup/route.ts
+import { NextResponse, NextRequest } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { users } from '@/lib/db';
 
-export async function POST(req: Request) {
-  const formData = await req.formData();
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+export async function POST(req: NextRequest) {
+	const formData = await req.formData();
+	const email = formData.get('email') as string;
+	const password = formData.get('password') as string;
 
-  // Vérifie que tous les champs sont fournis
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email et mot de passe requis" }, { status: 400 });
-  }
+	if (!email || !password) {
+		return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
+	}
 
-  // Vérifie que l'utilisateur n'existe pas déjà
-  const existingUser = users.find((u) => u.email === email);
-  if (existingUser) {
-    return NextResponse.json({ error: "Cet email est déjà utilisé" }, { status: 409 });
-  }
+	const existingUser = users.find(u => u.email === email);
+	if (existingUser) {
+		return NextResponse.json({ error: 'Email déjà utilisé' }, { status: 400 });
+	}
 
-  // Hash du mot de passe
-  const passwordHash = await bcrypt.hash(password, 10);
+	const passwordHash = await bcrypt.hash(password, 10);
+	const newUser = { id: String(users.length + 1), email, passwordHash };
+	users.push(newUser);
 
-  // Création de l'utilisateur (fake DB)
-  const newUser = {
-    id: (users.length + 1).toString(),
-    email,
-    passwordHash,
-  };
-  users.push(newUser);
+	// Redirection basée sur l’URL réellement appelée par le client
+	const url = req.nextUrl.clone();
+	url.pathname = '/auth';
+	url.search = '';
 
-  // Création d'une session
-  const sessionId = await createSession(newUser.id);
-
-  // Redirection vers la home avec cookie de session
-  const res = NextResponse.redirect(new URL("/", req.url));
-  res.cookies.set("session_id", sessionId, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-  });
-
-  return res;
+	console.log('Redirecting to:', url.toString());
+	return NextResponse.redirect(url, 303); // 303 = convertit en GET
 }
