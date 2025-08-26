@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(req: NextRequest) {
-  const isLoggedIn = req.cookies.get('session_id') || false
-  console.log("isLoggedIn:", isLoggedIn)
-  if (!isLoggedIn) {
-    return NextResponse.redirect(new URL('/auth', req.url))
-  }
 
-  return NextResponse.next()
+ const publicPaths = ['/auth', '/signup', '/api/login', '/api/signup'];
+
+export function middleware(req: NextRequest) {
+    const isLoggedIn = req.cookies.get('session_id') || false
+    const url = req.nextUrl.pathname;
+    console.log("isLoggedIn:", isLoggedIn)
+
+
+    if (!isLoggedIn && !publicPaths.includes(url)) {
+        return NextResponse.redirect(new URL('/auth', req.url))
+    }
+
+    return NextResponse.next()
 }
 
 export const config = {
