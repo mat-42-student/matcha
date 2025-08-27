@@ -12,8 +12,7 @@ Project has been made with next.js, socket.io, a postgresql database and nginx.
 git clone and make
 Then https://localhost:8443 (or any host url)
 
-## aller dans la db
-
-ouvrir le conteneur de DB avec vsc ou docker exec it
+## go inside DB
+open the DB's container with VSC or docker exec it
 psql -U alice -d matcha
 
