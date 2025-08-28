@@ -1,0 +1,105 @@
+// matcha/src/lib/db/users.ts
+import { executeQuery, pool } from '../db-utils';
+import { QueryResult } from 'pg';
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  passwd: string;
+  country?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  gender: string;
+  sex_pref: string;
+  bio?: string;
+  fame?: number;
+  created_at?: Date;
+}
+
+/**
+ * Create a new user
+ */
+export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
+  const query = {
+    text: `
+      INSERT INTO users (username, email, passwd, country, city, latitude, longitude, gender, sex_pref, bio, fame)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING *;
+    `,
+    values: [
+      user.username,
+      user.email,
+      user.passwd,
+      user.country ?? 'France',
+      user.city,
+      user.latitude ?? null,
+      user.longitude ?? null,
+      user.gender,
+      user.sex_pref,
+      user.bio ?? null,
+      user.fame ?? 0
+    ]
+  };
+
+  const result = await pool.query<User>(query);
+  return result.rows[0];
+}
+
+/**
+ * Get user by id
+ */
+export async function getUserById(id: string): Promise<User | null> {
+  const result = await pool.query<User>(
+    'SELECT * FROM users WHERE id = $1',
+    [id]
+  );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * Get user by email
+ */
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const result = await pool.query<User>(
+    'SELECT * FROM users WHERE email = $1',
+    [email]
+  );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * List all users
+ */
+export async function listUsers(): Promise<User[]> {
+  const result = await pool.query<User>('SELECT * FROM users ORDER BY created_at DESC');
+  return result.rows;
+}
+
+/**
+ * Update a user (partial update)
+ */
+export async function updateUser(id: string, updates: Partial<User>): Promise<User | null> {
+  const fields = Object.keys(updates);
+  if (fields.length === 0) return await getUserById(id);
+
+  const setClauses = fields.map((field, i) => `"${field}" = $${i + 1}`).join(', ');
+  const values = Object.values(updates);
+
+  const query = {
+    text: `UPDATE users SET ${setClauses} WHERE id = $${fields.length + 1} RETURNING *`,
+    values: [...values, id]
+  };
+
+  const result = await pool.query<User>(query);
+  return result.rows[0] ?? null;
+}
+
+/**
+ * Delete a user
+ */
+export async function deleteUser(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM users WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
+}
