@@ -8,13 +8,15 @@ re: clean all
 build:
 	docker compose build
 
+vdown:
+	docker compose down -v
+
 down:
 	docker compose down
 
-fclean: clean
+fclean: vdown clean
 	docker system prune -a -f
 
 clean: down
-	docker compose down -v
 
 .PHONY: all build run re clean fclean

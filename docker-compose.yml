@@ -42,7 +42,8 @@ services:
     expose:
       - "5432"
     volumes:
-        - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d/
+      - postgres_data:/var/lib/postgresql/data
     env_file:
       - .env
     networks:
