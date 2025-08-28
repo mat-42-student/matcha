@@ -14,7 +14,7 @@ make vdown ; make
 ### ✨brand new adminer container✨
 http://localhost:8080/
 system postgresql
-server postgresql:5432
+server postgres:5432
 user alice
 pass caglisse
 database matcha
