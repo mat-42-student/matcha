@@ -1,4 +1,4 @@
-"use client"; // car on va utiliser router côté client
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -50,8 +50,9 @@ export default function SignupPage() {
           <p className="text-red-600 text-sm text-center">{error}</p>
         )}
 
+        {/* Email */}
         <input
-          type="text"
+          type="email"
           name="email"
           placeholder="Email"
           className="px-4 py-2 rounded-full border border-gray-300 
@@ -60,6 +61,8 @@ export default function SignupPage() {
                      text-gray-900"
           required
         />
+
+        {/* Mot de passe */}
         <input
           type="password"
           name="password"
@@ -70,6 +73,60 @@ export default function SignupPage() {
                      text-gray-900"
           required
         />
+
+        {/* Nom d'utilisateur */}
+        <input
+          type="text"
+          name="username"
+          placeholder="Nom d'utilisateur"
+          className="px-4 py-2 rounded-full border border-gray-300 
+                     focus:outline-none focus:ring-2 focus:ring-pink-400
+                     placeholder-gray-400
+                     text-gray-900"
+          required
+        />
+
+        {/* Ville */}
+        <input
+          type="text"
+          name="city"
+          placeholder="Ville"
+          className="px-4 py-2 rounded-full border border-gray-300 
+                     focus:outline-none focus:ring-2 focus:ring-pink-400
+                     placeholder-gray-400
+                     text-gray-900"
+          required
+        />
+
+        {/* Genre */}
+        <select
+          name="gender"
+          className="px-4 py-2 rounded-full border border-gray-300 
+                     focus:outline-none focus:ring-2 focus:ring-pink-400
+                     text-gray-900"
+          required
+        >
+          <option value="">-- Sélectionnez votre genre --</option>
+          <option value="M">Homme</option>
+          <option value="F">Femme</option>
+          <option value="O">Autre</option>
+        </select>
+
+        {/* Préférence sexuelle */}
+        <select
+          name="sex_pref"
+          className="px-4 py-2 rounded-full border border-gray-300 
+                     focus:outline-none focus:ring-2 focus:ring-pink-400
+                     text-gray-900"
+          required
+        >
+          <option value="">-- Préférence --</option>
+          <option value="M">Hommes</option>
+          <option value="F">Femmes</option>
+          <option value="B">Les deux</option>
+        </select>
+
+        {/* Bouton */}
         <button
           type="submit"
           disabled={loading}
