@@ -1,19 +1,50 @@
-import { User, listUsers } from "@/lib/db/users"
-import CardUser from "@/components/card-user/CardUser"
-import Pagination from "@/components/browse/Pagination"
+"use client";
+import { useEffect, useState } from "react";
+import CardUser from "@/components/card-user/CardUser";
 
-export async function Browse() {
-  const users: User[] = await listUsers();
-  // console.log(users[0]);
-  const tmp_user = users[0]
-  return(
-    <>
-      <h1 className="text-3xl font-bold mb-6 text-center text-pink-800">Last Profiles</h1>
-      {/* {users.map((user) => (
-        <CardUser key={user.id} user={user} />
-      ))} */}
-    <CardUser user={tmp_user} />
-    <Pagination />
-    </>
-  )
+export function Browse() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const res = await fetch(`/api/users?page=${page}`);
+      const data = await res.json();
+      setUsers(data);
+      setLoading(false);
+    };
+    load();
+  }, [page]);
+
+  return (
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1>
+
+      {loading && <p>Chargement...</p>}
+
+      <ul>
+        {users.map((u) => (
+          <CardUser key={u.id} user={u} />
+        ))}
+      </ul>
+
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+        >
+          Précédent
+        </button>
+        <button
+          onClick={() => setPage((p) => p + 1)}
+          className="px-3 py-1 rounded bg-gray-200"
+        >
+          Suivant
+        </button>
+      </div>
+    </div>
+  );
 }
