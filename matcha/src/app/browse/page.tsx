@@ -1,9 +1,7 @@
 import { Browse } from "@/components/browse/Browse"
 
-export default function Page() {
-    return(
-        <>
-            <Browse />
-        </>
-    )
+export default async function Page() {
+  return (
+    <Browse />
+  )
 }
