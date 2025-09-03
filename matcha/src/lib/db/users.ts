@@ -1,5 +1,5 @@
 // matcha/src/lib/db/users.ts
-import { executeQuery, pool } from '../db-utils';
+import {  pool } from './db-utils';
 import { QueryResult } from 'pg';
 
 export interface User {
