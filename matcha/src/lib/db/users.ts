@@ -1,6 +1,7 @@
 // matcha/src/lib/db/users.ts
-import { executeQuery, pool } from '../db-utils';
-import { QueryResult } from 'pg';
+import { pool } from '../db-utils';
+
+export const PROFILES_LIMIT = 20; // Limit the number of profiles returned
 
 export interface User {
   id: string;
@@ -77,6 +78,15 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function listUsers(): Promise<User[]> {
   const result = await pool.query<User>('SELECT * FROM users ORDER BY created_at DESC');
   return result.rows;
+}
+
+/**
+ * Fetch total number of pages based on PROFILES_LIMIT
+ */
+export async function fetchTotalPages(): Promise<number> {
+  const result = await pool.query<{total : string}>('SELECT count(*) AS total FROM users');
+  const totalUsers = parseInt(result.rows[0].total, 10);
+  return Math.ceil(totalUsers / PROFILES_LIMIT);
 }
 
 /**
