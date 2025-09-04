@@ -112,3 +112,68 @@ async function seed() {
 }
 
 seed();
+
+// import fetch from "node-fetch";
+
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+// });
+
+// const PIXABAY_KEY = process.env.PIXABAY_KEY;
+
+// async function fetchPixabayImages(query: string, perPage = 5) {
+//   const url = `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(
+//     query
+//   )}&image_type=photo&per_page=${perPage}`;
+
+//   const res = await fetch(url);
+//   if (!res.ok) {
+//     throw new Error(`Pixabay API error: ${res.status}`);
+//   }
+//   const data = await res.json();
+//   return data.hits as { largeImageURL: string; id: number }[];
+// }
+
+// async function downloadImage(url: string) {
+//   const res = await fetch(url);
+//   if (!res.ok) {
+//     throw new Error(`Failed to download ${url}`);
+//   }
+//   const buffer = await res.arrayBuffer();
+//   const mimeType = res.headers.get("content-type") ?? "image/jpeg";
+//   return { buffer: Buffer.from(buffer), mimeType };
+// }
+
+// async function seedPictures() {
+//   const client = await pool.connect();
+//   try {
+//     const images = await fetchPixabayImages("portrait", 5);
+
+//     for (const img of images) {
+//       console.log(`Downloading ${img.largeImageURL}`);
+//       const { buffer, mimeType } = await downloadImage(img.largeImageURL);
+
+//       // Ici j’utilise un user_id bidon — à adapter avec tes vrais users !
+//       const userId = "00000000-0000-0000-0000-000000000001";
+
+//       await client.query(
+//         `INSERT INTO pictures (user_id, data, mime_type, url, filename)
+//          VALUES ($1, $2, $3, NULL, $4)`,
+//         [userId, buffer, mimeType, `pixabay-${img.id}.jpg`]
+//       );
+//       console.log(`Inserted image for user ${userId}`);
+//     }
+//   } finally {
+//     client.release();
+//   }
+// }
+
+// seedPictures()
+//   .then(() => {
+//     console.log("✅ Seeding done!");
+//     process.exit(0);
+//   })
+//   .catch((err) => {
+//     console.error("❌ Error seeding:", err);
+//     process.exit(1);
+//   });
