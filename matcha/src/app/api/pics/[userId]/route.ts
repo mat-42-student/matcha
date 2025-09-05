@@ -7,15 +7,12 @@ export async function GET(
   context: { params: Promise<{ userId: string }> }
 ) {
   const { userId } = await context.params; // ✅ il faut await ici
-  console.log("Fetching picture for userId:", userId);
 
-  console.log(`SELECT url, mime_type, data FROM pictures WHERE user_id = '${userId}' LIMIT 1`)
   const result = await pool.query(
     "SELECT url, mime_type, data FROM pictures WHERE user_id = $1 LIMIT 1",
     [userId]
   );
 
-  console.log("Database query result:", result.rows);
   if (result.rows.length === 0) {
     console.log("No picture found for userId:", userId);
     return new NextResponse("Not found", { status: 404 });
@@ -25,7 +22,7 @@ export async function GET(
 
   if (url) {
     console.log("Redirecting to URL:", url);
-    return NextResponse.json({ url });
+    return NextResponse.redirect(url);
   }
 
   if (data) {

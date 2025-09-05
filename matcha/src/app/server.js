@@ -1,6 +1,7 @@
 import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
+import { seed } from "../lib/db/seed-users.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -8,6 +9,8 @@ const port = 3000;
 
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
+
+await seed();
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
@@ -20,25 +23,25 @@ const io = new Server(httpServer, {
   },
 });
 
-  io.on("connection", (socket) => {
-    console.log("A user connected");
+io.on("connection", (socket) => {
+  console.log("A user connected");
 
-    socket.on("disconnect", () => {
-      console.log("A user disconnected");
-    });
-
-    socket.on("chat-message", (msg) => {
-      console.log("Received message:", msg);
-      io.emit("chat-message", msg);
-    });
+  socket.on("disconnect", () => {
+    console.log("A user disconnected");
   });
 
-  httpServer
-    .once("error", (err) => {
-      console.error(err);
-      process.exit(1);
-    })
-    .listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`);
-    });
+  socket.on("chat-message", (msg) => {
+    console.log("Received message:", msg);
+    io.emit("chat-message", msg);
+  });
+});
+
+httpServer
+  .once("error", (err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .listen(port, () => {
+    console.log(`> Ready on http://${hostname}:${port}`);
+  });
 });

@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { Pool } from 'pg';
 
-function getPool() {
+export function getPool() {
   return new Pool({
     user: process.env.POSTGRES_USER,
     host: process.env.POSTGRES_HOST,
@@ -11,7 +11,7 @@ function getPool() {
   });
 }
 
-async function insertUser(pool: Pool) {
+async function insertUser(pool) {
   const username = faker.internet.username();
   const gender = Math.random() < 0.5 ? 'M' : 'F';
   const { rows } = await pool.query(
@@ -26,7 +26,7 @@ async function insertUser(pool: Pool) {
   return [rows[0].id, gender];
 }
 
-async function insertPic(pool: Pool, id: number, picUrl: string) {
+async function insertPic(pool, id, picUrl) {
   try {
     await pool.query(
       "INSERT INTO pictures (user_id, url) VALUES ($1, $2)",
@@ -38,7 +38,7 @@ async function insertPic(pool: Pool, id: number, picUrl: string) {
   }
 }
 
-async function getPixabayPics(g: string, page: number = 1) {
+async function getPixabayPics(g, page = 1) {
   const API_KEY = '52071501-9882e5a59e7f705ac0b5ae712';
   const gender = g === 'M' ? 'male' : 'female';
   const params = new URLSearchParams({
@@ -58,16 +58,16 @@ async function getPixabayPics(g: string, page: number = 1) {
       throw new Error(`Pixabay API error: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    return data.hits.map((hit: any) => hit.webformatURL);
+    return data.hits.map((hit) => hit.webformatURL);
   } catch (err) {
     console.error("getPixabayPics error:", err);
   }
 }
 
-async function insertUserInterests(pool: Pool, userId: number) {
+async function insertUserInterests(pool, userId) {
   try {
     const interestsCount = await pool.query("SELECT COUNT(*) FROM interests");
-    const interests = new Set<number>();
+    const interests = new Set();
 
     while (interests.size < 3) {
       const randomInterest = Math.floor(Math.random() * Number(interestsCount.rows[0].count)) + 1;
@@ -84,25 +84,25 @@ async function insertUserInterests(pool: Pool, userId: number) {
   }
 }
 
-async function seed() {
+export async function seed() {
   const pool = getPool();
-  const malePics = await getPixabayPics('M');
-  malePics.push(... await getPixabayPics('M', 2));
-  const femalePics = await getPixabayPics('F');
-  femalePics.push(... await getPixabayPics('F', 2));
-  // console.log(malePics, "size: ", malePics.length);
   try {
     const ret = await pool.query("SELECT COUNT(*) FROM users");
     const userCount = ret.rows[0].count;
-    if (userCount < 500) {
-      console.log(`Seeding ${500 - userCount} users...`);
-      for (let i = userCount; i < 500; i++) {
-        const [ id, gender ] = await insertUser(pool);
-        await insertUserInterests(pool, id);
-        const pic = gender === 'M' ? malePics.pop() : femalePics.pop();
-        await insertPic(pool, id, pic);
-      }
-    } 
+    if (userCount >= 500)
+      return;
+    console.log("Getting pictures from Pixabay...");
+    const malePics = await getPixabayPics('M');
+    malePics.push(... await getPixabayPics('M', 2));
+    const femalePics = await getPixabayPics('F');
+    femalePics.push(... await getPixabayPics('F', 2));
+    console.log(`Seeding ${500 - userCount} users...`);
+    for (let i = userCount; i < 500; i++) {
+      const [ id, gender ] = await insertUser(pool);
+      await insertUserInterests(pool, id);
+      const pic = gender === 'M' ? malePics.pop() : femalePics.pop();
+      await insertPic(pool, id, pic);
+    }
     console.log("... Done");
   } catch (err) {
     console.error("Seed error:", err);
@@ -110,8 +110,6 @@ async function seed() {
     await pool.end();
   }
 }
-
-seed();
 
 // import fetch from "node-fetch";
 

@@ -5,7 +5,7 @@ import { pool } from "@/lib/db-utils";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") ?? "1", 10);
-  const limit = 5;
+  const limit = 12;
   const offset = (page - 1) * limit;
 
   const { rows } = await pool.query(
