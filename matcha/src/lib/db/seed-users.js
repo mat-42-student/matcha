@@ -19,17 +19,19 @@ export function getPool() {
 }
 
 function getRandomCity() {
-  console.log(`frCities length: ${frCities.length}`);
   const index = Math.floor(Math.random() * frCities.length);
-  console.log(`city: ${JSON.stringify(frCities[index])}`);
   return frCities[index];
 }
 
+function getRandomUsername(sex) {
+  const gender = sex === 'M'? 'male' : "female";
+  return faker.person.firstName(gender) + faker.number.int(9999);
+}
+
 async function insertUser(pool) {
-  const username = faker.person.firstName() + faker.number.int(9999);
   const gender = Math.random() < 0.5 ? 'M' : 'F';
+  const username = getRandomUsername(gender);
   const city = getRandomCity();
-  console.log(`city ${city}`);
 
   const { rows } = await pool.query(
     `INSERT INTO users (username, email, passwd, gender, bio, city, latitude, longitude) VALUES
