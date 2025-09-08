@@ -2,13 +2,12 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 
- const publicPaths = ['/auth', '/signup', '/api/login', '/api/signup'];
+const publicPaths = ['/auth', '/signup', '/api/login', '/api/signup'];
 
 export function middleware(req: NextRequest) {
     const isLoggedIn = req.cookies.get('session_id') || false
     const url = req.nextUrl.pathname;
     console.log("isLoggedIn:", isLoggedIn)
-
 
     if (!isLoggedIn && !publicPaths.includes(url)) {
         return NextResponse.redirect(new URL('/auth', req.url))

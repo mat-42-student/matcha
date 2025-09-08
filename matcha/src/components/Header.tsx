@@ -7,7 +7,7 @@ export function Header() {
         </h1>
         <nav className="flex gap-4">
           
-          <a href="/browse" className="hover:underline">Me@t</a>
+          <a href="/" className="hover:underline">Me@t</a>
           <a href="/profile" className="hover:underline">Profile</a>
           <a href="/chat" className="hover:underline transition duration-300">Chat</a>
           <a href="/search" className="hover:scale-150 transition duration-300">🔍</a>
