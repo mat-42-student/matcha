@@ -146,8 +146,8 @@ async function insertUserPic(pool, id, urlPic) {
     const { buffer, mimeType } = await downloadImage(urlPic);
 
     await pool.query(
-      `INSERT INTO pictures (user_id, data, mime_type, url)
-        VALUES ($1, $2, $3, NULL)`,
+      `INSERT INTO pictures (user_id, data, mime_type, is_main)
+        VALUES ($1, $2, $3, true)`,
       [id, buffer, mimeType]
     );
     console.log(`Inserted image for user ${id}`);

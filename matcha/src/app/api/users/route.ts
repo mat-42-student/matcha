@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const offset = (page - 1) * limit;
 
   const { rows } = await pool.query(
-    "SELECT * FROM users LIMIT $1 OFFSET $2",
+    "SELECT id, username, gender, city, bio FROM users LIMIT $1 OFFSET $2",
     [limit, offset]
   );
 

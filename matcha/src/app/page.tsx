@@ -25,11 +25,11 @@ export default function Homepage() {
 
       {loading && <p>Chargement...</p>}
 
-      <ul>
+      <div className="flex flex-wrap justify-center">
         {users.map((u) => (
-          <CardUser key={u.id} user={u} />
+          <CardUser key={u.username} user={u} />
         ))}
-      </ul>
+      </div>
 
       <div className="flex gap-2 mt-4">
         <button

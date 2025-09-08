@@ -6,10 +6,10 @@ export async function GET(
   req: Request,
   context: { params: Promise<{ userId: string }> }
 ) {
-  const { userId } = await context.params; // ✅ il faut await ici
+  const { userId } = await context.params;
 
   const result = await pool.query(
-    "SELECT url, mime_type, data FROM pictures WHERE user_id = $1 LIMIT 1",
+    "SELECT mime_type, data FROM pictures WHERE user_id = $1 AND is_main = true",
     [userId]
   );
 
@@ -18,12 +18,7 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const { url, mime_type, data } = result.rows[0];
-
-  if (url) {
-    console.log("Redirecting to URL:", url);
-    return NextResponse.redirect(url);
-  }
+  const { mime_type, data } = result.rows[0];
 
   if (data) {
     console.log("Serving image data for userId:", userId);
