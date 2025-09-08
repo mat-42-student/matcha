@@ -1,10 +1,10 @@
-import { fakerFR as faker } from "@faker-js/faker";
+import { fa, fakerFR as faker } from "@faker-js/faker";
 import { Pool } from 'pg';
 import fs from "fs";
 import path from "path";
 
-const MAX_USERS = 10;
-
+const MIN_USERS = 10;
+const API_KEY = process.env.PIX_KEY;
 const filePath = path.join(process.cwd(), "src/data/fr-cities.json");
 const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
@@ -50,27 +50,15 @@ async function insertUser(pool) {
   return [rows[0].id, gender];
 }
 
-async function downloadPic(pool, id, picUrl) {
-  try {
-    await pool.query(
-      "INSERT INTO pictures (user_id, url) VALUES ($1, $2)",
-      [id, picUrl]
-    );
-  }
-  catch (err) {
-    console.error("Insert pic error:", err);
-  }
-}
-
-async function getPixabayPictureUrls(g, page = 1) {
-  const API_KEY = '52071501-9882e5a59e7f705ac0b5ae712';
+async function getPixabayPictureUrls(g, remainingUsers, page = 1) {
+  const nb_users = remainingUsers > 200 ? 200 : remainingUsers;
   const gender = g === 'M' ? 'male' : 'female';
   const params = new URLSearchParams({
     key: API_KEY,
     q: gender,
     category: "people",
     image_type: "photo",
-    per_page: MAX_USERS.toString(),
+    per_page: nb_users.toString(),
     safesearch: "true",
     page: page.toString()
   });
@@ -82,9 +70,18 @@ async function getPixabayPictureUrls(g, page = 1) {
       throw new Error(`Pixabay API error: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    return data.hits.map((hit) => hit.webformatURL);
+    const urls = data.hits.map(hit => hit.webformatURL);
+
+    const remaining = remainingUsers - nb_users;
+    if (remaining > 0) {
+      const nextUrls = await getPixabayPictureUrls(g, remaining, page + 1);
+      return urls.concat(nextUrls);
+    }
+
+    return urls;
   } catch (err) {
     console.error("getPixabayPictureUrls error:", err);
+    return [];
   }
 }
 
@@ -113,19 +110,18 @@ export async function seed() {
   try {
     const ret = await pool.query("SELECT COUNT(*) FROM users");
     const userCount = ret.rows[0].count;
-    if (userCount >= MAX_USERS)
+    if (userCount >= MIN_USERS)
       return;
+    const remainingUsers = MIN_USERS - userCount;
     console.log("Getting pictures from Pixabay...");
-    const malePics = await getPixabayPictureUrls('M');
-    // malePics.push(... await getPixabayPictureUrls('M', 2));
-    const femalePics = await getPixabayPictureUrls('F');
-    // femalePics.push(... await getPixabayPictureUrls('F', 2));
-    console.log(`Seeding ${MAX_USERS - userCount} users...`);
-    for (let i = userCount; i < MAX_USERS; i++) {
+    const malePics = await getPixabayPictureUrls('M', remainingUsers);
+    const femalePics = await getPixabayPictureUrls('F', remainingUsers);
+    console.log(`Seeding ${remainingUsers} users...`);
+    for (let i = userCount; i < MIN_USERS; i++) {
       const [ id, gender ] = await insertUser(pool);
       await insertUserInterests(pool, id);
-      const pic = gender === 'M' ? malePics.pop() : femalePics.pop();
-      await downloadPic(pool, id, pic);
+      const urlPic = gender === 'M' ? malePics.pop() : femalePics.pop();
+      await insertUserPic(pool, id, urlPic);
     }
     console.log("... Done");
   } catch (err) {
@@ -135,67 +131,24 @@ export async function seed() {
   }
 }
 
-// import fetch from "node-fetch";
+async function downloadImage(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to download ${url}`);
+  }
+  const buffer = await res.arrayBuffer();
+  const mimeType = res.headers.get("content-type") ?? "image/jpeg";
+  return { buffer: Buffer.from(buffer), mimeType };
+}
 
-// const pool = new Pool({
-//   connectionString: process.env.DATABASE_URL,
-// });
+async function insertUserPic(pool, id, urlPic) {
+    console.log(`Downloading ${urlPic}`);
+    const { buffer, mimeType } = await downloadImage(urlPic);
 
-// const PIXABAY_KEY = process.env.PIXABAY_KEY;
-
-// async function fetchPixabayImages(query: string, perPage = 5) {
-//   const url = `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(
-//     query
-//   )}&image_type=photo&per_page=${perPage}`;
-
-//   const res = await fetch(url);
-//   if (!res.ok) {
-//     throw new Error(`Pixabay API error: ${res.status}`);
-//   }
-//   const data = await res.json();
-//   return data.hits as { largeImageURL: string; id: number }[];
-// }
-
-// async function downloadImage(url: string) {
-//   const res = await fetch(url);
-//   if (!res.ok) {
-//     throw new Error(`Failed to download ${url}`);
-//   }
-//   const buffer = await res.arrayBuffer();
-//   const mimeType = res.headers.get("content-type") ?? "image/jpeg";
-//   return { buffer: Buffer.from(buffer), mimeType };
-// }
-
-// async function seedPictures() {
-//   const client = await pool.connect();
-//   try {
-//     const images = await fetchPixabayImages("portrait", 5);
-
-//     for (const img of images) {
-//       console.log(`Downloading ${img.largeImageURL}`);
-//       const { buffer, mimeType } = await downloadImage(img.largeImageURL);
-
-//       // Ici j’utilise un user_id bidon — à adapter avec tes vrais users !
-//       const userId = "00000000-0000-0000-0000-000000000001";
-
-//       await client.query(
-//         `INSERT INTO pictures (user_id, data, mime_type, url, filename)
-//          VALUES ($1, $2, $3, NULL, $4)`,
-//         [userId, buffer, mimeType, `pixabay-${img.id}.jpg`]
-//       );
-//       console.log(`Inserted image for user ${userId}`);
-//     }
-//   } finally {
-//     client.release();
-//   }
-// }
-
-// seedPictures()
-//   .then(() => {
-//     console.log("✅ Seeding done!");
-//     process.exit(0);
-//   })
-//   .catch((err) => {
-//     console.error("❌ Error seeding:", err);
-//     process.exit(1);
-//   });
+    await pool.query(
+      `INSERT INTO pictures (user_id, data, mime_type, url)
+        VALUES ($1, $2, $3, NULL)`,
+      [id, buffer, mimeType]
+    );
+    console.log(`Inserted image for user ${id}`);
+}
