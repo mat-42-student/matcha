@@ -1,14 +1,25 @@
 import { pool } from "./db-utils";
 import { getUserById } from "./users";
+import { v4 as uuidv4 } from "uuid";
+
+export async function createSession(userId: string): Promise<string> {
+	const sessionId = uuidv4();
+
+	await pool.query(
+		`INSERT INTO sessions (id, user_id) VALUES ($1, $2)`,
+		[sessionId, userId]
+	);
+
+	return sessionId;
+}
 
 export async function getUserByIdFromSession(sessionId: string) {
-  const res = await pool.query(
-    "SELECT user_id FROM sessions WHERE id = $1",
-    [sessionId]
-  );
-
-  if (res.rowCount === 0) return null;
-
-  const userId = res.rows[0].user_id;
-  return getUserById(userId);
+	const result = await pool.query(
+		`SELECT u.id, u.email, u.username
+     FROM sessions s
+     JOIN users u ON s.user_id = u.id
+     WHERE s.id = $1 AND s.expires_at > NOW()`,
+		[sessionId]
+	);
+	return result.rows[0] || null;
 }
