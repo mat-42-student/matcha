@@ -1,17 +1,17 @@
-// app/api/allpics/[userId]/route.ts
+// app/api/users/[userId]/location/route.ts
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db-utils";
-import { copyFile } from "fs";
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ userId: string }> }
+  context: { params: Promise<{ userId: string, latitude: string, longitude: string }> }
 ) {
-  const { userId } = await context.params;
+  const { userId, latitude, longitude } = await context.params;
 
   const result = await pool.query(
-    'SELECT id, mime_type, encode(data, \'base64\') as data, is_main FROM pictures WHERE user_id = $1 ORDER BY is_main DESC, id ASC',
-    [userId]
+    "UPDATE users SET latitude = $1, longitude = $2 WHERE id = $3",
+    [latitude, longitude, userId]
   );
 
   if (result.rows.length === 0) {
