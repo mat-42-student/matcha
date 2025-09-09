@@ -29,7 +29,9 @@ export default function LoginForm() {
 			}
 
 			// ✅ Succès → redirection
+            window.dispatchEvent(new Event("user-logged-in"));
 			router.push("/");
+
 		} catch (err) {
 			console.error(err);
 			setError("Erreur réseau");

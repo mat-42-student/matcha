@@ -13,6 +13,10 @@ export async function createSession(userId: string): Promise<string> {
 	return sessionId;
 }
 
+export async function deleteSession(sessionId: string) {
+  await pool.query(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
+}
+
 export async function getUserByIdFromSession(sessionId: string) {
 	const result = await pool.query(
 		`SELECT u.id, u.email, u.username

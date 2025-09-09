@@ -23,7 +23,7 @@ if (process.env.NODE_ENV !== "production") {
 export async function executeQuery<T extends QueryResultRow>(
   queryString: string, 
 ): Promise<QueryResult<T>> {
-  const client = await pool.connect();
+  const client = await pool.connect(); 
   
   try {
     const result = await client.query<T>(queryString);

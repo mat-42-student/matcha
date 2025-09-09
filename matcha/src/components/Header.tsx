@@ -4,66 +4,82 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface User {
-	id: string;
-	email: string;
-	username: string;
+  id: string;
+  email: string;
+  username: string;
 }
 
 export function Header() {
-	const [user, setUser] = useState<User | null>(null);
-	const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		async function fetchUser() {
-			try {
-				const res = await fetch("/api/me");
-				const data = await res.json();
-				setUser(data.user);
-			} catch (err) {
-				console.error("Erreur fetch /api/me:", err);
-				setUser(null);
-			} finally {
-				setLoading(false);
-			}
-		}
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" }); // 👈 important pour les cookies
+        const data = await res.json();
+        console.log("HEADER /api/me response:", data);
 
-		fetchUser();
-	}, []);
+        if (res.ok) {
+          setUser(data); // 👈 directement `data`, pas `data.user`
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Erreur fetch /api/me:", err);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-	async function handleLogout() {
-		await fetch("/api/logout", { method: "POST" });
-		setUser(null);
-		window.location.href = "/auth"; // redirige vers login
-	}
+    fetchUser();
 
-	return (
-		<header className="w-full bg-white shadow p-4 flex justify-between items-center">
-			<Link href="/" className="text-xl font-bold">
-				Matcha 🍵
-			</Link>
+    // écouter un event "user-logged-in"
+    window.addEventListener("user-logged-in", fetchUser);
 
-			{!loading && (
-				<nav className="flex gap-4">
-					{user ? (
-						<>
-							<Link href="/profile">Profil</Link>
-							<button
-								onClick={handleLogout}
-								className="text-red-600 hover:underline"
-							>
-								Logout
-							</button>
-						</>
-					) : (
-						<>
-							<Link href="/auth">Login</Link>
-							<Link href="/signup" className="font-semibold text-green-600">
-								Signup
-							</Link>
-						</>
-					)}
-				</nav>
-			)}
-		</header>
-	);
+    return () => {
+        window.removeEventListener("user-logged-in", fetchUser);
+    };
+
+
+
+  }, []);
+
+  async function handleLogout() {
+    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    setUser(null);
+    window.location.href = "/auth"; // redirige vers login
+  }
+
+  return (
+    <header className="w-full bg-white shadow p-4 flex justify-between items-center">
+      <Link href="/" className="text-xl font-bold">
+        Matcha 🍵
+      </Link>
+
+      {!loading && (
+        <nav className="flex gap-4">
+          {user ? (
+            <>
+              <Link href="/profile">Profil</Link>
+              <button
+                onClick={handleLogout}
+                className="text-red-600 hover:underline"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth">Login</Link>
+              <Link href="/signup" className="font-semibold text-green-600">
+                Signup
+              </Link>
+            </>
+          )}
+        </nav>
+      )}
+    </header>
+  );
 }
