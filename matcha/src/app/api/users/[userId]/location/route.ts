@@ -1,30 +1,23 @@
 // app/api/users/[userId]/location/route.ts
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db-utils";
 
-export async function GET(
-  req: Request,
+export async function POST(
+  req: NextRequest,
   context: { params: Promise<{ userId: string, latitude: string, longitude: string }> }
 ) {
-  const { userId, latitude, longitude } = await context.params;
+  const { userId } = await context.params;
+  const { latitude, longitude, city, country } = await req.json();
+
+  console.log("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
+  console.log(userId, country, city, latitude, longitude); 
+  console.log("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
 
   const result = await pool.query(
-    "UPDATE users SET latitude = $1, longitude = $2 WHERE id = $3",
-    [latitude, longitude, userId]
+    "UPDATE users SET country = $1, city = $2, latitude = $3, longitude = $4 WHERE id = $5",
+    [country, city, latitude, longitude, userId]
   );
 
-  if (result.rows.length === 0) {
-    console.log("No picture found for userId:", userId);
-    return new NextResponse("Not found", { status: 404 });
-  }
-
-  const picsJson = result.rows.map((row) => ({
-    id: row.id,
-    mime_type: row.mime_type ?? "image/jpeg",
-    data: row.data,
-    is_main: row.is_main,
-  }));
-
-  return NextResponse.json(picsJson);
+  return NextResponse.json({ success: true });
 }
