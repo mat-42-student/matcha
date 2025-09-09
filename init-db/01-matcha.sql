@@ -62,6 +62,16 @@ CREATE TABLE "notifications" (
   "created_at" timestamp DEFAULT (current_timestamp)
 );
 
+CREATE TABLE "sessions" (
+  "id" uuid PRIMARY KEY,
+  "user_id" uuid NOT NULL,
+  "created_at" timestamp DEFAULT (current_timestamp),
+  "expires_at" timestamp DEFAULT (current_timestamp + interval '7 days'),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+CREATE INDEX ON "sessions" ("user_id");
+
 CREATE UNIQUE INDEX ON "user_interests" ("user_id", "interest_id");
 
 CREATE UNIQUE INDEX ON "matches" ("user1_id", "user2_id");

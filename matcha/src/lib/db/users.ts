@@ -1,7 +1,6 @@
 // matcha/src/lib/db/users.ts
-import { pool } from '../db-utils';
-
-export const PROFILES_LIMIT = 20; // Limit the number of profiles returned
+import {  pool } from './db-utils';
+import { QueryResult } from 'pg';
 
 export interface User {
   id: string;

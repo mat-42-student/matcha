@@ -1,4 +1,4 @@
-import { executeQuery } from '../db-utils';
+import { executeQuery } from './db-utils';
 
 export interface Match {
   id: number;

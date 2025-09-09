@@ -20,10 +20,10 @@ if (process.env.NODE_ENV !== "production") {
   global.cachedPool = pool;
 }
 
-async function executeQuery<T extends QueryResultRow>(
+export async function executeQuery<T extends QueryResultRow>(
   queryString: string, 
 ): Promise<QueryResult<T>> {
-  const client = await pool.connect();
+  const client = await pool.connect(); 
   
   try {
     const result = await client.query<T>(queryString);
@@ -40,7 +40,7 @@ async function executeQuery<T extends QueryResultRow>(
 }
 
 // Utility function to test the connection
-async function testConnection(): Promise<boolean> {
+export async function testConnection(): Promise<boolean> {
   try {
     await executeQuery('SELECT NOW()');
     console.log('Database connection successful');
@@ -51,4 +51,3 @@ async function testConnection(): Promise<boolean> {
   }
 }
 
-export { executeQuery, testConnection };

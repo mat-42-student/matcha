@@ -1,6 +1,6 @@
 // scripts/test-users.ts
 import { createUser, listUsers, getUserByEmail, updateUser, deleteUser } from '../src/lib/db/users';
-import { pool } from '../src/lib/db-utils';
+import { pool } from '../src/lib/db/db-utils';
 
 async function main() {
   try {
