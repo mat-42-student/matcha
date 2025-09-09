@@ -1,7 +1,6 @@
 // app/api/allpics/[userId]/route.ts
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
-import { copyFile } from "fs";
 
 export async function GET(
   req: Request,
