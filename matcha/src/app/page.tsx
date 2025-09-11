@@ -6,7 +6,7 @@ export default function Homepage() {
   return (
     <>
       <Browse />
-      <Geoloc userId="987f4997-9d56-482b-ba8e-68651cff86d9" />
+      <Geoloc userId="3eff5f12-1e3c-4e09-a17e-911654525826" />
     </>
   )
 }

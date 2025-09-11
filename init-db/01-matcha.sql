@@ -7,7 +7,7 @@ CREATE TABLE "users" (
   "city" varchar(50),
   "latitude" float,
   "longitude" float,
-  "year of birth" DATE NOT NULL,
+  "birthday" DATE NOT NULL,
   "gender" char(1) NOT NULL,
   "sex_pref" char(1) NOT NULL DEFAULT 'B',
   "bio" text,

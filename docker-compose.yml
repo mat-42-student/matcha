@@ -8,22 +8,22 @@ volumes:
 
 services:
 
-  nginx:
-    container_name: nginx
+  matcha_nginx:
+    container_name: matcha_nginx
     build:
       context: ./nginx
       dockerfile: Dockerfile
     ports:
       - "8443:443"
     depends_on:
-      - server
+      - matcha_server
     networks:
       - main-network
     restart: on-failure
 
-  server:
+  matcha_server:
     image: node:alpine
-    container_name: server
+    container_name: matcha_server
     working_dir: /app
     volumes:
       - ./matcha:/app
@@ -43,13 +43,13 @@ services:
     networks:
       - main-network
     depends_on:
-      postgres:
+      matcha_postgres:
         condition: service_healthy
     restart: on-failure
   
 
-  postgres:
-    container_name: postgres
+  matcha_postgres:
+    container_name: matcha_postgres
     image: postgres:alpine
     expose:
       - "5432"
@@ -70,7 +70,7 @@ services:
       retries: 5
     restart: on-failure
 
-  adminer:
+  matcha_adminer:
     image: adminer
     restart: always
     ports:
@@ -78,5 +78,5 @@ services:
     networks:
       - main-network
     depends_on:
-      postgres:
+      matcha_postgres:
         condition: service_healthy  

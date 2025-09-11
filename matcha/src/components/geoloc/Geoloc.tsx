@@ -1,12 +1,26 @@
 "use client";
+
 import { useEffect } from "react";
 
 export default function Geoloc({ userId }: { userId: string }) {
 
-  async function handlePosition(position: GeolocationPosition) {
+  async function postLocationData(
+    latitude: number,
+    longitude: number,
+    city: string,
+    country: string) {
+
+    await fetch(`/api/users/${userId}/location`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ latitude, longitude, city, country })
+    });
+
+  }
+
+  async function locateFromBrowser(position: GeolocationPosition) {
     const { latitude, longitude } = position.coords;
 
-    // Reverse geocoding si nécessaire
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
     );
@@ -14,36 +28,33 @@ export default function Geoloc({ userId }: { userId: string }) {
     const city = data.address.city || data.address.town || data.address.village;
     const country = data.address.country;
 
-    await fetch(`/api/users/${userId}/location`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ latitude, longitude, city, country })
-    });
+    await postLocationData(latitude, longitude, city, country)
   }
 
   async function locateFromIp() {
-    fetch(`/api/users/${userId}/location-ip`);
+    const resp = await fetch(`https://ipwhois.app/json/`);
+    if (!resp.ok) {
+      console.error("ipwhois fetch failed", resp.status, await resp.text());
+      return
+    }
+    const data = await resp.json();
+
+    if (!data.success) {
+      console.log("error: IP lookup failed")
+      return
+    }
+
+    const { latitude, longitude, city, country } = data;
+    await postLocationData(latitude, longitude, city, country)
+
   }
 
   function requestLocation() {
-    if (!navigator.geolocation) {
-      console.warn("Geolocation unsupported");
-      locateFromIp();
-      return;
-    }
-
     navigator.geolocation.getCurrentPosition(
-      handlePosition,
-      (error) => {
-        console.warn("Unable to locate user : " + error.message);
-        locateFromIp();
-      }
-    );
+      locateFromBrowser,locateFromIp);
   }
 
-  useEffect(() => {
-    requestLocation();
-  }, []);
+  useEffect(requestLocation, [])
 
   return null;
 }

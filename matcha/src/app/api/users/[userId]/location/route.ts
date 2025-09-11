@@ -10,10 +10,6 @@ export async function POST(
   const { userId } = await context.params;
   const { latitude, longitude, city, country } = await req.json();
 
-  console.log("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
-  console.log(userId, country, city, latitude, longitude); 
-  console.log("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
-
   const result = await pool.query(
     "UPDATE users SET country = $1, city = $2, latitude = $3, longitude = $4 WHERE id = $5",
     [country, city, latitude, longitude, userId]
