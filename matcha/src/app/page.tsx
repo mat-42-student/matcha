@@ -20,12 +20,13 @@ export default function Homepage() {
   }, [page]);
 
   return (
-    <div className="p-4">
+    // Étend la hauteur du <main> (qui est déjà "flex-1 overflow-hidden")
+    <div className="h-full overflow-auto p-4">
       <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1>
 
       {loading && <p>Chargement...</p>}
 
-      <div className="flex flex-wrap justify-center">
+      <div className="flex flex-wrap justify-center gap-4">
         {users.map((u) => (
           <CardUser key={u.username} user={u} />
         ))}
