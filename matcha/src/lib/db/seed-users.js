@@ -34,7 +34,7 @@ async function insertUser(pool) {
   const city = getRandomCity();
 
   const { rows } = await pool.query(
-    `INSERT INTO users (username, email, passwd, gender, bio, city, latitude, longitude, year_of_birth) VALUES
+    `INSERT INTO users (username, email, passwd, gender, bio, city, latitude, longitude, birthday) VALUES
     ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
     [
       username,

@@ -1,7 +1,7 @@
 // app/api/users/[userId]/location/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db-utils";
+import { pool } from "@/lib/db/db-utils";
 
 export async function POST(
   req: NextRequest,
