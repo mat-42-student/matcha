@@ -1,4 +1,4 @@
-// app/api/allpics/[userId]/route.ts
+// app/api/users/[userId]/allpics/route.ts
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
 

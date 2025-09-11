@@ -5,7 +5,7 @@ import { User } from "@/lib/db/users";
 import MainPic from "@/components/pics/MainPic";
 
 async function fetchPics(userId: string) {
-  const res = await fetch(`/api/allpics/${userId}`);
+  const res = await fetch(`/api/users/${userId}/allpics`);
   if (!res.ok)
     return [];
   return await res.json();
