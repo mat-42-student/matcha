@@ -53,7 +53,7 @@ export function Header() {
   }
 
   return (
-    <header className="w-full bg-white shadow p-4 flex justify-between items-center">
+    <header className="w-full bg-pink-800  shadow p-4 flex justify-between items-center">
       <Link href="/" className="text-xl font-bold">
         Matcha 🍵
       </Link>
@@ -65,7 +65,7 @@ export function Header() {
               <Link href="/profile">Profil</Link>
               <button
                 onClick={handleLogout}
-                className="text-red-600 hover:underline"
+                className="text-fuchsia-200 hover:underline"
               >
                 Logout
               </button>
@@ -73,7 +73,7 @@ export function Header() {
           ) : (
             <>
               <Link href="/auth">Login</Link>
-              <Link href="/signup" className="font-semibold text-green-600">
+              <Link href="/signup" className="font-semibold text-orange-200">
                 Signup
               </Link>
             </>
