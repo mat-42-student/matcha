@@ -72,6 +72,13 @@ export function SignupForm() {
         />
 
         <input 
+            name="birthday" 
+            type="date" 
+            required 
+            className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900"
+        />
+
+        <input 
             name="city" 
             type="text" 
             placeholder="Ville" 

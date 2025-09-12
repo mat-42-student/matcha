@@ -20,7 +20,7 @@ export default function Browse() {
   }, [page]);
 
   return (
-    <div className="p-4">
+    <div className="h-full overflow-auto p-4">
       <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1>
 
       {loading && <p>Chargement...</p>}

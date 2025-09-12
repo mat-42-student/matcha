@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
-import { loginUser } from "@/server/routes/login";
 import { createSession } from "@/lib/db/session";
+import { loginUser } from "@/lib/db/users";
 
 export async function POST(req: NextRequest) {
 	try {

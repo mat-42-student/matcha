@@ -1,6 +1,6 @@
 // matcha/src/lib/db/users.ts
 import {  pool } from './db-utils';
-import { QueryResult } from 'pg';
+import bcrypt from 'bcryptjs';
 
 export interface User {
   id: string;
@@ -11,6 +11,7 @@ export interface User {
   city?: string;
   latitude?: number;
   longitude?: number;
+  birthday: string;
   gender: string;
   sex_pref: string;
   bio?: string;
@@ -26,8 +27,8 @@ export interface User {
 export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
   const query = {
     text: `
-      INSERT INTO users (username, email, passwd, country, city, latitude, longitude, gender, sex_pref, bio, fame)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      INSERT INTO users (username, email, passwd, country, city, latitude, longitude, birthday, gender, sex_pref, bio, fame)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *;
     `,
     values: [
@@ -38,6 +39,7 @@ export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise
       user.city,
       user.latitude ?? null,
       user.longitude ?? null,
+      user.birthday,
       user.gender,
       user.sex_pref,
       user.bio ?? null,
@@ -80,12 +82,31 @@ export async function listUsers(): Promise<User[]> {
 }
 
 /**
+ * Try to log user
+ */
+export async function loginUser(email: string, password: string): Promise<User | null> {
+  const result = await pool.query<User>(
+    'SELECT * FROM users WHERE email=$1',
+    [email]
+  );
+  const user = result.rows[0];
+  if (!user) return null;
+
+  const match = await bcrypt.compare(password, user.passwd);
+  if (!match) return null;
+
+  return user;
+}
+
+
+/**
  * Fetch total number of pages based on PROFILES_LIMIT
  */
 export async function fetchTotalPages(): Promise<number> {
+  const min_users: number = parseInt(process.env.PROFILES_LIMIT ?? "20");
   const result = await pool.query<{total : string}>('SELECT count(*) AS total FROM users');
   const totalUsers = parseInt(result.rows[0].total, 10);
-  return Math.ceil(totalUsers / PROFILES_LIMIT);
+  return Math.ceil(totalUsers / min_users);
 }
 
 /**
