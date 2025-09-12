@@ -9,11 +9,11 @@ declare global {
 export const pool =
   global.cachedPool ||
   new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: parseInt(process.env.DB_PORT || '5432'),
+    user: process.env.POSTGRES_USER,
+    host: process.env.POSTGRES_HOST,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: parseInt(process.env.POSTGRES_PORT || '5432'),
   });
 
 if (process.env.NODE_ENV !== "production") {

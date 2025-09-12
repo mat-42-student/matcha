@@ -1,4 +1,4 @@
-import { fa, fakerFR as faker } from "@faker-js/faker";
+import { fakerFR as faker } from "@faker-js/faker";
 import { Pool } from 'pg';
 import fs from "fs";
 import path from "path";
@@ -114,9 +114,10 @@ export async function seed() {
     if (userCount >= MIN_USERS)
       return;
     const remainingUsers = MIN_USERS - userCount;
-    console.log("Getting pictures from Pixabay...");
+    console.log("Getting url pictures from Pixabay...");
     const malePics = await getPixabayPictureUrls('M', remainingUsers);
     const femalePics = await getPixabayPictureUrls('F', remainingUsers);
+    console.log("... Done");
     console.log(`Seeding ${remainingUsers} users...`);
     for (let i = userCount; i < MIN_USERS; i++) {
       const [ id, gender ] = await insertUser(pool);
@@ -143,7 +144,6 @@ async function downloadImage(url) {
 }
 
 async function insertUserPic(pool, id, urlPic) {
-    console.log(`Downloading ${urlPic}`);
     const { buffer, mimeType } = await downloadImage(urlPic);
 
     await pool.query(
@@ -151,5 +151,4 @@ async function insertUserPic(pool, id, urlPic) {
         VALUES ($1, $2, $3, true)`,
       [id, buffer, mimeType]
     );
-    console.log(`Inserted image for user ${id}`);
 }

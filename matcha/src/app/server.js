@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
-import { seed } from "../lib/db/seed-users.js";
+import { seed } from "../../scripts/seed-users.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";

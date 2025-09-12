@@ -1,5 +1,4 @@
 import { pool } from "./db-utils";
-import { getUserById } from "./users";
 import { v4 as uuidv4 } from "uuid";
 
 export async function createSession(userId: string): Promise<string> {
