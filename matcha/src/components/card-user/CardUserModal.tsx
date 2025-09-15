@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@/lib/db/users";
+import LikeButton from "./LikeButton"
 
 async function fetchPics(userId: string) {
   const res = await fetch(`/api/users/${userId}/allpics`);
@@ -10,7 +11,7 @@ async function fetchPics(userId: string) {
   return await res.json();
 }
 
-export function UserModal({
+export default function CardUserModal({
   user,
   onClose,
 }: {
@@ -76,15 +77,7 @@ export function UserModal({
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
 
-        <button
-          className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition mt-4"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log("Liked user:", user.id);
-          }}
-        >
-          Like
-        </button>
+        <LikeButton user={user} />
       </div>
     </div>
   );

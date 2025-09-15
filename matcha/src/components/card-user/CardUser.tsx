@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { User } from "@/lib/db/users";
-import { UserModal } from "./UserModal";
 import MainPic from "@/components/pics/MainPic";
+import CardUserModal from "./CardUserModal";
+import LikeButton from "./LikeButton"
 
 export default function CardUser({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
@@ -30,15 +31,11 @@ export default function CardUser({ user }: { user: User }) {
         <p className="text-gray-600 mb-4">
           {user.bio?.slice(0, 100) || "No bio yet"}
         </p>
-        <button
-          className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition"
-          onClick={(e) => { handleLike(e); }}
-        >
-          Like
-        </button>
+        <LikeButton user={user} />
+        
       </div>
 
-      {open && <UserModal user={user} onClose={() => setOpen(false)} />}
+      {open && <CardUserModal user={user} onClose={() => setOpen(false)} />}
     </>
   );
 }
