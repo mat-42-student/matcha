@@ -1,27 +1,15 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-
-const publicPaths = ["/auth", "/signup", "/api/login", "/api/signup"];
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const sessionId = req.cookies.get("session_id")?.value;
-  const url = req.nextUrl.pathname;
-
-  if (!sessionId && !publicPaths.includes(url)) {
-    return NextResponse.redirect(new URL("/auth", req.url));
-  }
-
-  if (sessionId && ["/auth", "/signup"].includes(url)) {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
+  // Pour le moment, aucune logique → on laisse juste passer la requête
   return NextResponse.next();
 }
 
-// list of the path on wich middleware is not executed in order to limit slowings
 export const config = {
   matcher: [
+    // Ici tu peux même restreindre si besoin, mais par défaut
+    // on l’applique à tout sauf aux fichiers statiques
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
