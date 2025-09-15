@@ -6,24 +6,18 @@ import CardUser from "@/components/card-user/CardUser";
 export default function Browse() {
   const [users, setUsers] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const res = await fetch(`/api/users?page=${page}`);
-      const data = await res.json();
-      setUsers(data);
-      setLoading(false);
-    };
-    load();
-  }, [page]);
+  async function getUserList() {
+    const res = await fetch(`/api/users?page=${page}`);
+    const data = await res.json();
+    setUsers(data);
+  }
+
+  useEffect(() => {getUserList();}, [page]);
 
   return (
     <div className="h-full overflow-auto p-4">
       <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1>
-
-      {loading && <p>Chargement...</p>}
 
       <div className="flex flex-wrap justify-center">
         {users.map((u) => (

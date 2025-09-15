@@ -10,7 +10,7 @@ export default function Geoloc({ userId }: { userId: string }) {
     city: string,
     country: string) {
 
-    await fetch(`/api/users/${userId}/location`, {
+    await fetch(`/api/users/location`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ latitude, longitude, city, country })
