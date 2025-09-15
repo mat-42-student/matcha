@@ -4,9 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { pool } from "@/lib/db/db-utils";
 
-export async function POST(req: NextRequest,
-  context: { params: Promise<{ latitude: string, longitude: string }> }
-) {
+export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session_id")?.value || null;
   const { latitude, longitude, city, country } = await req.json();
