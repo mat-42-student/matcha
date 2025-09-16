@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { User } from "@/lib/db/users";
+import { PublicUser } from "@/types";
 import MainPic from "@/components/pics/MainPic";
 import CardUserModal from "./CardUserModal";
 import LikeButton from "./LikeButton"
 
-export default function CardUser({ user }: { user: User }) {
+export default function CardUser({ user }: { user: PublicUser }) {
   const [open, setOpen] = useState(false);
 
   function handleLike(e: React.MouseEvent) {

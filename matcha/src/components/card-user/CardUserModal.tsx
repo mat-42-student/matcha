@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { User } from "@/lib/db/users";
+import { PublicUser } from "@/types";
 import LikeButton from "./LikeButton"
 
 async function fetchPics(userId: string) {
@@ -15,7 +15,7 @@ export default function CardUserModal({
   user,
   onClose,
 }: {
-  user: User;
+  user: PublicUser;
   onClose: () => void;
 }) {
   const [pics, setPics] = useState<

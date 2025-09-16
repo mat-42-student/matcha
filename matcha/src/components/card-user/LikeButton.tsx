@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { User } from "@/lib/db/users";
+import { PublicUser } from "@/types";
 
-const me = fetch(`api/me`);
-
-export default function LikeButton({ user }: { user: User }) {
+export default function LikeButton({ user }: { user: PublicUser }) {
+  const tmp_like = fetch(``);
   const [liked, setLiked] = useState(false);
 
   function handleLike(e: React.MouseEvent) {
     e.stopPropagation();
     setLiked(!liked);
     
-    console.log("Liked user:", user.id);
   }
 
   return (

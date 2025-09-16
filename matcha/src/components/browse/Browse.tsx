@@ -1,18 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import CardUser from "@/components/card-user/CardUser";
+import { PublicUser } from "@/types";
 
 export default function Browse() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<PublicUser[]>([]);
   const [page, setPage] = useState(1);
+  const router = useRouter();
 
-  async function getUserList() {
-    const res = await fetch(`/api/users?page=${page}`);
-    const data = await res.json();
-    setUsers(data);
+async function getUserList() {
+    try {
+      const res = await fetch(`/api/users?page=${page}`);
+      
+      if (!res.ok) {
+        console.log(`API Error: ${res.status}`);
+        router.push("/auth");
+        return;
+      }
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Could not retrieve users :", err);
+    }
   }
-
   useEffect(() => {getUserList();}, [page]);
 
   return (
