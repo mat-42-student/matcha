@@ -54,7 +54,7 @@ export default function Geoloc({ userId }: { userId: string }) {
       locateFromBrowser,locateFromIp);
   }
 
-  useEffect(requestLocation, [])
+  // useEffect(requestLocation, [])
 
   return null;
 }

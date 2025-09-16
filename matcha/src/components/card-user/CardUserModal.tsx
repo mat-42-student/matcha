@@ -27,7 +27,7 @@ export default function CardUserModal({
     fetchPics(user.id).then(setPics);
   }, [user.id]);
 
-  if (pics.length === 0) return null;
+  // if (pics.length === 0) return null;
 
   function nextPic() {
     setCurrent((prev) => (prev + 1) % pics.length);
@@ -48,31 +48,33 @@ export default function CardUserModal({
       >
         <h2 className="text-xl font-bold text-pink-700">{user.username}</h2>
 
-        {/* Displayed pic */}
-        <img
-          src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
-          alt={`photo ${current + 1}`}
-          className="rounded-lg shadow-md w-full object-cover my-2"
-        />
+        { pics.length !== 0 &&
+          <img
+            src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
+            alt={`photo ${current + 1}`}
+            className="rounded-lg shadow-md w-full object-cover my-2"
+          />
+        }
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-2">
-          <button
-            onClick={prevPic}
-            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            ◀
-          </button>
-          <span className="text-sm text-gray-500">
-            {current + 1} / {pics.length}
-          </span>
-          <button
-            onClick={nextPic}
-            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            ▶
-          </button>
-        </div>
+        { pics.length > 1 &&
+          <div className="flex justify-between mt-2">
+            <button
+              onClick={prevPic}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              ◀
+            </button>
+            <span className="text-sm text-gray-500">
+              {current + 1} / {pics.length}
+            </span>
+            <button
+              onClick={nextPic}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              ▶
+            </button>
+          </div>
+        }
 
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
