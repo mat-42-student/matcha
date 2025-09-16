@@ -14,7 +14,6 @@ export async function GET(
   );
 
   if (result.rows.length === 0) {
-    console.log("No picture found for userId:", userId);
     return new NextResponse("Not found", { status: 404 });
   }
 

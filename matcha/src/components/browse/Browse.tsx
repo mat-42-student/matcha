@@ -13,19 +13,32 @@ export default function Browse() {
 async function getUserList() {
     try {
       const res = await fetch(`/api/users?page=${page}`);
-      
-      if (!res.ok) {
-        console.log(`API Error: ${res.status}`);
+      if (res.status === 401) {
         router.push("/auth");
         return;
       }
+      if (!res.ok) {
+        console.log(`API Error: ${res.status}`);
+        return;
+      }
+
       const data = await res.json();
       setUsers(data);
     } catch (err) {
       console.error("Could not retrieve users :", err);
     }
   }
-  useEffect(() => {getUserList();}, [page]);
+  useEffect(() => {
+    getUserList();
+
+    // Affiche la mémoire utilisée côté client
+    // if (typeof window !== "undefined" && (window.performance as any).memory) {
+    //   const { usedJSHeapSize, totalJSHeapSize } = (window.performance as any).memory;
+    //   console.log(
+    //     `Heap: ${(usedJSHeapSize / 1024 / 1024).toFixed(2)} MB / ${(totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`
+    //   );
+    // }
+  }, [page]);
 
   return (
     <div className="h-full overflow-auto p-4">

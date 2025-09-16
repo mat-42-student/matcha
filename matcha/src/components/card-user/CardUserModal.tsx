@@ -49,11 +49,11 @@ export default function CardUserModal({
         <h2 className="text-xl font-bold text-pink-700">{user.username}</h2>
 
         { pics.length !== 0 &&
-          <img
-            src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
-            alt={`photo ${current + 1}`}
-            className="rounded-lg shadow-md w-full object-cover my-2"
-          />
+        <img
+          src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
+          alt={`photo ${current + 1}`}
+          className="rounded-lg shadow-md w-full object-cover my-2"
+        />
         }
 
         { pics.length > 1 &&
