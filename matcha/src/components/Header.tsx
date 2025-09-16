@@ -48,13 +48,21 @@ export function Header({ initialUser }: { initialUser: PublicUser | null }) {
       <nav className="flex gap-4">
         {user ? (
           <>
-            <span>Hi, {user.username}</span>
-            <Link href="/profile" className="text-fuchsia-100 hover:underline">
-              Profil
+            <Link href="/search" className="text-fuchsia-100 hover:underline text-2xl p-3 border">
+              🔍
+            </Link>
+            <Link href="/likes" className="text-fuchsia-100 hover:underline p-3 border">
+              Likes
+            </Link>
+            <Link href="/chat" className="text-fuchsia-100 hover:underline p-3 border">
+              Chat
+            </Link>
+            <Link href="/profile" className="text-fuchsia-100 hover:underline p-3 border">
+              {user.username}
             </Link>
             <button
               onClick={handleLogout}
-              className="text-fuchsia-200 hover:underline"
+              className="text-fuchsia-200 hover:underline p-3 border"
             >
               Logout
             </button>

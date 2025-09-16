@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PublicUser } from "@/types";
 import MainPic from "@/components/pics/MainPic";
 import CardUserModal from "./CardUserModal";
-import LikeButton from "./LikeButton"
+// import LikeButton from "./LikeButton"
 
 export default function CardUser({ user }: { user: PublicUser }) {
   const [open, setOpen] = useState(false);
