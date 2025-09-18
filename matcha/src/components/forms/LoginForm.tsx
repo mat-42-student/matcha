@@ -2,11 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+// dans ton composant LoginForm ou page login
+import { useUser } from "@/context/UserContext";
+
+
 
 export default function LoginForm() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+    const { setUser } = useUser();
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -29,7 +34,8 @@ export default function LoginForm() {
 			}
 
 			// ✅ Succès → redirection
-            window.dispatchEvent(new Event("user-logged-in"));
+            //window.dispatchEvent(new Event("user-logged-in"));
+            setUser(data.user);
 			router.push("/");
 
 		} catch (err) {
