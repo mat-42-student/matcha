@@ -48,6 +48,9 @@ export function Header({ initialUser }: { initialUser: PublicUser | null }) {
       <nav className="flex gap-4">
         {user ? (
           <>
+            <Link href="/" className="text-fuchsia-100 hover:underline p-3 border">
+              Me@t
+            </Link>
             <Link href="/search" className="text-fuchsia-100 hover:underline text-2xl p-3 border">
               🔍
             </Link>

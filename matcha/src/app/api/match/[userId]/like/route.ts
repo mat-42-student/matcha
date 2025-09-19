@@ -6,13 +6,14 @@ import { cookies } from "next/headers";
 
 
 
-export async function POST(req: NextRequest, context: { params: { userId: string } }) {
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
-    const params = context.params; // attendre les params dynamiques
-    const likedUserId = await params.userId;
-     const cookieStore = await cookies();
+    const { userId } = await context.params;
+    const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
-    console.log("Liked: ", params.userId);
     
     if (!sessionId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest, context: { params: { userId: string
       return NextResponse.json({ error: "Session invalide" }, { status: 401 });
     }
 
-    if (me.id === likedUserId) {
+    if (me.id === userId) {
       return NextResponse.json({ error: "Narcissistic" }, { status: 400 });
     }
 
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest, context: { params: { userId: string
       VALUES ($1, $2, 'like')
       ON CONFLICT (user1_id, user2_id) DO NOTHING
     `;
-    await pool.query(query, [me.id, likedUserId]);
+    await pool.query(query, [me.id, userId]);
 
     return NextResponse.json({ success: true });
   } catch (err) {
