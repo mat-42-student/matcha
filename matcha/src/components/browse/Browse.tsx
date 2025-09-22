@@ -13,10 +13,6 @@ export default function Browse() {
 async function getUserList() {
     try {
       const res = await fetch(`/api/users?page=${page}`);
-      if (res.status === 401) {
-        router.push("/auth");
-        return;
-      }
       if (!res.ok) {
         console.log(`API Error: ${res.status}`);
         return;

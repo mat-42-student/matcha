@@ -17,7 +17,6 @@ export default function LikeButton({ user }: { user: PublicUser }) {
     try {
       const res = await fetch(`/api/match/${user.id}/status`);
       const data = await res.json();
-      console.log(data);
       if (data.status === "like") {
         setLiked(true);
         setStatus("");
