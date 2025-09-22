@@ -23,7 +23,7 @@ export async function POST(
     }
 
     if (me.id === userId) {
-      return NextResponse.json({ error: "Narcissistic" }, { status: 400 });
+      return NextResponse.json({ error: "Narcissist" }, { status: 400 });
     }
 
     await client.query("BEGIN");
@@ -57,6 +57,6 @@ export async function POST(
     console.error(err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   } finally {
-    client.release(); // Libérer la connexion
+    client.release();
   }
 }

@@ -1,5 +1,5 @@
 // matcha/src/app/api/match/[userId]/status/route.ts
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getUserByIdFromSession } from "@/lib/db/session";
 import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
