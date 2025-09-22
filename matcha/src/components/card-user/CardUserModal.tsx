@@ -27,8 +27,6 @@ export default function CardUserModal({
     fetchPics(user.id).then(setPics);
   }, [user.id]);
 
-  // if (pics.length === 0) return null;
-
   function nextPic() {
     setCurrent((prev) => (prev + 1) % pics.length);
   }

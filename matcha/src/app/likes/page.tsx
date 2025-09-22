@@ -1,47 +1,58 @@
 // matcha/src/app/likes/page.tsx
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import { getUserByIdFromSession } from "@/lib/db/session";
-import { pool } from "@/lib/db/db-utils";
-// import { useRouter } from "next/navigation";
-import { PublicUser } from "@/types";
-import CardUser from "@/components/card-user/CardUser";
+"use client";
 
-export default async function Homepage() {
-  try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value || "";
+import { useState } from "react";
+import Liked from "@/components/like/Liked";
+import LikeMe from "@/components/like/LikeMe";
+import Matches from "@/components/like/Matches";
 
-    const user = await getUserByIdFromSession(sessionId);
-    if (!user) {
-      return <>Go auth</>;
-    }
-    const { rows: likes } = await pool.query(
-      `SELECT user2_id FROM matches WHERE user1_id = $1`,
-      [user.id]
-    );
-    if (likes.length === 0) {
-      return (<div>I'm sorry no one liked you</div>);
-    }
-    const { rows: users } = await pool.query(
-      `SELECT id, username, bio, city, gender, date_part('year', age(current_date, birthdate))::int AS age
-      FROM users
-      WHERE id = ANY($1)`,
-      [likes.map((l) => l.user2_id)]
-    );
+export default function LikesPage() {
+  const [activeTab, setActiveTab] = useState<"liked" | "likeMe" | "matches">(
+    "matches"
+  );
 
-    return (
-    <div className="h-full overflow-auto p-4">
-      <div className="flex flex-wrap justify-center">
-        {users.map((u) => (
-          <CardUser key={u.username} user={u} />
-        ))}
+  return (
+    <div className="max-w-3xl mx-auto mt-8">
+      {/* --- Tabs menu --- */}
+      <div className="flex border-b border-pink-300 text-pink-100">
+        <button
+          onClick={() => setActiveTab("liked")}
+          className={`flex-1 px-4 py-2 transition ${
+            activeTab === "liked"
+              ? "border-b-2 border-pink-400 text-pink-400 font-semibold"
+              : "hover:text-pink-300"
+          }`}
+        >
+          People I like
+        </button>
+        <button
+          onClick={() => setActiveTab("likeMe")}
+          className={`flex-1 px-4 py-2 transition ${
+            activeTab === "likeMe"
+              ? "border-b-2 border-pink-400 text-pink-400 font-semibold"
+              : "hover:text-pink-300"
+          }`}
+        >
+          People who likes me
+        </button>
+        <button
+          onClick={() => setActiveTab("matches")}
+          className={`flex-1 px-4 py-2 transition ${
+            activeTab === "matches"
+              ? "border-b-2 border-pink-400 text-pink-400 font-semibold"
+              : "hover:text-pink-300"
+          }`}
+        >
+          Matches
+        </button>
+      </div>
+
+      {/* --- Tabs content --- */}
+      <div className="mt-6">
+        {activeTab === "liked" && <Liked />}
+        {activeTab === "likeMe" && <LikeMe />}
+        {activeTab === "matches" && <Matches />}
       </div>
     </div>
-    )
-
-  } catch (err) {
-    console.error("Error:", err);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
-  }
+  );
 }

@@ -9,11 +9,6 @@ import CardUserModal from "./CardUserModal";
 export default function CardUser({ user }: { user: PublicUser }) {
   const [open, setOpen] = useState(false);
 
-  function handleLike(e: React.MouseEvent) {
-    e.stopPropagation();
-    console.log("Liked user:", user.id);
-  }
-
   function handleCardClick() {
     setOpen(true);
   }

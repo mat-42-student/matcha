@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import { PublicUser } from "@/types";
 
+function getButtonText(liked: boolean, status: string) {
+  if (status === "match") return "Unmatch";
+  if (liked) return "Unlike";
+  return "Like";
+}
+
 export default function LikeButton({ user }: { user: PublicUser }) {
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
@@ -11,7 +17,7 @@ export default function LikeButton({ user }: { user: PublicUser }) {
     try {
       const res = await fetch(`/api/match/${user.id}/status`);
       const data = await res.json();
-
+      console.log(data);
       if (data.status === "like") {
         setLiked(true);
         setStatus("");
@@ -54,7 +60,7 @@ export default function LikeButton({ user }: { user: PublicUser }) {
           className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition"
           onClick={(e) => { handleLike(e); }}
       >
-        {status === "match" ? "Unmatch" : liked ? "Unlike" : "Like"}
+        {getButtonText(liked, status)}
       </button>
       {status === "isLiked" && <span className="text-pink-800">(❤️ Likes you)</span>}
     </>

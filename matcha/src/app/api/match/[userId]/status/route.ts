@@ -25,8 +25,8 @@ export async function GET(
     const query = `
       SELECT CASE
         WHEN EXISTS (
-          SELECT 1 FROM matches WHERE (user1_id = $1 AND user2_id = $2)
-                                    OR(user1_id = $2 AND user2_id = $1)
+          SELECT 1 FROM matches WHERE ((user1_id = $1 AND user2_id = $2)
+                                    OR(user1_id = $2 AND user2_id = $1))
                                     AND status = 'match'
         )
         THEN 'match'
