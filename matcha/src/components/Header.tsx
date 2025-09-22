@@ -48,27 +48,28 @@ export function Header({ initialUser }: { initialUser: PublicUser | null }) {
       <nav className="flex gap-4">
         {user ? (
           <>
-            <Link href="/" className="text-fuchsia-100 hover:underline p-3 border">
-              Me@t
+            <Link href="/" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              👥 Me@t
             </Link>
-            <Link href="/search" className="text-fuchsia-100 hover:underline text-2xl p-3 border">
-              🔍
+            <Link href="/search" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              🔍 Search
             </Link>
-            <Link href="/likes" className="text-fuchsia-100 hover:underline p-3 border">
-              Likes
+            <Link href="/likes" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              ❤️ Likes
             </Link>
-            <Link href="/chat" className="text-fuchsia-100 hover:underline p-3 border">
-              Chat
+            <Link href="/chat" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              🗨️ Chat
             </Link>
-            <Link href="/profile" className="text-fuchsia-100 hover:underline p-3 border">
-              {user.username}
+            <Link href="/profile" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              👤 {user.username}
             </Link>
-            <button
+            <Link
+              href="#"
               onClick={handleLogout}
-              className="text-fuchsia-200 hover:underline p-3 border"
+              className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500"
             >
-              Logout
-            </button>
+              👋 Logout
+            </Link>
           </>
         ) : (
           <>

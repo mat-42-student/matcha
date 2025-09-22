@@ -46,7 +46,17 @@ export default function CardUserModal({
         className="bg-white rounded-lg p-6 w-96 relative"
         onClick={(e) => e.stopPropagation()} // don't close if click was inside modal
       >
-        <h2 className="text-xl font-bold text-pink-700">{user.username}</h2>
+      <div className="flex justify-between items-center mb-2">
+        <div>
+          <span className="text-xl text-pink-700 font-semibold">
+            {user.username}
+          </span>
+          <span className="text-sm text-gray-400"> ({user.gender})</span>
+        </div>
+        <span className="text-sm text-gray-600">
+          {user.age} ans
+        </span>
+      </div>
 
         { pics.length !== 0 &&
         <img

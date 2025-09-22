@@ -21,22 +21,23 @@ export default async function Homepage() {
       [user.id]
     );
     if (likes.length === 0) {
-      return (<div>I'm sorry no one likes you</div>);
+      return (<div>I'm sorry no one liked you</div>);
     }
     const { rows: users } = await pool.query(
-      `SELECT id, username, bio, city, gender, birthday
+      `SELECT id, username, bio, city, gender, date_part('year', age(current_date, birthdate))::int AS age
       FROM users
       WHERE id = ANY($1)`,
       [likes.map((l) => l.user2_id)]
     );
 
     return (
-      <>
-        Ici les likes
+    <div className="h-full overflow-auto p-4">
+      <div className="flex flex-wrap justify-center">
         {users.map((u) => (
-          <CardUser key={u.id} user={u} />
+          <CardUser key={u.username} user={u} />
         ))}
-      </>
+      </div>
+    </div>
     )
 
   } catch (err) {

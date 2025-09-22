@@ -8,13 +8,13 @@ export async function POST(req: NextRequest) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const username = formData.get('username') as string; // 👈 tu peux ajouter ça dans ton formulaire
-    const birthday = formData.get('birthday') as string;
+    const birthdate = formData.get('birthdate') as string;
     const gender = formData.get('gender') as string;     // 👈 obligatoire d’après ton schéma
     const sex_pref = formData.get('sex_pref') as string; // 👈 obligatoire aussi
     const city = formData.get('city') as string;         // 👈 requis par la DB
 
     // ✅ Vérification des champs requis
-    if (!email || !password || !username || !gender || !birthday || !sex_pref || !city) {
+    if (!email || !password || !username || !gender || !birthdate || !sex_pref || !city) {
       return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
     }
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       fame: 0,
       latitude: 0,
       longitude: 0,
-      birthday: birthday,
+      birthdate: birthdate,
     });
 
     console.log("Nouvel utilisateur enregistré en DB :", newUser);

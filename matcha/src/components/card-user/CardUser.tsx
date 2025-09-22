@@ -21,7 +21,8 @@ export default function CardUser({ user }: { user: PublicUser }) {
   return (
     <>
       <div
-        className="w-72 bg-white border border-gray-300 rounded-lg shadow-md p-4 m-4 inline-block cursor-pointer"
+        className="w-72 bg-white border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 inline-block cursor-pointer
+                  hover:border-pink-500"
         onClick={() => handleCardClick()}
       >
       <div className="flex justify-between items-center mb-2">
