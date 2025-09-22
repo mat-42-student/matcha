@@ -23,13 +23,28 @@ export function Header() {
       <nav className="flex gap-4">
         {user ? (
           <>
-            <Link href="/profile">Profil</Link>
-            <button
+            <Link href="/" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              👥 Me@t
+            </Link>
+            <Link href="/search" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              🔍 Search
+            </Link>
+            <Link href="/likes" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              ❤️ Likes
+            </Link>
+            <Link href="/chat" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              🗨️ Chat
+            </Link>
+            <Link href="/profile" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
+              👤 {user.username}
+            </Link>
+            <Link
+              href="#"
               onClick={handleLogout}
-              className="text-fuchsia-200 hover:underline"
+              className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500"
             >
-              Logout
-            </button>
+              👋 Logout
+            </Link>
           </>
         ) : (
           <>

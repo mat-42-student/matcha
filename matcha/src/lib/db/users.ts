@@ -11,7 +11,7 @@ export interface User {
   city?: string;
   latitude?: number;
   longitude?: number;
-  birthday: string;
+  birthdate: string;
   gender: string;
   sex_pref: string;
   bio?: string;
@@ -27,7 +27,7 @@ export interface User {
 export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
   const query = {
     text: `
-      INSERT INTO users (username, email, passwd, country, city, latitude, longitude, birthday, gender, sex_pref, bio, fame)
+      INSERT INTO users (username, email, passwd, country, city, latitude, longitude, birthdate, gender, sex_pref, bio, fame)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *;
     `,
@@ -39,7 +39,7 @@ export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise
       user.city,
       user.latitude ?? null,
       user.longitude ?? null,
-      user.birthday,
+      user.birthdate,
       user.gender,
       user.sex_pref,
       user.bio ?? null,

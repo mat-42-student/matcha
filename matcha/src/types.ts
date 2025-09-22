@@ -8,6 +8,10 @@ export type User = {
 // Type exposé au front (pas de passwordHash)
 export type PublicUser = {
   id: string;
-  email: string;
   username: string;
+  email: string;
+  gender: string;
+  city: string;
+  bio: string;
+  age: number;
 };

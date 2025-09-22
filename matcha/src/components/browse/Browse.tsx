@@ -1,23 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import CardUser from "@/components/card-user/CardUser";
+import { PublicUser } from "@/types";
 
 export default function Browse() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<PublicUser[]>([]);
   const [page, setPage] = useState(1);
+  const router = useRouter();
 
-  async function getUserList() {
-    const res = await fetch(`/api/users?page=${page}`);
-    const data = await res.json();
-    setUsers(data);
+async function getUserList() {
+    try {
+      const res = await fetch(`/api/users?page=${page}`);
+      if (res.status === 401) {
+        router.push("/auth");
+        return;
+      }
+      if (!res.ok) {
+        console.log(`API Error: ${res.status}`);
+        return;
+      }
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Could not retrieve users :", err);
+    }
   }
+  useEffect(() => {
+    getUserList();
 
-  useEffect(() => {getUserList();}, [page]);
+    // Affiche la mémoire utilisée côté client
+    // if (typeof window !== "undefined" && (window.performance as any).memory) {
+    //   const { usedJSHeapSize, totalJSHeapSize } = (window.performance as any).memory;
+    //   console.log(
+    //     `Heap: ${(usedJSHeapSize / 1024 / 1024).toFixed(2)} MB / ${(totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`
+    //   );
+    // }
+  }, [page]);
 
   return (
     <div className="h-full overflow-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1>
+      {/* <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1> */}
 
       <div className="flex flex-wrap justify-center">
         {users.map((u) => (

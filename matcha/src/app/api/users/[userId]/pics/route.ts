@@ -14,14 +14,12 @@ export async function GET(
   );
 
   if (result.rows.length === 0) {
-    console.log("No picture found for userId:", userId);
     return new NextResponse("Not found", { status: 404 });
   }
 
   const { mime_type, data } = result.rows[0];
 
   if (data) {
-    console.log("Serving image data for userId:", userId);
     return new NextResponse(data, {
       headers: {
         "Content-Type": mime_type ?? "image/jpeg",
@@ -30,6 +28,5 @@ export async function GET(
     });
   }
 
-  console.log("No image data or URL found for userId:", userId);
   return new NextResponse("No image available", { status: 404 });
 }
