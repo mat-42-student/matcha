@@ -28,7 +28,7 @@ export async function POST(
       OR (user1_id = $2 AND user2_id = $1);
     `;
     const result = await pool.query(query, [me.id, userId]);
-    return NextResponse.json({ deleted: result.rowCount });
+    return NextResponse.json({ success: true, deleted: result.rowCount });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
