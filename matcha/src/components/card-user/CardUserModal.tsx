@@ -20,6 +20,7 @@ export default function CardUserModal({
   onClose: () => void;
   onUserUpdate?: () => void;
 }) {
+
   const [pics, setPics] = useState<
     { id: number; mime_type: string; data: string; is_main: boolean }[]
   >([]);

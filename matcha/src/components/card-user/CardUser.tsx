@@ -19,6 +19,10 @@ export default function CardUser({
     setOpen(true);
   }
 
+  function dispInterests(interests: string[]) {
+
+  }
+
   return (
     <>
       <div
@@ -41,9 +45,11 @@ export default function CardUser({
           <MainPic userId={user.id}/>
         </div>
         <span className="text-gray-800 mb-2 text-right">{user.city}</span>
-        <p className="text-gray-600 mb-4">
-          {user.bio?.slice(0, 100) || "No bio yet"}
-        </p>
+        <ul className="text-gray-600 mb-4">
+          {user.interests.map((i) => (
+            <li>#{i}</li>
+           ))}
+        </ul>
       </div>
 
       {open && <CardUserModal user={user} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}

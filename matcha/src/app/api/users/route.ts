@@ -24,12 +24,10 @@ export async function GET(req: Request) {
     }
 
     const query = `
-      SELECT 
-        id, username, gender, city, bio,
-        date_part('year', age(current_date, birthdate))::int AS age
-      FROM users
+      SELECT *
+      FROM users_with_interests
       WHERE id != $1
-      LIMIT $2 OFFSET $3
+      LIMIT $2 OFFSET $3;
     `;
 
     const { rows } = await pool.query(query, [me.id, limit, offset]);

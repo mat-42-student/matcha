@@ -71,6 +71,20 @@ CREATE TABLE "sessions" (
   FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
+CREATE VIEW "users_with_interests" AS
+SELECT 
+  u.id,
+  u.username,
+  u.gender,
+  u.city,
+  u.bio,
+  date_part('year', age(current_date, u.birthdate))::int AS age,
+  COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests
+FROM users u
+LEFT JOIN user_interests ui ON u.id = ui.user_id
+LEFT JOIN interests i ON ui.interest_id = i.id
+GROUP BY u.id;
+
 CREATE INDEX ON "sessions" ("user_id");
 
 CREATE UNIQUE INDEX ON "user_interests" ("user_id", "interest_id");

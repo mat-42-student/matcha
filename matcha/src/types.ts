@@ -14,4 +14,5 @@ export type PublicUser = {
   city: string;
   bio: string;
   age: number;
+  interests: string[];
 };
