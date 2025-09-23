@@ -12,6 +12,7 @@ CREATE TABLE "users" (
   "sex_pref" char(1) NOT NULL DEFAULT 'B',
   "bio" text,
   "fame" float,
+  "is_verified" boolean DEFAULT false,
   "created_at" timestamp DEFAULT (current_timestamp)
 );
 
@@ -70,6 +71,16 @@ CREATE TABLE "sessions" (
   "expires_at" timestamp DEFAULT (current_timestamp + interval '7 days'),
   FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
 );
+
+
+CREATE TABLE "email_verifications" (
+  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "user_id" uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  "token" varchar(255) UNIQUE NOT NULL,
+  "expires_at" timestamp DEFAULT (current_timestamp + interval '1 days'),
+  "created_at" timestamp DEFAULT (current_timestamp)
+);
+
 
 CREATE INDEX ON "sessions" ("user_id");
 

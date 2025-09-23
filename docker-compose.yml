@@ -33,13 +33,6 @@ services:
     command: sh -c "npm install && npm run dev"
     env_file:
       - .env
-    # environment:
-    #   - NODE_ENV=development
-    #   - DB_USER=${DB_USER}
-    #   - DB_PASSWORD=${DB_PASSWORD}
-    #   - DB_NAME=${DB_NAME}
-    #   - DB_HOST=${DB_HOST}
-    #   - DB_PORT=${DB_PORT}
     networks:
       - main-network
     depends_on:
@@ -79,4 +72,13 @@ services:
       - main-network
     depends_on:
       matcha_postgres:
-        condition: service_healthy  
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: matcha_mailpit
+    ports:
+      - "8025:8025"   # Interface web
+      - "1025:1025"   # Serveur SMTP
+    networks:
+      - main-network

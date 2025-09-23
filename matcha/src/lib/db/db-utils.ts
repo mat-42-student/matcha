@@ -1,8 +1,6 @@
 import { Pool, QueryResultRow, QueryResult } from 'pg';
 
 declare global {
-  // Trick pour éviter que Next recrée le pool à chaque hot reload en dev
-  // (important car Next.js recharge les modules souvent en mode dev).
   var cachedPool: Pool | undefined;
 }
 
@@ -21,16 +19,18 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export async function executeQuery<T extends QueryResultRow>(
-  queryString: string, 
+  queryString: string,
+  values: any[] = []   // 👈 ajout des valeurs
 ): Promise<QueryResult<T>> {
   const client = await pool.connect(); 
   
   try {
-    const result = await client.query<T>(queryString);
+    const result = await client.query<T>(queryString, values);
     return result;
   } catch (error) {
     console.error('Database query error:', {
       query: queryString,
+      values, // 👈 log les valeurs aussi
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     throw new Error(`Query execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -38,7 +38,6 @@ export async function executeQuery<T extends QueryResultRow>(
     client.release();
   }
 }
-
 // Utility function to test the connection
 export async function testConnection(): Promise<boolean> {
   try {

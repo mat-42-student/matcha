@@ -1,6 +1,7 @@
 // matcha/src/lib/db/users.ts
 import {  pool } from './db-utils';
 import bcrypt from 'bcryptjs';
+import { executeQuery } from "./db-utils";
 
 export interface User {
   id: string;
@@ -133,5 +134,15 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
  */
 export async function deleteUser(id: string): Promise<boolean> {
   const result = await pool.query('DELETE FROM users WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
+}
+
+export async function markUserAsVerified(userId: string): Promise<boolean> {
+  const query = `
+    UPDATE users
+    SET is_verified = true
+    WHERE id = $1
+  `;
+  const result = await executeQuery(query, [userId]);
   return (result.rowCount ?? 0) > 0;
 }
