@@ -8,7 +8,7 @@ import Matches from "@/components/like/Matches";
 
 export default function LikeTabs() {
   const [activeTab, setActiveTab] = useState<"liked" | "likeMe" | "matches">(
-    "matches"
+    "liked"
   );
 
   return (

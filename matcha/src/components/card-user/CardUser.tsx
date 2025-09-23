@@ -4,9 +4,15 @@ import { useState } from "react";
 import { PublicUser } from "@/types";
 import MainPic from "@/components/pics/MainPic";
 import CardUserModal from "./CardUserModal";
-// import LikeButton from "./LikeButton"
 
-export default function CardUser({ user }: { user: PublicUser }) {
+export default function CardUser({
+  user,
+  onUserUpdate,
+ }: { 
+  user: PublicUser;
+  onUserUpdate?: () => void;
+}) {
+
   const [open, setOpen] = useState(false);
 
   function handleCardClick() {
@@ -40,7 +46,7 @@ export default function CardUser({ user }: { user: PublicUser }) {
         </p>
       </div>
 
-      {open && <CardUserModal user={user} onClose={() => setOpen(false)} />}
+      {open && <CardUserModal user={user} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}
     </>
   );
 }

@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 import { getUserByIdFromSession } from "@/lib/db/session";
 
 export async function GET() {
-  console.log("GETMATCHES")
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
@@ -38,7 +37,6 @@ export async function GET() {
     AND m.status = 'match'`,
     [me.id]
     );
-    console.log("MATCHES", matches)
     return NextResponse.json(matches);
   } catch (err) {
       console.error(err);

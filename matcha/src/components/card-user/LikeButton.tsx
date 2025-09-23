@@ -5,11 +5,19 @@ import { PublicUser } from "@/types";
 
 function getButtonText(liked: boolean, status: string) {
   if (status === "match") return "Unmatch";
+  
   if (liked) return "Unlike";
+  if (status === "isLiked") return "Match !";
   return "Like";
 }
 
-export default function LikeButton({ user }: { user: PublicUser }) {
+export default function LikeButton({
+  user,
+  onUserUpdate
+}: {
+  user: PublicUser,
+  onUserUpdate?: () => void
+}) {
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
 
@@ -45,7 +53,11 @@ export default function LikeButton({ user }: { user: PublicUser }) {
     try {
       const res = await fetch(url, { method: "POST" });
       const data = await res.json();
-      if (data.success) setLiked(!liked);
+      if (data.success) {
+        setLiked(!liked);
+        if (onUserUpdate)
+          onUserUpdate();
+      }
     } catch (err) {
       console.error(err);
     }

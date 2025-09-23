@@ -14,9 +14,11 @@ async function fetchPics(userId: string) {
 export default function CardUserModal({
   user,
   onClose,
+  onUserUpdate,
 }: {
   user: PublicUser;
   onClose: () => void;
+  onUserUpdate?: () => void;
 }) {
   const [pics, setPics] = useState<
     { id: number; mime_type: string; data: string; is_main: boolean }[]
@@ -38,11 +40,11 @@ export default function CardUserModal({
   return (
     <div
       className="fixed inset-0 backdrop-blur-sm flex justify-center items-center z-50 bg-black/30"
-      onClick={onClose} // a click closes the modal
+      onClick={onClose}
     >
       <div
         className="bg-white rounded-lg p-6 w-96 relative"
-        onClick={(e) => e.stopPropagation()} // don't close if click was inside modal
+        onClick={(e) => e.stopPropagation()}
       >
       <div className="flex justify-between items-center mb-2">
         <div>
@@ -87,7 +89,7 @@ export default function CardUserModal({
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
 
-        <LikeButton user={user} />
+        <LikeButton user={user} onUserUpdate={onUserUpdate}/>
       </div>
     </div>
   );

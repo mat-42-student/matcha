@@ -7,14 +7,12 @@ import { PublicUser } from "@/types";
 export default function Liked() {
   const [users, setUsers] = useState<PublicUser[]>([]);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      const res = await fetch("/api/match/getLikes");
-      const data = await res.json();
-      setUsers(data);
-    }
-    fetchUsers();
-  }, []);
+  async function fetchUsers() {
+    const res = await fetch("/api/match/getLikes");
+    const data = await res.json();
+    setUsers(data);
+  }
+  useEffect(() => { fetchUsers() }, []);
 
   return (
     <div className="h-full overflow-auto p-4">
@@ -22,7 +20,7 @@ export default function Liked() {
         users.length > 0 ? (
           <div className="flex flex-wrap justify-center">
             {users.map((u) => (
-              <CardUser key={u.username} user={u} />
+              <CardUser key={u.username} user={u} onUserUpdate={fetchUsers}/>
             ))}
           </div>
         ) : 

@@ -29,7 +29,7 @@ export default function LikeMe() {
       {users.length > 0 ? 
       <div className="flex flex-wrap justify-center">
         {users.map((u) => (
-          <CardUser key={u.username} user={u} />
+          <CardUser key={u.username} user={u} onUserUpdate={fetchLikeMe} />
         ))}
       </div>
       :
