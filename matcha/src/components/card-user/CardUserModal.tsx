@@ -1,43 +1,50 @@
+// matcha/src/components/card-user/CardUserModal.tsx
+
 "use client"
 
 import { useState, useEffect } from "react";
-import { PublicUser } from "@/types";
+import { PublicUser, Picture } from "@/types";
 import LikeButton from "./LikeButton"
-import Interests from "./Interests";
 
-async function fetchPics(userId: string) {
-  const res = await fetch(`/api/users/${userId}/allpics`);
-  if (!res.ok)
-    return [];
-  return await res.json();
-}
 
 export default function CardUserModal({
   user,
+  mainPic,
   onClose,
   onUserUpdate,
 }: {
   user: PublicUser;
+  mainPic: Picture;
   onClose: () => void;
   onUserUpdate?: () => void;
 }) {
 
-  const [pics, setPics] = useState<
-    { id: number; mime_type: string; data: string; is_main: boolean }[]
-  >([]);
+  const [pics, setPics] = useState<Picture[] >([mainPic]);
   const [current, setCurrent] = useState(0);
 
-  useEffect(() => {
-    fetchPics(user.id).then(setPics);
-  }, [user.id]);
+  async function fetchPics(userId: string) {
+    const res = await fetch(`/api/users/${userId}/allpics`);
+    if (!res.ok || res.status === 204)
+      return [];
+    return await res.json();
+  }
+
+  async function loadPics() {
+    const extraPics = await fetchPics(user.id);
+    setPics([mainPic, ...extraPics]);
+  }
 
   function nextPic() {
-    setCurrent((prev) => (prev + 1) % pics.length);
+    if (current <= pics.length)
+      setCurrent(current + 1);
   }
 
   function prevPic() {
-    setCurrent((prev) => (prev - 1 + pics.length) % pics.length);
+    if (current > 0)
+      setCurrent(current - 1);
   }
+
+  useEffect(() => { loadPics(); }, []);
 
   return (
     <div
@@ -61,35 +68,34 @@ export default function CardUserModal({
       </div>
 
         { pics.length !== 0 &&
-        <img
-          src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
-          alt={`photo ${current + 1}`}
-          className="rounded-lg shadow-md w-full object-cover my-2"
-        />
+          <>
+            <img
+              src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
+              alt={`photo ${current + 1}`}
+              className="rounded-lg shadow-md w-full object-cover my-2"
+            />
+            <div className="flex justify-between mt-2">
+              <button
+                onClick={prevPic}
+                className="px-3 py-1 bg-pink-500 rounded disabled:opacity-30"
+                disabled={current === 0}
+              >
+                ◀
+              </button>
+              <span className="text-sm text-gray-500">
+                {current + 1} / {pics.length}
+              </span>
+              <button
+                onClick={nextPic}
+                className="px-3 py-1 bg-pink-500 rounded disabled:opacity-30"
+                disabled={current + 1  >= pics.length}
+              >
+                ▶
+              </button>
+            </div>
+          </>
         }
 
-        { pics.length > 1 &&
-          <div className="flex justify-between mt-2">
-            <button
-              onClick={prevPic}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              ◀
-            </button>
-            <span className="text-sm text-gray-500">
-              {current + 1} / {pics.length}
-            </span>
-            <button
-              onClick={nextPic}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-            >
-              ▶
-            </button>
-          </div>
-        }
-        <div>
-          <Interests interests={user.interests} />
-        </div>
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
 

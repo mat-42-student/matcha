@@ -16,3 +16,8 @@ export type PublicUser = {
   age: number;
   interests: string[];
 };
+
+export type Picture = {
+  mime_type: string;
+  data: string;
+}

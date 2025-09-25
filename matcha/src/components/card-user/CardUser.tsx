@@ -1,8 +1,9 @@
+// matcha/src/components/card-user/CardUser.tsx
+
 "use client";
 
-import { useState } from "react";
-import { PublicUser } from "@/types";
-import MainPic from "@/components/pics/MainPic";
+import { useEffect, useState } from "react";
+import { PublicUser, Picture } from "@/types";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
 
@@ -15,10 +16,28 @@ export default function CardUser({
 }) {
 
   const [open, setOpen] = useState(false);
+  const [mainPic, setMainPic] = useState<Picture>({mime_type: "", data: ""});
 
+async function fetchMainPic() {
+  try {
+    const res = await fetch(`/api/users/${user.id}/pics/`);
+    if (res.status === 204)
+      return;
+    if (!res.ok) {
+      console.error(`API Error: ${res.status}`);
+      return;
+    }
+    const pic: Picture = await res.json();
+    setMainPic(pic);
+  } catch (err) {
+    console.error("Could not retrieve main picture:", err);
+  }
+}
   function handleCardClick() {
     setOpen(true);
   }
+
+  useEffect(() => {fetchMainPic()}, []);
 
   return (
     <>
@@ -38,7 +57,10 @@ export default function CardUser({
         </div>
 
         <div className="flex justify-center">
-          <MainPic userId={user.id} />
+          <img
+            className="max-h-48"
+            src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
+            alt="profile picture" />
         </div>
 
         <div className="text-gray-800 mb-2 mt-auto">{user.city}</div>
@@ -47,7 +69,7 @@ export default function CardUser({
         </div>
       </div>
 
-      {open && <CardUserModal user={user} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}
+      {open && <CardUserModal user={user} mainPic={mainPic} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}
     </>
   );
 }
