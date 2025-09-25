@@ -48,7 +48,7 @@ export default function LikeTabs() {
       </div>
 
       {/* --- Tabs content --- */}
-      <div className="mt-6">
+      <div>
         {activeTab === "liked" && <Liked />}
         {activeTab === "likeMe" && <LikeMe />}
         {activeTab === "matches" && <Matches />}

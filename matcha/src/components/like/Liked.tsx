@@ -15,7 +15,7 @@ export default function Liked() {
   useEffect(() => { fetchUsers() }, []);
 
   return (
-    <div className="h-full overflow-auto p-4">
+    <div className="h-full">
       {
         users.length > 0 ? (
           <div className="flex flex-wrap justify-center">

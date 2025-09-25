@@ -38,8 +38,6 @@ async function getUserList() {
 
   return (
     <div className="h-full p-4">
-      {/* <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1> */}
-
       <div className="flex flex-wrap justify-center">
         {users.map((u) => (
           <CardUser key={u.username} user={u} />
