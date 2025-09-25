@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
-    
+
     if (!sessionId) {
       return NextResponse.json({ error: "No session found" }, { status: 401 });
     }
@@ -19,14 +19,12 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: likedBy } = await pool.query(
-    `SELECT u.id, u.username, u.bio, u.city, u.gender,
-            date_part('year', age(current_date, u.birthdate))::int AS age
-    FROM matches m
-    JOIN users u ON u.id = m.user1_id
-    WHERE m.user2_id = $1 AND m.status = 'like'`,
-    [me.id]
-    );
+    const { rows: likedBy } = await pool.query(`
+      SELECT *
+      FROM users_who_like_me
+      WHERE me = $1
+    `,
+    [me.id]);
     return NextResponse.json(likedBy);
   } catch (err) {
       console.error(err);

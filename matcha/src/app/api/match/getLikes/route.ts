@@ -19,12 +19,11 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: likedUsers } = await pool.query(
-    `SELECT u.id, u.username, u.bio, u.city, u.gender,
-            date_part('year', age(current_date, u.birthdate))::int AS age
-    FROM matches m
-    JOIN users u ON u.id = m.user2_id
-    WHERE m.user1_id = $1 AND m.status = 'like'`,
+    const { rows: likedUsers } = await pool.query(`
+      SELECT *
+      FROM users_me_like
+      WHERE me = $1
+    `,
     [me.id]
     );
     return NextResponse.json(likedUsers);

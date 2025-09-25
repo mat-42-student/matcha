@@ -19,24 +19,15 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: matches } = await pool.query(
-    `SELECT 
-    u.id,
-    u.username,
-    u.bio,
-    u.city,
-    u.gender,
-    date_part('year', age(current_date, u.birthdate))::int AS age
-    FROM matches m
-    JOIN users u 
-        ON u.id = CASE 
-                    WHEN m.user1_id = $1 THEN m.user2_id
-                    ELSE m.user1_id
-                END
-    WHERE (m.user1_id = $1 OR m.user2_id = $1)
-    AND m.status = 'match'`,
-    [me.id]
-    );
+    const { rows: matches } = await pool.query(`
+      SELECT uwi.*
+      FROM matches m
+      JOIN users_with_interests uwi 
+        ON uwi.id IN (m.user1_id, m.user2_id)
+      WHERE m.status = 'match'
+        AND $1 IN (m.user1_id, m.user2_id)   -- je fais partie du match
+        AND uwi.id <> $1;                    -- j’exclus moi-même
+      `, [me.id]);
     return NextResponse.json(matches);
   } catch (err) {
       console.error(err);
