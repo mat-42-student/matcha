@@ -16,7 +16,7 @@ export default function Matches() {
   useEffect(() => { fetchMatches() }, []);
 
   return (
-    <div className="h-full overflow-auto p-4">
+    <div className="h-full p-4">
       {users.length > 0 ? 
       <div className="flex flex-wrap justify-center">
         {users.map((u) => (

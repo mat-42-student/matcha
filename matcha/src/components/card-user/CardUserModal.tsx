@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { PublicUser } from "@/types";
 import LikeButton from "./LikeButton"
+import Interests from "./Interests";
 
 async function fetchPics(userId: string) {
   const res = await fetch(`/api/users/${userId}/allpics`);
@@ -86,7 +87,9 @@ export default function CardUserModal({
             </button>
           </div>
         }
-
+        <div>
+          <Interests interests={user.interests} />
+        </div>
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
 

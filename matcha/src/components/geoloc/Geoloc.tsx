@@ -54,7 +54,7 @@ export default function Geoloc({ userId }: { userId: string }) {
       locateFromBrowser,locateFromIp);
   }
 
-  // request location should be called in profile settings in smthing like
+  // request location should be called in profile settings with smthing like
   // <button onClick={requestLocation}>Update my location</button>
 
   // useEffect(requestLocation, []) // this one was disabled to avoid being bored by permission popups on every page load
