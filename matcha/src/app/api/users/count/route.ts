@@ -4,7 +4,7 @@ import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
 import { getUserByIdFromSession } from "@/lib/db/session";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;

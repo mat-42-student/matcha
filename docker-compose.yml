@@ -31,15 +31,9 @@ services:
     expose:
       - "3000"
     command: sh -c "npm install && npm run dev"
+    # command: sh -c "npm install && npm run build && npm run start"
     env_file:
       - .env
-    # environment:
-    #   - NODE_ENV=development
-    #   - DB_USER=${DB_USER}
-    #   - DB_PASSWORD=${DB_PASSWORD}
-    #   - DB_NAME=${DB_NAME}
-    #   - DB_HOST=${DB_HOST}
-    #   - DB_PORT=${DB_PORT}
     networks:
       - main-network
     depends_on:

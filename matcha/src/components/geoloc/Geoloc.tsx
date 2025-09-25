@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+// import { useEffect } from "react";
 
-export default function Geoloc({ userId }: { userId: string }) {
+export default function Geoloc() {
 
   async function postLocationData(
     latitude: number,
@@ -54,6 +54,7 @@ export default function Geoloc({ userId }: { userId: string }) {
       locateFromBrowser,locateFromIp);
   }
 
+  requestLocation(); // So EsLint will STFU - Remove in actual use
   // request location should be called in profile settings with smthing like
   // <button onClick={requestLocation}>Update my location</button>
 

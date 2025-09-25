@@ -1,4 +1,3 @@
-import { Profile } from  "@/components/profile/Profile"
 import { EditProfile } from  "@/components/profile/EditProfile"
 import { cookies } from "next/headers";
 import { getUserByIdFromSession } from "@/lib/db/session";

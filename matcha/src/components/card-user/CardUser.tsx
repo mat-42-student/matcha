@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { PublicUser, Picture } from "@/types";
+import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
 
@@ -18,26 +19,28 @@ export default function CardUser({
   const [open, setOpen] = useState(false);
   const [mainPic, setMainPic] = useState<Picture>({mime_type: "", data: ""});
 
-async function fetchMainPic() {
-  try {
-    const res = await fetch(`/api/users/${user.id}/pics/`);
-    if (res.status === 204)
-      return;
-    if (!res.ok) {
-      console.error(`API Error: ${res.status}`);
-      return;
-    }
-    const pic: Picture = await res.json();
-    setMainPic(pic);
-  } catch (err) {
-    console.error("Could not retrieve main picture:", err);
-  }
-}
   function handleCardClick() {
     setOpen(true);
   }
 
-  useEffect(() => {fetchMainPic()}, []);
+  useEffect(() => {
+    async function fetchMainPic() {
+      try {
+        const res = await fetch(`/api/users/${user.id}/pics/`);
+        if (res.status === 204)
+          return;
+        if (!res.ok) {
+          console.error(`API Error: ${res.status}`);
+          return;
+        }
+        const pic: Picture = await res.json();
+        setMainPic(pic);
+      } catch (err) {
+        console.error("Could not retrieve main picture:", err);
+      }
+    }
+    fetchMainPic()
+  }, []);
 
   return (
     <>
@@ -57,7 +60,7 @@ async function fetchMainPic() {
         </div>
 
         <div className="flex justify-center">
-          <img
+          <Image
             className="max-h-48"
             src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
             alt="profile picture" />

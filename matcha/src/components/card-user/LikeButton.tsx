@@ -21,28 +21,6 @@ export default function LikeButton({
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
 
-  async function fetchLikeStatus() {
-    try {
-      const res = await fetch(`/api/match/${user.id}/status`);
-      const data = await res.json();
-      if (data.status === "like") {
-        setLiked(true);
-        setStatus("");
-      } else if (data.status === "match") {
-        setLiked(true);
-        setStatus("match")
-      } else if (data.status === "isLiked") {
-        setLiked(false);
-        setStatus("isLiked")
-      } else {
-        setLiked(false)
-        setStatus("")
-      }
-    } catch (error) {
-      console.error("Error fetching like status:", error);
-    }
-  }
-
   async function handleLike(e: React.MouseEvent) {
     e.stopPropagation();
     let url = '';
@@ -63,7 +41,30 @@ export default function LikeButton({
     }
   }
 
-  useEffect(() => { fetchLikeStatus() }, []);
+  useEffect(() => {
+    async function fetchLikeStatus() {
+      try {
+        const res = await fetch(`/api/match/${user.id}/status`);
+        const data = await res.json();
+        if (data.status === "like") {
+          setLiked(true);
+          setStatus("");
+        } else if (data.status === "match") {
+          setLiked(true);
+          setStatus("match")
+        } else if (data.status === "isLiked") {
+          setLiked(false);
+          setStatus("isLiked")
+        } else {
+          setLiked(false)
+          setStatus("")
+        }
+      } catch (error) {
+        console.error("Error fetching like status:", error);
+      }
+    }
+    fetchLikeStatus()
+  }, []);
 
   return (
     <>

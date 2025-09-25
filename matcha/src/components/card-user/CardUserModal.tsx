@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { PublicUser, Picture } from "@/types";
+import Image from "next/image";
 import LikeButton from "./LikeButton"
 
 
@@ -22,18 +23,6 @@ export default function CardUserModal({
   const [pics, setPics] = useState<Picture[] >([mainPic]);
   const [current, setCurrent] = useState(0);
 
-  async function fetchPics(userId: string) {
-    const res = await fetch(`/api/users/${userId}/allpics`);
-    if (!res.ok || res.status === 204)
-      return [];
-    return await res.json();
-  }
-
-  async function loadPics() {
-    const extraPics = await fetchPics(user.id);
-    setPics([mainPic, ...extraPics]);
-  }
-
   function nextPic() {
     if (current <= pics.length)
       setCurrent(current + 1);
@@ -44,7 +33,21 @@ export default function CardUserModal({
       setCurrent(current - 1);
   }
 
-  useEffect(() => { loadPics(); }, []);
+  useEffect(() => { 
+    async function fetchPics(userId: string) {
+      const res = await fetch(`/api/users/${userId}/allpics`);
+      if (!res.ok || res.status === 204)
+        return [];
+      return await res.json();
+    }
+
+    async function loadPics() {
+      const extraPics = await fetchPics(user.id);
+      setPics([mainPic, ...extraPics]);
+    }
+
+    loadPics();
+  }, []);
 
   return (
     <div
@@ -69,7 +72,7 @@ export default function CardUserModal({
 
         { pics.length !== 0 &&
           <>
-            <img
+            <Image
               src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
               alt={`photo ${current + 1}`}
               className="rounded-lg shadow-md w-full object-cover my-2"
