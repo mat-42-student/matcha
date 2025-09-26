@@ -1,6 +1,6 @@
 "use client";
 
-// import { useEffect } from "react";
+import { useEffect } from "react";
 
 export default function Geoloc() {
 
@@ -54,10 +54,10 @@ export default function Geoloc() {
       locateFromBrowser,locateFromIp);
   }
 
-  requestLocation(); // So EsLint will STFU - Remove in actual use
+
   // request location should be called in profile settings with smthing like
   // <button onClick={requestLocation}>Update my location</button>
 
-  // useEffect(requestLocation, []) // this one was disabled to avoid being bored by permission popups on every page load
+  useEffect(requestLocation, []) // this one was disabled to avoid being bored by permission popups on every page load
   return null;
 }

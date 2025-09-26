@@ -61,6 +61,10 @@ export default function CardUser({
 
         <div className="flex justify-center">
           <Image
+            unoptimized
+            width={0}
+            height={0}
+            style={{width: "auto", height:"auto"}}
             className="max-h-48"
             src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
             alt="profile picture" />

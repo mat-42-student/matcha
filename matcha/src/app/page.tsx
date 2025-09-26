@@ -17,7 +17,7 @@ export default async function Homepage() {
   return (
     <>
       <Browse />
-      <Geoloc />
+      {/* <Geoloc /> */}
     </>
   );
 }

@@ -73,6 +73,10 @@ export default function CardUserModal({
         { pics.length !== 0 &&
           <>
             <Image
+              unoptimized
+              width={0}
+              height={0}
+              style={{width: "auto", height:"auto"}}
               src={`data:${pics[current].mime_type};base64,${pics[current].data}`}
               alt={`photo ${current + 1}`}
               className="rounded-lg shadow-md w-full object-cover my-2"
