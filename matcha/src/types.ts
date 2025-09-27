@@ -14,6 +14,7 @@ export type PublicUser = {
   city: string;
   bio: string;
   age: number;
+  sex_pref: string;
   interests: string[];
 };
 

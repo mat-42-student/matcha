@@ -1,73 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CardUser from "@/components/card-user/CardUser";
 import { PublicUser } from "@/types";
 
-export default function Browse() {
-  const [users, setUsers] = useState<PublicUser[]>([]);
+export default function Browse( { users }: { users: PublicUser[] } ) {
   const [page, setPage] = useState(1);
-  const [userCount, setUserCount] = useState<number>(0);
+  const perPage = 12;
 
-async function fetchUserCount() {
-  try {
-    const res = await fetch(`/api/users/count`);
-    if (!res.ok) {
-      console.log(`API Error: ${res.status}`);
-      return;
-    }
-    const data = await res.json();
-    return data[0].count;
-  } catch (err) {
-    console.error("Could not retrieve user count:", err);
-  }
-}
+  const totalPages = Math.ceil(users.length / perPage);
+  const startIndex = (page - 1) * perPage;
+  const currentUsers = users.slice(startIndex, startIndex + perPage);
 
-  useEffect(() => { async function getUserList() {
-    try {
-      const count = await fetchUserCount();
-      if (!count) 
-        return;
-      setUserCount(count);
-
-      const res = await fetch(`/api/users?page=${page}`);
-      if (!res.ok) {
-        console.log(`API Error: ${res.status}`);
-        return;
-      }
-
-      const data = await res.json();
-      setUsers(data);
-    } catch (err) {
-      console.error("Could not retrieve users :", err);
-    }
-  }
-  getUserList() }, [page]);
+  if (users.length === 0)
+    return <div className="p-4">No results</div>
 
   return (
     <div className="p-4">
       <div className="flex flex-wrap justify-center">
-        {users.map((u) => (
+        {currentUsers.map((u) => (
           <CardUser key={u.username} user={u} />
         ))}
       </div>
 
-      <div className="flex gap-2 mt-4 justify-center">
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}
-          className="px-3 py-1 rounded bg-pink-600 disabled:opacity-50"
-        >
-          Précédent
-        </button>
-        <button
-          onClick={() => setPage((p) => p + 1)}
-          className="px-3 py-1 rounded bg-pink-600 disabled:opacity-50"
-          disabled={userCount !== null && page * 12 >= userCount - 1}
-        >
-          Suivant
-        </button>
-      </div>
+      {users.length > perPage && (
+        <div className="flex gap-2 mt-4 justify-center">
+          <button
+            onClick={() => setPage((p) => p - 1)}
+            disabled={page === 1}
+            className="px-3 py-1 rounded bg-pink-700 disabled:opacity-50 shadow-md hover:bg-pink-800"
+          >
+            ←
+          </button>
+
+          <span className="px-2 py-1">
+            Page {page} / {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage((p) => (p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1 rounded bg-pink-700 disabled:opacity-50 shadow-md hover:bg-pink-800"
+          >
+            →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

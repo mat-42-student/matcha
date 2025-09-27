@@ -27,10 +27,7 @@ export default function CardUser({
     async function fetchMainPic() {
       try {
         const res = await fetch(`/api/users/${user.id}/pics/`);
-        if (res.status === 204)
-          return;
-        if (!res.ok) {
-          console.error(`API Error: ${res.status}`);
+        if (res.status === 204 || !res.ok) {
           return;
         }
         const pic: Picture = await res.json();
@@ -60,14 +57,21 @@ export default function CardUser({
         </div>
 
         <div className="flex justify-center">
-          <Image
-            unoptimized
-            width={0}
-            height={0}
-            style={{width: "auto", height:"auto"}}
-            className="max-h-48"
-            src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
-            alt="profile picture" />
+          {mainPic.data ? (
+            <Image
+              unoptimized
+              width={0}
+              height={0}
+              style={{ width: "auto", height: "auto" }}
+              className="max-h-48 rounded shadow-md"
+              src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
+              alt="profile picture"
+            />
+          ) : (
+            <div className="w-32 h-32 bg-gray-200 flex items-center justify-center rounded shadow-md">
+              <span className="text-gray-500 text-sm">No photo</span>
+            </div>
+          )}
         </div>
 
         <div className="text-gray-800 mb-2 mt-auto">{user.city}</div>

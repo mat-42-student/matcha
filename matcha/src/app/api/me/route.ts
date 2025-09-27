@@ -1,4 +1,5 @@
 // src/app/api/me/route.ts
+
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getUserByIdFromSession } from "@/lib/db/session";
@@ -17,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: "Session invalide" }, { status: 401 });
     }
 
-    return NextResponse.json(user); // 👈 safe: PublicUser
+    return NextResponse.json(user);
   } catch (err) {
     console.error("Erreur /api/me:", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

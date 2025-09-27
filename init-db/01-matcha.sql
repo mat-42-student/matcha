@@ -78,6 +78,7 @@ SELECT
   u.gender,
   u.city,
   u.bio,
+  u.sex_pref,
   date_part('year', age(current_date, u.birthdate))::int AS age,
   COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests
 FROM users u

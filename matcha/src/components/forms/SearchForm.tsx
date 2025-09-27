@@ -72,7 +72,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 p-4 max-w-md mx-auto bg-white shadow rounded-2xl text-black"
+      className="space-y-6 p-4 max-w-md mx-auto bg-white -md rounded-2xl text-black"
     >
       {/* Gender */}
       <div>

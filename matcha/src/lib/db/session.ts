@@ -21,9 +21,9 @@ export async function getUserByIdFromSession(sessionId: string): Promise<PublicU
     if (!sessionId) return null;
 
     const result = await pool.query(
-        `SELECT u.id, u.email, u.username
+        `SELECT uwi.*
         FROM sessions s
-        JOIN users u ON s.user_id = u.id
+        JOIN users_with_interests uwi ON s.user_id = uwi.id
         WHERE s.id = $1 AND s.expires_at > NOW()
         LIMIT 1`,
         [sessionId]

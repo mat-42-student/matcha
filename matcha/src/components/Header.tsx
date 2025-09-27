@@ -1,60 +1,42 @@
 // components/Header.tsx
 "use client";
 
+import { useState } from "react";
 import { useUser } from "@/context/UserContext";
+import MenuDesktop from "./MenuDesktop";
+import MenuMobile from "./MenuMobile";
 import Link from "next/link";
 
 export function Header() {
   const { user, setUser } = useUser();
 
-  // Fonction logout
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST", credentials: "include" });
-    setUser(null); // 🔑 met à jour le context, tous les composants abonnés se rerendent
-    window.location.href = "/auth"; // redirection
+    setUser(null);
+    window.location.href = "/auth";
   }
 
   return (
     <header className="w-full bg-pink-800 shadow p-4 flex justify-between items-center">
-      <Link href="/" className="text-xl font-bold">
+      <Link href="/" className="text-xl font-bold text-white">
         Matcha 🍵
       </Link>
 
-      <nav className="flex gap-4">
-        {user ? (
-          <>
-            <Link href="/" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
-              👥 Me@t
-            </Link>
-            <Link href="/search" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
-              🔍 Search
-            </Link>
-            <Link href="/likes" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
-              ❤️ Likes
-            </Link>
-            <Link href="/chat" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
-              🗨️ Chat
-            </Link>
-            <Link href="/profile" className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500">
-              👤 {user.username}
-            </Link>
-            <Link
-              href="#"
-              onClick={handleLogout}
-              className="px-4 py-2 text-fuchsia-100 hover:text-pink-950 duration-500"
-            >
-              👋 Logout
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link href="/auth">Login</Link>
-            <Link href="/signup" className="font-semibold text-orange-200">
-              Signup
-            </Link>
-          </>
-        )}
-      </nav>
+      {user ? (
+        <>
+          <MenuDesktop user={user} onLogout={handleLogout} />
+          <MenuMobile user={user} onLogout={handleLogout} />
+        </>
+      ) : (
+        <div className="flex gap-4">
+          <Link href="/auth" className="text-white hover:text-pink-200 transition">
+            Login
+          </Link>
+          <Link href="/signup" className="font-semibold text-orange-200 hover:text-orange-100 transition">
+            Signup
+          </Link>
+        </div>
+      )}
     </header>
   );
 }

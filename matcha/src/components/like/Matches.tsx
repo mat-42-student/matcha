@@ -1,7 +1,7 @@
 // matcha/src/components/like/Matches.tsx
 
 import { useEffect, useState } from "react";
-import CardUser from "@/components/card-user/CardUser";
+import Browse from "@/components/browse/Browse";
 import { PublicUser } from "@/types";
 
 export default function Matches() {
@@ -16,16 +16,8 @@ export default function Matches() {
   useEffect(() => { fetchMatches() }, []);
 
   return (
-    <div className="h-full p-4">
-      {users.length > 0 ? 
-      <div className="flex flex-wrap justify-center">
-        {users.map((u) => (
-          <CardUser key={u.username} user={u} onUserUpdate={fetchMatches}/>
-        ))}
-      </div>
-      :
-      <span>No matches for now</span>
-    }
+    <div className="p-4">
+      <Browse users={users}/>
     </div>
-  )
+  );
 }
