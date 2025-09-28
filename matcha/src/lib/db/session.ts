@@ -18,6 +18,7 @@ export async function deleteSession(sessionId: string) {
 }
 
 export async function getUserByIdFromSession(sessionId: string): Promise<PublicUser | null> {
+  try {
     if (!sessionId) return null;
 
     const result = await pool.query(
@@ -30,4 +31,9 @@ export async function getUserByIdFromSession(sessionId: string): Promise<PublicU
     );
 
     return result.rows[0] || null;
-    }
+  }
+  catch(e) {
+    console.log("Error: ", e);
+    return null;
+  }
+}

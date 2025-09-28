@@ -8,23 +8,23 @@ import { PublicUser } from "@/types";
 import { pool } from "@/lib/db/db-utils";
 
 export default async function Homepage() {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("session_id")?.value;
+  
+  if (!sessionId) redirect("/auth");
+  
+  const me = await getUserByIdFromSession(sessionId);
+  if (!me) redirect("/auth");
+  
   try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) redirect("/auth");
-
-    const me = await getUserByIdFromSession(sessionId);
-    if (!me) redirect("/auth");
-
     let query = `
-      SELECT *
-      FROM users_with_interests uwi
-      WHERE uwi.id != $1
-        AND (uwi.sex_pref = 'B' OR uwi.sex_pref = $2)
+    SELECT *
+    FROM users_with_interests uwi
+    WHERE uwi.id != $1
+    AND (uwi.sex_pref = 'B' OR uwi.sex_pref = $2)
     `;
-
-    const params: any[] = [me.id, me.gender];
+  
+    const params: string[] = [me.id, me.gender];
     if (me.sex_pref !== "B") {
       query += " AND uwi.gender = $3";
       params.push(me.sex_pref);
