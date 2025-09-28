@@ -3,13 +3,6 @@
 import { useState, useEffect } from "react";
 import { PublicUser } from "@/types";
 
-function getButtonText(liked: boolean, status: string) {
-  if (status === "match") return "Unmatch";
-  
-  if (liked) return "Unlike";
-  if (status === "isLiked") return "Match !";
-  return "Like";
-}
 
 export default function LikeButton({
   user,
@@ -20,6 +13,14 @@ export default function LikeButton({
 }) {
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
+
+  function getButtonText(liked: boolean, status: string) {
+    if (status === "match") return "Unmatch";
+    
+    if (liked) return "Unlike";
+    if (status === "isLiked") return "Match !";
+    return "Like";
+  }
 
   async function handleLike(e: React.MouseEvent) {
     e.stopPropagation();

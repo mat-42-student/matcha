@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CardUser from "@/components/card-user/CardUser";
+import Navigation from "./Navigation";
 import { PublicUser } from "@/types";
 
 export default function Browse( { users }: { users: PublicUser[] } ) {
@@ -11,6 +12,16 @@ export default function Browse( { users }: { users: PublicUser[] } ) {
   const totalPages = Math.ceil(users.length / perPage);
   const startIndex = (page - 1) * perPage;
   const currentUsers = users.slice(startIndex, startIndex + perPage);
+
+  function nextPage(){
+    if (page < totalPages)
+      setPage(page + 1);
+  }
+
+  function prevPage(){
+    if (page > 0)
+      setPage(page - 1);
+  }
 
   if (users.length === 0)
     return <div className="p-4">No results</div>
@@ -23,29 +34,7 @@ export default function Browse( { users }: { users: PublicUser[] } ) {
         ))}
       </div>
 
-      {users.length > perPage && (
-        <div className="flex gap-2 mt-4 justify-center">
-          <button
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1}
-            className="px-3 py-1 rounded bg-pink-700 disabled:opacity-50 shadow-md hover:bg-pink-800"
-          >
-            ←
-          </button>
-
-          <span className="px-2 py-1">
-            Page {page} / {totalPages}
-          </span>
-
-          <button
-            onClick={() => setPage((p) => (p + 1))}
-            disabled={page === totalPages}
-            className="px-3 py-1 rounded bg-pink-700 disabled:opacity-50 shadow-md hover:bg-pink-800"
-          >
-            →
-          </button>
-        </div>
-      )}
+      {users.length > perPage && <Navigation page={page} totalPages={totalPages} prev={prevPage} next={nextPage} />}
     </div>
   );
 }

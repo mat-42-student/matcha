@@ -95,7 +95,7 @@ export default function CardUserModal({
               <button
                 onClick={nextPic}
                 className="px-3 py-1 bg-pink-500 rounded disabled:opacity-30"
-                disabled={current + 1  >= pics.length}
+                disabled={current === pics.length}
               >
                 ▶
               </button>
