@@ -74,7 +74,10 @@ export default function CardUser({
           )}
         </div>
 
-        <div className="text-gray-800 mb-2 mt-auto">{user.city}</div>
+        <div className="text-gray-800 mb-2 mt-auto flex justify-between">
+          <span>{user.city}</span>
+          <span>{user.distance} km</span>
+        </div>
         <div>
           <Interests interests={user.interests} />
         </div>

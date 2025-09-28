@@ -13,8 +13,10 @@ export default function LikeButton({
 }) {
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
+  const [disabled, setDisabled] = useState(false);
 
   function getButtonText(liked: boolean, status: string) {
+    if (disabled) return "Seriously ?";
     if (status === "match") return "Unmatch";
     
     if (liked) return "Unlike";
@@ -31,6 +33,10 @@ export default function LikeButton({
       url = `/api/match/${user.id}/unlike`;
     try {
       const res = await fetch(url, { method: "POST" });
+      if (res.status === 204){
+        setDisabled(true);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setLiked(!liked);
@@ -70,8 +76,9 @@ export default function LikeButton({
   return (
     <>
       <button
-          className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition"
+          className="bg-pink-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-pink-700 transition"
           onClick={(e) => { handleLike(e); }}
+          disabled = {disabled}
       >
         {getButtonText(liked, status)}
       </button>

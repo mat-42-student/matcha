@@ -18,13 +18,13 @@ export default async function Homepage() {
   
   try {
     let query = `
-    SELECT *
+    SELECT uwi.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(uwi.latitude, uwi.longitude))/1000) AS distance
     FROM users_with_interests uwi
-    WHERE uwi.id != $1
-    AND (uwi.sex_pref = 'B' OR uwi.sex_pref = $2)
+    WHERE uwi.id != $3
+    AND (uwi.sex_pref = 'B' OR uwi.sex_pref = $4)
     `;
   
-    const params: string[] = [me.id, me.gender];
+    const params: string[] = [me.latitude.toString(), me.longitude.toString(), me.id, me.gender];
     if (me.sex_pref !== "B") {
       query += " AND uwi.gender = $3";
       params.push(me.sex_pref);

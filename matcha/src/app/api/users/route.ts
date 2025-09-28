@@ -1,4 +1,7 @@
 // app/api/users/route.ts
+
+// it seems this endpoint is never called
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
@@ -19,13 +22,13 @@ export async function GET(req: Request) {
     }
 
     const query = `
-      SELECT *
-      FROM users_with_interests
-      WHERE id != $1
+      SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(u.latitude, u.longitude))/1000) AS distance
+      FROM users_with_interests u
+      WHERE u.id != $3
     `;
 
-    const { rows } = await pool.query(query, [me.id]);
-    return NextResponse.json(rows);
+    const { rows: users } = await pool.query(query, [me.latitude, me.longitude, me.id]);
+    return NextResponse.json(users);
   } catch (err) {
     console.error("Erreur /api/users:", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

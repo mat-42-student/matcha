@@ -17,7 +17,7 @@ export default function MenuMobile({ user, onLogout }: { user: any; onLogout: ()
 
       {open && (
         <nav className="absolute right-0 top-full mt-2 w-48 bg-pink-700 rounded shadow-lg flex flex-col gap-2 p-4 z-50">
-          <Link href="/" className="px-2 py-1 text-fuchsia-100 hover:bg-pink-800 transition" onClick={() => setOpen(false)}>
+          <Link href="/" className="px-2 py-1 text-fuchsia-100 hover:bg-pink-800" onClick={() => setOpen(false)}>
             👥 Me@t
           </Link>
           <Link href="/search" className="px-2 py-1 text-fuchsia-100 hover:bg-pink-800 transition" onClick={() => setOpen(false)}>

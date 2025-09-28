@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS cube;
+CREATE EXTENSION IF NOT EXISTS earthdistance;
+
 CREATE TABLE "users" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "username" varchar(50) UNIQUE NOT NULL,
@@ -77,6 +80,8 @@ SELECT
   u.username,
   u.gender,
   u.city,
+  u.latitude,
+  u.longitude,
   u.bio,
   u.sex_pref,
   date_part('year', age(current_date, u.birthdate))::int AS age,

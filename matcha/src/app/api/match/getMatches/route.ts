@@ -20,14 +20,14 @@ export async function GET() {
     }
 
     const { rows: matches } = await pool.query(`
-      SELECT uwi.*
+      SELECT uwi.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(uwi.latitude, uwi.longitude))/1000) AS distance
       FROM matches m
       JOIN users_with_interests uwi 
         ON uwi.id IN (m.user1_id, m.user2_id)
       WHERE m.status = 'match'
-        AND $1 IN (m.user1_id, m.user2_id)   -- je fais partie du match
-        AND uwi.id <> $1;                    -- j’exclus moi-même
-      `, [me.id]);
+        AND $3 IN (m.user1_id, m.user2_id)
+        AND uwi.id <> $3;
+      `, [me.latitude, me.longitude, me.id]);
     return NextResponse.json(matches);
   } catch (err) {
       console.error(err);

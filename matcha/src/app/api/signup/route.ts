@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, getUserByEmail } from '@/lib/db/users';
+import { getGPSFromCityName } from '@/lib/gps'
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,12 @@ export async function POST(req: NextRequest) {
     // 🔐 Hash du mot de passe
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // 📍 Get GPS loc from city
+    const coords = await getGPSFromCityName(city);
+    if (!coords) {
+      return NextResponse.json({ error: "Unable to resolve gps coords of target city"}, { status: 400 });
+    }
+
     // 📝 Création en DB
     const newUser = await createUser({
       username,
@@ -38,8 +45,8 @@ export async function POST(req: NextRequest) {
       sex_pref,
       bio: '',
       fame: 0,
-      latitude: 0,
-      longitude: 0,
+      latitude: coords.lat,
+      longitude: coords.lon,
       birthdate: birthdate,
     });
 

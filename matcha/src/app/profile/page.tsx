@@ -1,9 +1,9 @@
-import { EditProfile } from  "@/components/profile/EditProfile"
 import { cookies } from "next/headers";
 import { getUserByIdFromSession } from "@/lib/db/session";
 import { redirect } from "next/navigation";
+import ProfileTabs from "@/components/profile/ProfileTabs";
 
-export default async  function Page() {
+export default async function LikesPage() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session_id")?.value || null;
 
@@ -13,9 +13,5 @@ export default async  function Page() {
     redirect("/auth");
   }
 
-    return(
-        <>
-            <EditProfile />
-        </>
-    )
+  return <ProfileTabs user={user}/>;
 }

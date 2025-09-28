@@ -20,11 +20,11 @@ export async function GET() {
     }
 
     const { rows: likedBy } = await pool.query(`
-      SELECT *
+      SELECT *, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude))/1000) AS distance
       FROM users_who_like_me
-      WHERE me = $1
+      WHERE me = $3
     `,
-    [me.id]);
+    [me.latitude, me.longitude, me.id]);
     return NextResponse.json(likedBy);
   } catch (err) {
       console.error(err);
