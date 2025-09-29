@@ -1,15 +1,13 @@
 // app/api/users/route.ts
+
+// it seems this endpoint is never called
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
 import { getUserByIdFromSession } from "@/lib/db/session";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") ?? "1", 10);
-  const limit = 12;
-  const offset = (page - 1) * limit;
-
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
@@ -24,16 +22,13 @@ export async function GET(req: Request) {
     }
 
     const query = `
-      SELECT 
-        id, username, gender, city, bio,
-        date_part('year', age(current_date, birthdate))::int AS age
-      FROM users
-      WHERE id != $1
-      LIMIT $2 OFFSET $3
+      SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(u.latitude, u.longitude))/1000) AS distance
+      FROM users_with_interests u
+      WHERE u.id != $3
     `;
 
-    const { rows } = await pool.query(query, [me.id, limit, offset]);
-    return NextResponse.json(rows);
+    const { rows: users } = await pool.query(query, [me.latitude, me.longitude, me.id]);
+    return NextResponse.json(users);
   } catch (err) {
     console.error("Erreur /api/users:", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

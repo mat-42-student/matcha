@@ -1,46 +1,89 @@
+// matcha/src/components/card-user/CardUser.tsx
+
 "use client";
 
-import { useState } from "react";
-import { PublicUser } from "@/types";
-import MainPic from "@/components/pics/MainPic";
+import { useEffect, useState } from "react";
+import { PublicUser, Picture } from "@/types";
+import Image from "next/image";
 import CardUserModal from "./CardUserModal";
-// import LikeButton from "./LikeButton"
+import Interests from "./Interests";
 
-export default function CardUser({ user }: { user: PublicUser }) {
+export default function CardUser({
+  user,
+  onUserUpdate,
+ }: { 
+  user: PublicUser;
+  onUserUpdate?: () => void;
+}) {
+
   const [open, setOpen] = useState(false);
+  const [mainPic, setMainPic] = useState<Picture>({mime_type: "", data: ""});
 
   function handleCardClick() {
     setOpen(true);
   }
 
+  useEffect(() => {
+    async function fetchMainPic() {
+      try {
+        const res = await fetch(`/api/users/${user.id}/pics/`);
+        if (res.status === 204 || !res.ok) {
+          return;
+        }
+        const pic: Picture = await res.json();
+        setMainPic(pic);
+      } catch (err) {
+        console.error("Could not retrieve main picture:", err);
+      }
+    }
+    fetchMainPic()
+  }, []);
+
   return (
     <>
       <div
-        className="w-72 bg-white border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 inline-block cursor-pointer
-                  hover:border-pink-500"
+        className="w-72 bg-white border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer
+                  hover:border-pink-500 flex flex-col"
         onClick={() => handleCardClick()}
       >
-      <div className="flex justify-between items-center mb-2">
-        <div>
-          <span className="text-xl text-pink-700 font-semibold">
-            {user.username}
-          </span>
-          <span className="text-sm text-gray-400"> ({user.gender})</span>
+        <div className="flex justify-between items-center mb-2">
+          <div>
+            <span className="text-xl text-pink-700 font-semibold">
+              {user.username}
+            </span>
+            <span className="text-sm text-gray-400"> ({user.gender})</span>
+          </div>
+          <span className="text-sm text-gray-600">{user.age} ans</span>
         </div>
-        <span className="text-sm text-gray-600">
-          {user.age} ans
-        </span>
-      </div>
+
         <div className="flex justify-center">
-          <MainPic userId={user.id}/>
+          {mainPic.data ? (
+            <Image
+              unoptimized
+              width={0}
+              height={0}
+              style={{ width: "auto", height: "auto" }}
+              className="max-h-48 rounded shadow-md"
+              src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
+              alt="profile picture"
+            />
+          ) : (
+            <div className="w-32 h-32 bg-gray-200 flex items-center justify-center rounded shadow-md">
+              <span className="text-gray-500 text-sm">No photo</span>
+            </div>
+          )}
         </div>
-        <span className="text-gray-800 mb-2 text-right">{user.city}</span>
-        <p className="text-gray-600 mb-4">
-          {user.bio?.slice(0, 100) || "No bio yet"}
-        </p>
+
+        <div className="text-gray-800 mb-2 mt-auto flex justify-between">
+          <span>{user.city}</span>
+          <span>{user.distance} km</span>
+        </div>
+        <div>
+          <Interests interests={user.interests} />
+        </div>
       </div>
 
-      {open && <CardUserModal user={user} onClose={() => setOpen(false)} />}
+      {open && <CardUserModal user={user} mainPic={mainPic} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}
     </>
   );
 }

@@ -23,7 +23,7 @@ export async function POST(
     }
 
     if (me.id === userId) {
-      return NextResponse.json({ error: "Narcissist" }, { status: 400 });
+      return new NextResponse(null, { status: 204 });
     }
 
     await client.query("BEGIN");

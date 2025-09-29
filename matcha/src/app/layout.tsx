@@ -26,10 +26,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="h-screen flex flex-col bg-gray-100">
         <UserProvider initialUser={user}>
             <Header />
-            {/* main empêche le scroll par défaut */}
             <main className="flex-1 overflow-auto">
-            {/* wrapper prend toute la hauteur disponible */}
-              <div className="w-full max-w-5xl mx-auto h-full">
+              <div className="w-full mx-auto h-full">
                   {children}
               </div>
             </main>

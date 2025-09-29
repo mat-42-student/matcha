@@ -19,13 +19,12 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: likedUsers } = await pool.query(
-    `SELECT u.id, u.username, u.bio, u.city, u.gender,
-            date_part('year', age(current_date, u.birthdate))::int AS age
-    FROM matches m
-    JOIN users u ON u.id = m.user2_id
-    WHERE m.user1_id = $1 AND m.status = 'like'`,
-    [me.id]
+    const { rows: likedUsers } = await pool.query(`
+      SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(u.latitude, u.longitude))/1000) AS distance
+      FROM users_me_like u
+      WHERE u.me = $3
+    `,
+    [me.latitude, me.longitude, me.id]
     );
     return NextResponse.json(likedUsers);
   } catch (err) {

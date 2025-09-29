@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       AND expires_at > now()
   )`;
 
-  const result = await pool.query(
+  await pool.query(
       query,
       [country, city, latitude, longitude, sessionId]
   );

@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 import { getUserByIdFromSession } from "@/lib/db/session";
 
 export async function GET() {
-  console.log("GETMATCHES")
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
@@ -20,25 +19,15 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: matches } = await pool.query(
-    `SELECT 
-    u.id,
-    u.username,
-    u.bio,
-    u.city,
-    u.gender,
-    date_part('year', age(current_date, u.birthdate))::int AS age
-    FROM matches m
-    JOIN users u 
-        ON u.id = CASE 
-                    WHEN m.user1_id = $1 THEN m.user2_id
-                    ELSE m.user1_id
-                END
-    WHERE (m.user1_id = $1 OR m.user2_id = $1)
-    AND m.status = 'match'`,
-    [me.id]
-    );
-    console.log("MATCHES", matches)
+    const { rows: matches } = await pool.query(`
+      SELECT uwi.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(uwi.latitude, uwi.longitude))/1000) AS distance
+      FROM matches m
+      JOIN users_with_interests uwi 
+        ON uwi.id IN (m.user1_id, m.user2_id)
+      WHERE m.status = 'match'
+        AND $3 IN (m.user1_id, m.user2_id)
+        AND uwi.id <> $3;
+      `, [me.latitude, me.longitude, me.id]);
     return NextResponse.json(matches);
   } catch (err) {
       console.error(err);

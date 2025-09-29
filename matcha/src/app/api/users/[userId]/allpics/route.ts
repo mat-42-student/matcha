@@ -8,20 +8,21 @@ export async function GET(
 ) {
   const { userId } = await context.params;
 
-  const result = await pool.query(
-    'SELECT id, mime_type, encode(data, \'base64\') as data, is_main FROM pictures WHERE user_id = $1 ORDER BY is_main DESC, id ASC',
+  const result = await pool.query(`
+    SELECT id, mime_type, encode(data, 'base64') as data 
+    FROM pictures 
+    WHERE user_id = $1 AND NOT is_main`,
     [userId]
   );
 
   if (result.rows.length === 0) {
-    return new NextResponse("Not found", { status: 404 });
+    return new NextResponse(null, { status: 204 });
   }
 
   const picsJson = result.rows.map((row) => ({
     id: row.id,
     mime_type: row.mime_type ?? "image/jpeg",
     data: row.data,
-    is_main: row.is_main,
   }));
 
   return NextResponse.json(picsJson);

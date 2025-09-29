@@ -1,66 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import CardUser from "@/components/card-user/CardUser";
+import Navigation from "./Navigation";
 import { PublicUser } from "@/types";
+import FilterBar from "./FilterBar";
 
-export default function Browse() {
-  const [users, setUsers] = useState<PublicUser[]>([]);
+export default function Browse({ users }: { users: PublicUser[] }) {
   const [page, setPage] = useState(1);
-  const router = useRouter();
+  const [filteredUsers, setFilteredUsers] = useState(users);
+  const perPage = 12;
 
-async function getUserList() {
-    try {
-      const res = await fetch(`/api/users?page=${page}`);
-      if (!res.ok) {
-        console.log(`API Error: ${res.status}`);
-        return;
-      }
-
-      const data = await res.json();
-      setUsers(data);
-    } catch (err) {
-      console.error("Could not retrieve users :", err);
-    }
-  }
   useEffect(() => {
-    getUserList();
+    setFilteredUsers(users);
+    setPage(1);
+  }, [users]);
 
-    // Affiche la mémoire utilisée côté client
-    // if (typeof window !== "undefined" && (window.performance as any).memory) {
-    //   const { usedJSHeapSize, totalJSHeapSize } = (window.performance as any).memory;
-    //   console.log(
-    //     `Heap: ${(usedJSHeapSize / 1024 / 1024).toFixed(2)} MB / ${(totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`
-    //   );
-    // }
-  }, [page]);
+  const totalPages = Math.ceil(filteredUsers.length / perPage);
+  const startIndex = (page - 1) * perPage;
+  const currentUsers = filteredUsers.slice(startIndex, startIndex + perPage);
+
+  function nextPage() {
+    if (page < totalPages) setPage(page + 1);
+  }
+
+  function prevPage() {
+    if (page > 1) setPage(page - 1);
+  }
+
+  if (users.length === 0) {
+    return <div className="p-4">No results</div>;
+  }
 
   return (
-    <div className="h-full p-4">
-      {/* <h1 className="text-xl font-bold mb-4">Users – Page {page}</h1> */}
-
+    <div className="p-4">
+      <FilterBar users={users} onChange={setFilteredUsers} />
       <div className="flex flex-wrap justify-center">
-        {users.map((u) => (
+        {currentUsers.map((u) => (
           <CardUser key={u.username} user={u} />
         ))}
       </div>
 
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}
-          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
-        >
-          Précédent
-        </button>
-        <button
-          onClick={() => setPage((p) => p + 1)}
-          className="px-3 py-1 rounded bg-gray-200"
-        >
-          Suivant
-        </button>
-      </div>
+      {filteredUsers.length > perPage && (
+        <Navigation
+          page={page}
+          totalPages={totalPages}
+          prev={prevPage}
+          next={nextPage}
+        />
+      )}
     </div>
   );
 }

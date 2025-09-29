@@ -1,7 +1,7 @@
-// src/app/api/me/route.ts
-
-import { cookies } from "next/headers";
+// app/api/users/count/route.ts
 import { NextResponse } from "next/server";
+import { pool } from "@/lib/db/db-utils";
+import { cookies } from "next/headers";
 import { getUserByIdFromSession } from "@/lib/db/session";
 
 export async function GET() {
@@ -13,14 +13,15 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const user = await getUserByIdFromSession(sessionId);
-    if (!user) {
+    const me = await getUserByIdFromSession(sessionId);
+    if (!me) {
       return NextResponse.json({ error: "Session invalide" }, { status: 401 });
     }
 
-    return NextResponse.json(user);
+    const { rows } = await pool.query("SELECT COUNT(id) FROM users_with_interests");
+    return NextResponse.json(rows);
   } catch (err) {
-    console.error("Erreur /api/me:", err);
+    console.error("Erreur /api/users:", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

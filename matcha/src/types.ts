@@ -12,6 +12,16 @@ export type PublicUser = {
   email: string;
   gender: string;
   city: string;
+  latitude: number;
+  longitude: number;
+  distance: number;
   bio: string;
   age: number;
+  sex_pref: string;
+  interests: string[];
 };
+
+export type Picture = {
+  mime_type: string;
+  data: string;
+}

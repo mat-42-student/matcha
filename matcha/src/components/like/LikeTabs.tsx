@@ -8,12 +8,11 @@ import Matches from "@/components/like/Matches";
 
 export default function LikeTabs() {
   const [activeTab, setActiveTab] = useState<"liked" | "likeMe" | "matches">(
-    "matches"
+    "liked"
   );
 
   return (
     <div className="max-w-3xl mx-auto mt-8">
-      {/* --- Tabs menu --- */}
       <div className="flex border-b border-pink-300 text-pink-100">
         <button
           onClick={() => setActiveTab("liked")}
@@ -47,8 +46,7 @@ export default function LikeTabs() {
         </button>
       </div>
 
-      {/* --- Tabs content --- */}
-      <div className="mt-6">
+      <div>
         {activeTab === "liked" && <Liked />}
         {activeTab === "likeMe" && <LikeMe />}
         {activeTab === "matches" && <Matches />}

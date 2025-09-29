@@ -4,6 +4,7 @@ import { createUser, getUserByEmail } from '@/lib/db/users';
 import { createEmailVerification } from '@/lib/db/emailVerifications';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { getGPSFromCityName } from '@/lib/gps'
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,13 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // 📍 Get GPS loc from city
+    const coords = await getGPSFromCityName(city);
+    if (!coords) {
+      return NextResponse.json({ error: "Unable to resolve gps coords of target city"}, { status: 400 });
+    }
+
+    // 📝 Création en DB
     const newUser = await createUser({
       username,
       email,
@@ -37,9 +45,9 @@ export async function POST(req: NextRequest) {
       sex_pref,
       bio: '',
       fame: 0,
-      latitude: 0,
-      longitude: 0,
-      birthdate,
+      latitude: coords.lat,
+      longitude: coords.lon,
+      birthdate: birthdate,
     });
 
     const token = crypto.randomBytes(32).toString('hex');

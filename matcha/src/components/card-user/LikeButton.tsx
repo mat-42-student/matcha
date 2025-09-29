@@ -3,36 +3,25 @@
 import { useState, useEffect } from "react";
 import { PublicUser } from "@/types";
 
-function getButtonText(liked: boolean, status: string) {
-  if (status === "match") return "Unmatch";
-  if (liked) return "Unlike";
-  return "Like";
-}
 
-export default function LikeButton({ user }: { user: PublicUser }) {
+export default function LikeButton({
+  user,
+  onUserUpdate
+}: {
+  user: PublicUser,
+  onUserUpdate?: () => void
+}) {
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
+  const [disabled, setDisabled] = useState(false);
 
-  async function fetchLikeStatus() {
-    try {
-      const res = await fetch(`/api/match/${user.id}/status`);
-      const data = await res.json();
-      if (data.status === "like") {
-        setLiked(true);
-        setStatus("");
-      } else if (data.status === "match") {
-        setLiked(true);
-        setStatus("match")
-      } else if (data.status === "isLiked") {
-        setLiked(false);
-        setStatus("isLiked")
-      } else {
-        setLiked(false)
-        setStatus("")
-      }
-    } catch (error) {
-      console.error("Error fetching like status:", error);
-    }
+  function getButtonText(liked: boolean, status: string) {
+    if (disabled) return "Seriously ?";
+    if (status === "match") return "Unmatch";
+    
+    if (liked) return "Unlike";
+    if (status === "isLiked") return "Match !";
+    return "Like";
   }
 
   async function handleLike(e: React.MouseEvent) {
@@ -44,20 +33,52 @@ export default function LikeButton({ user }: { user: PublicUser }) {
       url = `/api/match/${user.id}/unlike`;
     try {
       const res = await fetch(url, { method: "POST" });
+      if (res.status === 204){
+        setDisabled(true);
+        return;
+      }
       const data = await res.json();
-      if (data.success) setLiked(!liked);
+      if (data.success) {
+        setLiked(!liked);
+        if (onUserUpdate)
+          onUserUpdate();
+      }
     } catch (err) {
       console.error(err);
     }
   }
 
-  useEffect(() => { fetchLikeStatus() }, []);
+  useEffect(() => {
+    async function fetchLikeStatus() {
+      try {
+        const res = await fetch(`/api/match/${user.id}/status`);
+        const data = await res.json();
+        if (data.status === "like") {
+          setLiked(true);
+          setStatus("");
+        } else if (data.status === "match") {
+          setLiked(true);
+          setStatus("match")
+        } else if (data.status === "isLiked") {
+          setLiked(false);
+          setStatus("isLiked")
+        } else {
+          setLiked(false)
+          setStatus("")
+        }
+      } catch (error) {
+        console.error("Error fetching like status:", error);
+      }
+    }
+    fetchLikeStatus()
+  }, []);
 
   return (
     <>
       <button
-          className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition"
+          className="bg-pink-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-pink-700 transition"
           onClick={(e) => { handleLike(e); }}
+          disabled = {disabled}
       >
         {getButtonText(liked, status)}
       </button>
