@@ -1,17 +1,33 @@
 import { cookies } from "next/headers";
-import { getUserByIdFromSession } from "@/lib/db/session";
 import { redirect } from "next/navigation";
+import { getUserByIdFromSession } from "@/lib/db/session";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 
-export default async function LikesPage() {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value || null;
+async function getCurrentUser() {
+	const cookieStore = await cookies();
+	const sessionId = cookieStore.get("session_id")?.value;
 
-  const user = sessionId ? await getUserByIdFromSession(sessionId) : null;
+	if (!sessionId) return null;
 
-  if (!user) {
-    redirect("/auth");
-  }
+	try {
+		return await getUserByIdFromSession(sessionId);
+	} catch (err) {
+		console.error("❌ Erreur récupération user depuis session:", err);
+		return null;
+	}
+}
 
-  return <ProfileTabs user={user}/>;
+export default async function ProfilePage() {
+	const user = await getCurrentUser();
+
+	if (!user) {
+		redirect("/auth");
+	}
+
+	return (
+		<main className="flex flex-col items-center p-6">
+			<h1 className="text-2xl font-bold mb-4">Mon profil</h1>
+			<ProfileTabs user={user} editable />
+		</main>
+	);
 }
