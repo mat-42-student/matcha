@@ -1,11 +1,8 @@
-// components/profile/ProfileForm.tsx
 "use client";
-
+import { Edit2 } from "lucide-react";
 import { useState } from "react";
 
 export default function ProfileForm({ user }: { user: any }) {
-
-    console.log("user reçu dans ProfileForm:", user);
   const [formData, setFormData] = useState({
     username: user.username || "",
     email: user.email || "",
@@ -14,6 +11,8 @@ export default function ProfileForm({ user }: { user: any }) {
     sex_pref: user.sex_pref || "",
     bio: user.bio || "",
   });
+
+  const [editingField, setEditingField] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,103 +27,85 @@ export default function ProfileForm({ user }: { user: any }) {
     });
     if (res.ok) {
       alert("Profil mis à jour ✅");
+      setEditingField(null);
     } else {
       alert("Erreur lors de la mise à jour ❌");
     }
   };
 
+const renderRow = (label: string, name: string, type: "text" | "email" | "textarea" | "select" = "text") => {
+  const isEditing = editingField === name;
   return (
-
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-96 mx-auto mt-10 bg-white p-8 rounded-2xl shadow-md">
-      <div>
-        <label className="block font-medium text-gray-900 ml-3">User name</label>
-        <input
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-            className="px-4 py-2 rounded-full border border-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-pink-400
-                text-gray-900"
-        />
+    <div className="flex items-center justify-between py-4 border-b text-gray-900">
+      <div className="flex-1 min-h-[2.5rem] flex items-center">
+        <span className="font-medium text-gray-900">{label}: </span>
+        {isEditing ? (
+          type === "textarea" ? (
+            <textarea
+              name={name}
+              value={(formData as any)[name]}
+              onChange={handleChange}
+              className={`ml-2 w-full rounded border px-4 py-2 text-gray-900
+                  border-pink-300 ring-2 ring-pink-300 ring-offset-0 focus:outline-none`}
+            />
+          ) : type === "select" ? (
+            <select
+              name={name}
+              value={(formData as any)[name]}
+              onChange={handleChange}
+              className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 focus:outline-none"
+            >
+              <option value="M">Homme</option>
+              <option value="F">Femme</option>
+              <option value="B">Les deux</option>
+            </select>
+          ) : (
+            <input
+              name={name}
+              type={type}
+              value={(formData as any)[name]}
+              onChange={handleChange}
+              className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 focus:outline-none"
+            />
+          )
+        ) : (
+          <span className="ml-2 text-gray-700">
+            {name === "sex_pref"
+              ? (formData.sex_pref === "M" ? "Homme" : formData.sex_pref === "F" ? "Femme" : "Les deux")
+              : (formData as any)[name] || "-"}
+          </span>
+        )}
       </div>
-
-      <div>
-        <label className="block font-medium text-gray-900 ml-3">Email</label>
-        <input
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-            className="px-4 py-2 rounded-full border border-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-pink-400
-                text-gray-900"
-        />
-      </div>
-
-      <div>
-        <label className="block font-medium text-gray-900 ml-3">Town</label>
-        <input
-          name="city"
-          value={formData.city}
-          onChange={handleChange}
-            className="px-4 py-2 rounded-full border border-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-pink-400
-                text-gray-900"
-        />
-      </div>
-
-      <div>
-        <label className="block font-medium text-gray-900 ml-3">Genre</label>
-        <select
-          name="gender"
-          value={formData.gender}
-          onChange={handleChange}
-            className="px-4 py-2 rounded-full border border-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-pink-400
-                text-gray-900"
-        >
-          <option value="M">Homme</option>
-          <option value="F">Femme</option>
-          <option value="O">Autre</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block font-medium text-gray-900 ml-3">Sexual preference</label>
-        <select
-          name="sex_pref"
-          value={formData.sex_pref}
-          onChange={handleChange}
-            className="px-4 py-2 rounded-full border border-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-pink-400
-                text-gray-900"
-        >
-          <option value="M">Homme</option>
-          <option value="F">Femme</option>
-          <option value="B">Les deux</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block font-medium text-gray-900 ml-3">Bio</label>
-        <textarea
-          name="bio"
-          value={formData.bio}
-          onChange={handleChange}
-          rows={4}
-            className="px-4 py-2 rounded border border-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-pink-400
-                text-gray-900"
-        />
-      </div>
-
       <button
-        type="submit"
-        className="px-4 py-2 rounded-full bg-pink-600 text-white font-semibold 
-            hover:bg-pink-700 transition disabled:opacity-50"
+        type="button"
+        onClick={() => setEditingField(isEditing ? null : name)}
+        className="ml-4 h-10 w-10 flex items-center justify-center bg-pink-100 hover:bg-pink-200 rounded-full"
       >
-        Save
+        <Edit2 className="text-pink-600" size={20} />
       </button>
+    </div>
+  );
+};
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full max-w-lg mx-auto mt-10 bg-white p-8 rounded-2xl shadow-md">
+    {renderRow("Nom d’utilisateur", "username")}
+    {renderRow("Email", "email", "email")}
+    {renderRow("Ville", "city")}
+    {renderRow("Préférence sexuelle", "sex_pref", "select")}
+    {renderRow("Bio", "bio", "textarea")}
+
+      <div className="mt-6 flex justify-start">
+        {editingField && (
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-full bg-pink-600 text-white font-semibold 
+              hover:bg-pink-700 transition disabled:opacity-50"
+          >
+            Sauvegarder
+          </button>
+        )}
+      </div>
     </form>
   );
 }
