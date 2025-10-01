@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getUserByIdFromSession } from "@/lib/db/session";
+import { getSessionUser } from "@/lib/db/session";
 
 export async function GET() {
   try {
@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const user = await getUserByIdFromSession(sessionId);
+    const user = await getSessionUser(sessionId);
     if (!user) {
       return NextResponse.json({ error: "Session invalide" }, { status: 401 });
     }

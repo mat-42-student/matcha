@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getUserByIdFromSession } from "@/lib/db/session";
+import { getSessionUser } from "@/lib/db/session";
 import LoginForm from "@/components/forms/LoginForm";
 
 export default async function AuthPage() {
@@ -8,7 +8,7 @@ export default async function AuthPage() {
   const sessionId = cookieStore.get("session_id")?.value;
 
   if (sessionId) {
-    const user = await getUserByIdFromSession(sessionId);
+    const user = await getSessionUser(sessionId);
     if (user) {
       redirect("/");
     }

@@ -101,6 +101,24 @@ LEFT JOIN user_interests ui ON u.id = ui.user_id
 LEFT JOIN interests i ON ui.interest_id = i.id
 GROUP BY u.id;
 
+CREATE VIEW my_profile AS
+SELECT
+  u.id,
+  u.username,
+  u.email,
+  u.gender,
+  u.city,
+  u.latitude,
+  u.longitude,
+  u.bio,
+  u.sex_pref,
+  date_part('year', age(current_date, u.birthdate))::int AS age,
+  COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests
+FROM users u
+LEFT JOIN user_interests ui ON u.id = ui.user_id
+LEFT JOIN interests i ON ui.interest_id = i.id
+GROUP BY u.id, u.username, u.email, u.gender, u.city, u.latitude, u.longitude, u.bio, u.sex_pref, u.birthdate;
+
 CREATE VIEW users_me_like AS
 SELECT m.user1_id AS me, uwi.*
 FROM matches m

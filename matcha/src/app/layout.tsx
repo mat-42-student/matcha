@@ -2,7 +2,7 @@ import "./globals.css"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { cookies } from "next/headers";
-import { getUserByIdFromSession } from "@/lib/db/session";
+import { getSessionUser } from "@/lib/db/session";
 import type { PublicUser } from "@/types";
 import { UserProvider } from "@/context/UserContext";
 
@@ -19,7 +19,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const sessionId = cookieStore.get("session_id")?.value || null;
 
   // 🔑 Appel direct DB
-  const user: PublicUser | null = sessionId ? await getUserByIdFromSession(sessionId) : null;
+  const user: PublicUser | null = sessionId ? await getSessionUser(sessionId) : null;
 
   return (
     <html lang="fr">

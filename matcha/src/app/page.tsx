@@ -2,7 +2,7 @@
 
 import Browse from "@/components/browse/Browse";
 import { cookies } from "next/headers";
-import { getUserByIdFromSession } from "@/lib/db/session";
+import { getSessionUser } from "@/lib/db/session";
 import { redirect } from "next/navigation";
 import { PublicUser } from "@/types";
 import { pool } from "@/lib/db/db-utils";
@@ -13,7 +13,7 @@ export default async function Homepage() {
   
   if (!sessionId) redirect("/auth");
   
-  const me = await getUserByIdFromSession(sessionId);
+  const me = await getSessionUser(sessionId);
   if (!me) redirect("/auth");
   
   try {

@@ -113,22 +113,47 @@ export async function fetchTotalPages(): Promise<number> {
 /**
  * Update a user (partial update)
  */
-export async function updateUser(id: string, updates: Partial<User>): Promise<User | null> {
-  const fields = Object.keys(updates);
-  if (fields.length === 0) return await getUserById(id);
+export async function updateUser(
+  id: string,
+  updates: Partial<User>
+): Promise<User | null> {
+  // Liste blanche des champs qu’un utilisateur peut modifier
+  const allowedFields: (keyof User)[] = [
+    "username",
+    "email",
+    "city",
+    "country",
+    "gender",
+    "sex_pref",
+    "bio",
+    "birthdate",
+    "latitude",
+    "longitude"
+  ];
 
-  const setClauses = fields.map((field, i) => `"${field}" = $${i + 1}`).join(', ');
-  const values = Object.values(updates);
+  const fields = Object.keys(updates).filter((field) =>
+    allowedFields.includes(field as keyof User)
+  );
+
+  if (fields.length === 0) {
+    return await getUserById(id);
+  }
+
+  const setClauses = fields
+    .map((field, i) => `"${field}" = $${i + 1}`)
+    .join(", ");
+  const values = fields.map((field) => (updates as any)[field]);
 
   const query = {
-    text: `UPDATE users SET ${setClauses} WHERE id = $${fields.length + 1} RETURNING *`,
-    values: [...values, id]
+    text: `UPDATE users SET ${setClauses} WHERE id = $${
+      fields.length + 1
+    } RETURNING *`,
+    values: [...values, id],
   };
 
   const result = await pool.query<User>(query);
   return result.rows[0] ?? null;
 }
-
 /**
  * Delete a user
  */

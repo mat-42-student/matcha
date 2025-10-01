@@ -17,15 +17,16 @@ export async function deleteSession(sessionId: string) {
   await pool.query(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
 }
 
-export async function getUserByIdFromSession(sessionId: string): Promise<PublicUser | null> {
+export async function getSessionUser(sessionId: string): Promise<PublicUser | null> {
   try {
     if (!sessionId) return null;
 
     const result = await pool.query(
-        `SELECT uwi.*
+        `SELECT mp.*
         FROM sessions s
-        JOIN users_with_interests uwi ON s.user_id = uwi.id
-        WHERE s.id = $1 AND s.expires_at > NOW()
+        JOIN my_profile mp ON s.user_id = mp.id
+        WHERE s.id = $1
+            AND s.expires_at > NOW()
         LIMIT 1`,
         [sessionId]
     );
