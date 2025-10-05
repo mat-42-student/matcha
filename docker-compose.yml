@@ -31,9 +31,13 @@ services:
     expose:
       - "3000"
     command: sh -c "npm install && npm run dev"
-    # command: sh -c "npm install && npm run build && npm run start"
     env_file:
       - .env
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - NEXT_WEBPACK_USEPOLLING=true
+      - WATCHPACK_POLLING_INTERVAL=1000
     networks:
       - main-network
     depends_on:

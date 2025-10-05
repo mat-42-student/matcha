@@ -1,9 +1,9 @@
-import { PublicUser } from "@/types"
+// import { PublicUser } from "@/types"
 
-export default function EditProfile({user}:{user: PublicUser}) {
-    return (
-        <div>
-            Edit {user.username} profile here
-        </div>
-    )
-}
+// export default function EditProfile({user}:{user: PublicUser}) {
+//     return (
+//         <div>
+//             Edit {user.username} profile here
+//         </div>
+//     )
+// }
