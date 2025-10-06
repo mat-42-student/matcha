@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/db/session";
 import ProfileForm from "@/components/forms/ProfileForm";
+import ProfilePicture from "@/components/profile/ProfilePicture";
 
 async function getCurrentUser() {
 	const cookieStore = await cookies();
@@ -27,6 +28,7 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-center">My profile</h1>
+            <ProfilePicture userId={user.id} />
       <ProfileForm user={user} />
     </div>
   );
