@@ -14,7 +14,7 @@ export default function ProfilePicture({ userId }: { userId: string }) {
     async function fetchMainPic() {
       try {
 
-        const res = await fetch(`/api/users/${userId}/pics`);
+        const res = await fetch(`/api/me/pictures/main`);
    
         if (res.status === 204) {
           setMainPic(null);

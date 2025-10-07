@@ -17,7 +17,7 @@ export function ProfilePicturesModal({
     useEffect(() => {
     async function fetchPics() {
         try {
-        const res = await fetch(`/api/users/${userId}/allpics`);
+        const res = await fetch(`/api/me/pictures`);
         if (!res.ok) {
             console.warn("Erreur lors du chargement des photos:", res.status);
             setPictures([]); // Aucun résultat
@@ -49,7 +49,7 @@ export function ProfilePicturesModal({
     const formData = new FormData();
     formData.append("file", file);
 
-    await fetch(`/api/users/${userId}/upload`, {
+    await fetch(`/api/me/pictures`, {
       method: "POST",
       body: formData,
     });
@@ -59,7 +59,7 @@ export function ProfilePicturesModal({
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/users/${userId}/pictures/${id}`, {
+    await fetch(`/api/me/pictures/${id}`, {
       method: "DELETE",
     });
     setPictures((prev) => prev.filter((pic) => pic.id !== id));
@@ -67,7 +67,7 @@ export function ProfilePicturesModal({
   };
 
   const handleSetMain = async (id: string) => {
-    await fetch(`/api/users/${userId}/pictures/${id}/main`, {
+    await fetch(`/api/me/pictures/${id}/main`, {
       method: "PUT",
     });
     setHasChanges(true);

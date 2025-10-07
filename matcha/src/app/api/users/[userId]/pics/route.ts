@@ -27,13 +27,5 @@ if (result.rows.length === 0)
     });
   }
 
-  // if (data) {
-  //   return new NextResponse(data, {
-  //     headers: {
-  //       "Content-Type": mime_type ?? "image/jpeg",
-  //       "Content-Length": data.length.toString(),
-  //     },
-  //   });
-  // }
 
 return new NextResponse(null, { status: 204 });}
