@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import fs from "fs";
 import path from "path";
 
-const MIN_USERS = 10;
+const MIN_USERS = 20;
 const API_KEY = process.env.PIX_KEY;
 const filePath = path.join(process.cwd(), "src/data/fr-cities.json");
 const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
