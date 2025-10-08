@@ -93,6 +93,7 @@ SELECT
   u.latitude,
   u.longitude,
   u.bio,
+  u.fame,
   u.sex_pref,
   date_part('year', age(current_date, u.birthdate))::int AS age,
   COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests
@@ -130,6 +131,44 @@ SELECT m.user2_id AS me, uwi.*
 FROM matches m
 JOIN users_with_interests uwi ON uwi.id = m.user1_id
 WHERE m.status = 'like';
+
+CREATE OR REPLACE FUNCTION compatible_users_from(
+  ref_user_id UUID
+)
+RETURNS TABLE (
+  id UUID,
+  username TEXT,
+  gender TEXT,
+  city TEXT,
+  bio TEXT,
+  age INT,
+  interests JSON,
+  fame INT,
+  distance INT
+)
+AS $$
+  SELECT
+    u.id,
+    u.username,
+    u.gender,
+    u.city,
+    u.bio,
+    u.age,
+    u.interests,
+    u.fame,
+    ceil(earth_distance(ll_to_earth(me.latitude, me.longitude), ll_to_earth(u.latitude, u.longitude)) / 1000)::int AS distance
+  FROM users_with_interests u
+  JOIN users me ON me.id = ref_user_id
+  WHERE
+    u.id <> me.id
+    AND (
+      (me.sex_pref = 'B' OR me.sex_pref = u.gender)
+    )
+    AND (
+      (u.sex_pref = 'B' OR u.sex_pref = me.gender)
+    );
+$$ LANGUAGE sql STABLE;
+
 
 CREATE INDEX ON "sessions" ("user_id");
 

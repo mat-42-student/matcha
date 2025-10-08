@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { PublicUser, SearchCriteria } from "@/types";
 import SearchForm from "@/components/forms/SearchForm";
-import CardUser from "@/components/card-user/CardUser";
 import Browse from "@/components/browse/Browse";
 
 export default function SearchPage() {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<PublicUser[]>([]);
 
-  async function handleSearch(criteria: any) {
+  async function handleSearch(criteria: SearchCriteria) {
+    if (Object.keys(criteria).length === 0) {
+      setResults([]);
+      return;
+    }
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,7 +25,7 @@ export default function SearchPage() {
   return (
     <div className="space-y-6">
       <SearchForm onSubmit={handleSearch} />
-      <Browse users={results} />
+      {results && <Browse users={results} /> }
     </div>
   );
 }

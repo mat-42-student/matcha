@@ -25,3 +25,11 @@ export type Picture = {
   mime_type: string;
   data: string;
 }
+
+export type SearchCriteria = {
+  distance?: number;
+  ageRange?: [number, number];
+  interests?: "atLeastOne" | "custom";
+  customInterests?: string[];
+  fame?: number;
+};
