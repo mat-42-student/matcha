@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
 import { getSessionUser } from "@/lib/db/session";
+import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
-  const cookies = req.cookies;
-  const sessionId = cookies.get("session_id")?.value || null;
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("session_id")?.value || null;
 
   if (!sessionId)
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });

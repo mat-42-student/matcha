@@ -7,6 +7,7 @@ import type { PublicUser } from "@/types";
 import { UserProvider } from "@/context/UserContext";
 
 
+
 export const metadata = {
   title: "Matcha 🍵",
   description: "Just another dating app",

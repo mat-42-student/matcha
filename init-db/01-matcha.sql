@@ -158,3 +158,7 @@ ALTER TABLE "chat" ADD FOREIGN KEY ("sender_id") REFERENCES "users" ("id");
 ALTER TABLE "chat" ADD FOREIGN KEY ("recipient_id") REFERENCES "users" ("id");
 
 ALTER TABLE "notifications" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+
+CREATE UNIQUE INDEX unique_main_picture_per_user
+ON pictures (user_id)
+WHERE is_main = true;
