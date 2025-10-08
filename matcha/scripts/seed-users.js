@@ -34,8 +34,8 @@ async function insertUser(pool) {
   const city = getRandomCity();
 
   const { rows } = await pool.query(
-    `INSERT INTO users (username, email, passwd, gender, bio, city, latitude, longitude, birthdate) VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+    `INSERT INTO users (username, email, passwd, gender, bio, city, latitude, longitude, birthdate, fame) VALUES
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
     [
       username,
       username + '@' + faker.internet.domainName(),
@@ -45,7 +45,8 @@ async function insertUser(pool) {
       city.name,
       city.lat,
       city.lon,
-      faker.date.birthdate()
+      faker.date.birthdate(),
+      Math.floor(Math.random() * 100)
     ]
   );
   return [rows[0].id, gender];

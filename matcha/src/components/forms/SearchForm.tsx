@@ -6,16 +6,16 @@ import { SearchCriteria } from "@/types";
 export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCriteria) => void }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Activation des filtres
+  // Toggle filters on/off
   const [useDistance, setUseDistance] = useState(false);
   const [useAge, setUseAge] = useState(false);
   const [useInterests, setUseInterests] = useState(false);
   const [useFame, setUseFame] = useState(false);
 
-  // Valeurs des filtres
+  // setters
   const [distance, setDistance] = useState(50);
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 99]);
-  const [interestsMode, setInterestsMode] = useState<"atLeastOne" | "custom">("atLeastOne");
+  const [interestsMode, setInterestsMode] = useState<"similar" | "custom">("similar");
   const [customInterests, setCustomInterests] = useState<string[]>([]);
   const [fame, setFame] = useState(0);
 
@@ -110,7 +110,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
           onChange={() => setUseAge(!useAge)}
           id="age-filter"
         />
-        <label htmlFor="age-filter" className="block font-medium mb-2">Âge</label>
+        <label htmlFor="age-filter" className="block font-medium mb-2">Age</label>
         <input
           type="number"
           min={18}
@@ -141,19 +141,19 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
             onChange={() => setUseInterests(!useInterests)}
             id="interests-filter"
           />
-          <label htmlFor="interests-filter" className="font-medium">Centres d'intérêt</label>
+          <label htmlFor="interests-filter" className="font-medium">Looking for people</label>
         </div>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
             <input
               type="radio"
               name="interests"
-              value="atLeastOne"
-              checked={interestsMode === "atLeastOne"}
-              onChange={() => setInterestsMode("atLeastOne")}
+              value="similar"
+              checked={interestsMode === "similar"}
+              onChange={() => setInterestsMode("similar")}
               disabled={!useInterests}
             />
-            <span>Au moins un en commun</span>
+            <span>who share my interests</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -164,7 +164,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
               onChange={() => setInterestsMode("custom")}
               disabled={!useInterests}
             />
-            <span>Parmi ceux-ci</span>
+            <span>with at least one of these interests</span>
           </label>
         </div>
         {useInterests && interestsMode === "custom" && (
@@ -193,7 +193,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
           onChange={() => setUseFame(!useFame)}
           id="fame-filter"
         />
-        <label htmlFor="fame-filter" className="block font-medium mb-2">Célébrité</label>
+        <label htmlFor="fame-filter" className="block font-medium mb-2">Fame</label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <span

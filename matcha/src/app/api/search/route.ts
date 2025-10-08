@@ -21,38 +21,40 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { distance, ageMin, ageMax, fame, interests } = body;
+    const { distance, ageRange, fame, interests, customInterests } = body;
 
     let query = `
       SELECT *
-      FROM compatible_users_from($1)
+      FROM compatible_users_from($1) AS c
       WHERE 1=1
     `;
     const params: any[] = [me.id];
 
-    if (distance) {
-      query += ` AND distance <= $${params.length + 1}`;
+    if (distance && distance < 500) {
+      query += ` AND c.distance <= $${params.length + 1}`;
       params.push(distance);
     }
-    if (ageMin) {
-      query += ` AND u.age >= $${params.length + 1}`;
-      params.push(ageMin);
-    }
-    if (ageMax) {
-      query += ` AND u.age <= $${params.length + 1}`;
-      params.push(ageMax);
+    if (ageRange) {
+      query += ` AND c.age >= $${params.length + 1}`;
+      params.push(ageRange[0]);
+      query += ` AND c.age <= $${params.length + 1}`;
+      params.push(ageRange[1]);
     }
     if (fame) {
-      query += ` AND u.fame >= $${params.length + 1}`;
-      params.push(fame);
+      query += ` AND c.fame >= $${params.length + 1}`;
+      params.push((fame - 1) * 20); // because fame is 0-100 in DB
     }
-    if (interests && interests.length > 0) {
+    if (interests === "similar") {
       query += ` AND EXISTS (
-        SELECT 1 FROM user_interests ui
-        WHERE ui.user_id = u.id
-        AND ui.interest_id = ANY($${params.length + 1})
+        SELECT 1
+        FROM user_interests ui_me
+        JOIN user_interests ui_them ON ui_them.interest_id = ui_me.interest_id
+        WHERE ui_me.user_id = $1 AND ui_them.user_id = c.id
       )`;
-      params.push(interests);
+    }
+    if (interests === "custom" && customInterests.length > 0) {
+      query += ` AND ARRAY(SELECT jsonb_array_elements_text(interests::jsonb)) && $${params.length + 1}`;
+      params.push(customInterests);
     }
 
     console.log("Executing query:", query, "with params:", params);

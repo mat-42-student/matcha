@@ -29,7 +29,7 @@ export type Picture = {
 export type SearchCriteria = {
   distance?: number;
   ageRange?: [number, number];
-  interests?: "atLeastOne" | "custom";
+  interests?: "similar" | "custom";
   customInterests?: string[];
   fame?: number;
 };
