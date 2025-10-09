@@ -53,11 +53,14 @@ export async function POST(req: Request) {
       )`;
     }
     if (interests === "custom" && customInterests.length > 0) {
-      query += ` AND ARRAY(SELECT jsonb_array_elements_text(interests::jsonb)) && $${params.length + 1}`;
+      query += ` AND (
+        SELECT ARRAY_AGG(value)
+        FROM jsonb_array_elements_text(interests::jsonb) AS t(value)
+      ) && $${params.length + 1}
+    `;
       params.push(customInterests);
     }
-
-    console.log("Executing query:", query, "with params:", params);
+    // console.log("Executing query:", query, "with params:", params);
     const result = await pool.query(query, params);
     return NextResponse.json({ users: result.rows });
   } catch (err) {

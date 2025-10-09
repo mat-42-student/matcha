@@ -19,8 +19,16 @@ export default function CardUser({
   const [open, setOpen] = useState(false);
   const [mainPic, setMainPic] = useState<Picture>({mime_type: "", data: ""});
 
-  function handleCardClick() {
+  async function handleCardClick() {
     setOpen(true);
+    try {
+      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" })
+      if (!res.ok) {
+        console.error("Could not log profile view");
+      }
+    } catch (err) {
+      console.error("Could not log profile view:", err);
+    }
   }
 
   useEffect(() => {
