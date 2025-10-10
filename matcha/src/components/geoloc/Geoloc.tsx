@@ -15,7 +15,6 @@ export default function Geoloc() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ latitude, longitude, city, country })
     });
-
   }
 
   async function locateFromBrowser(position: GeolocationPosition) {
@@ -58,6 +57,6 @@ export default function Geoloc() {
   // request location should be called in profile settings with smthing like
   // <button onClick={requestLocation}>Update my location</button>
 
-  useEffect(requestLocation, []) // this one was disabled to avoid being bored by permission popups on every page load
+  useEffect(requestLocation, []) // disable this one to avoid being bored by permission popups on every page load
   return null;
 }

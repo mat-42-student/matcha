@@ -23,6 +23,19 @@ export default function CardUserModal({
   const [pics, setPics] = useState<Picture[] >([mainPic]);
   const [current, setCurrent] = useState(0);
 
+  async function reportUser() {
+    if (confirm("Do you really want to report this user ?"))
+      await fetch(`/api/users/${user.id}/report`, {method: 'POST'})
+  }
+
+  async function blockUser() {
+    if (!confirm("Do you really want to block this user ?"))
+      return;
+    await fetch(`/api/match/${user.id}/block`, {method: 'POST'})
+    onUserUpdate && onUserUpdate();
+    onClose();
+  }
+
   function nextPic() {
     if (current <= pics.length)
       setCurrent(current + 1);
@@ -66,7 +79,7 @@ export default function CardUserModal({
             <span className="text-sm text-gray-400"> ({user.gender}) </span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600">⭐{user.fame}</span>
+          <span className="text-sm text-gray-600" title="Fame">⭐{user.fame}</span>
         </div>
 
         { pics.length !== 0 &&
@@ -104,8 +117,13 @@ export default function CardUserModal({
 
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
-
-        <LikeButton user={user} onUserUpdate={onUserUpdate}/>
+        <div className="flex justify-between border border-pink-300">
+          <LikeButton user={user} onUserUpdate={onUserUpdate}/>
+          <span className="flex">
+            <button onClick={blockUser} title="Block user" className="px-2 text-xl">⛔</button>
+            <button onClick={reportUser} title="Report user" className="px-2 text-xl">🚨</button>
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+// matcha/src/components/browse/Browse.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,14 +13,23 @@ export default function Browse({ users }: { users: PublicUser[] }) {
   const [filteredUsers, setFilteredUsers] = useState(users);
   const perPage = 12;
 
-  // useEffect(() => {
-  //   setFilteredUsers(users);
-  //   setPage(1);
-  // }, [users]);
+  useEffect(() => {
+    setFilteredUsers(users);
+    setPage(1);
+  }, [users]);
 
   const totalPages = Math.ceil(filteredUsers.length / perPage);
   const startIndex = (page - 1) * perPage;
   const currentUsers = filteredUsers.slice(startIndex, startIndex + perPage);
+
+  async function handleBlockUser() {
+    const res = await fetch(`/api/users/compatible`)
+    if (!res.ok) {
+      console.error("Could not refresh user list after block");
+      return;
+    }
+    setFilteredUsers(await res.json());
+  }
 
   function nextPage() {
     if (page < totalPages) setPage(page + 1);
@@ -37,7 +48,7 @@ export default function Browse({ users }: { users: PublicUser[] }) {
       <FilterBar users={users} onChange={setFilteredUsers} />
       <div className="flex flex-wrap justify-center">
         {currentUsers.map((u) => (
-          <CardUser key={u.username} user={u} />
+          <CardUser key={u.username} user={u} onUserUpdate={handleBlockUser}/>
         ))}
       </div>
 

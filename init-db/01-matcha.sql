@@ -156,16 +156,32 @@ AS $$
     u.age,
     u.interests,
     u.fame,
-    ceil(earth_distance(ll_to_earth(me.latitude, me.longitude), ll_to_earth(u.latitude, u.longitude)) / 1000)::int AS distance
+    ceil(
+      earth_distance(
+        ll_to_earth(me.latitude, me.longitude),
+        ll_to_earth(u.latitude, u.longitude)
+      ) / 1000
+    )::int AS distance
   FROM users_with_interests u
   JOIN users me ON me.id = ref_user_id
   WHERE
     u.id <> me.id
     AND (
-      (me.sex_pref = 'B' OR me.sex_pref = u.gender)
+      me.sex_pref = 'B' OR me.sex_pref = u.gender
     )
     AND (
-      (u.sex_pref = 'B' OR u.sex_pref = me.gender)
+      u.sex_pref = 'B' OR u.sex_pref = me.gender
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM matches m
+      WHERE
+        (
+          (m.user1_id = ref_user_id AND m.user2_id = u.id)
+          OR
+          (m.user1_id = u.id AND m.user2_id = ref_user_id)
+        )
+        AND m.status = 'block'
     );
 $$ LANGUAGE sql STABLE;
 

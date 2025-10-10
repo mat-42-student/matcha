@@ -20,9 +20,21 @@ export async function GET() {
     }
 
     const { rows: likedBy } = await pool.query(`
-      SELECT *, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude))/1000) AS distance
-      FROM users_who_like_me
+      SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude))/1000) AS distance
+      FROM users_who_like_me u
       WHERE me = $3
+      AND NOT EXISTS (
+      SELECT 1
+      FROM matches m
+      WHERE
+        (
+          (m.user1_id = $3 AND m.user2_id = u.id)
+          OR
+          (m.user1_id = u.id AND m.user2_id = $3)
+        )
+        AND m.status = 'block'
+    );
+
     `,
     [me.latitude, me.longitude, me.id]);
     return NextResponse.json(likedBy);
