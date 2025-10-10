@@ -60,8 +60,9 @@ export default function CardUser({
               {user.username}
             </span>
             <span className="text-sm text-gray-400"> ({user.gender})</span>
+            <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600">{user.age} ans</span>
+          <span className="text-sm text-gray-600">⭐{user.fame}</span>
         </div>
 
         <div className="flex justify-center">

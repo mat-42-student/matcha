@@ -11,10 +11,10 @@ export default function Browse({ users }: { users: PublicUser[] }) {
   const [filteredUsers, setFilteredUsers] = useState(users);
   const perPage = 12;
 
-  useEffect(() => {
-    setFilteredUsers(users);
-    setPage(1);
-  }, [users]);
+  // useEffect(() => {
+  //   setFilteredUsers(users);
+  //   setPage(1);
+  // }, [users]);
 
   const totalPages = Math.ceil(filteredUsers.length / perPage);
   const startIndex = (page - 1) * perPage;

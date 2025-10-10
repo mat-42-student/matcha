@@ -58,17 +58,16 @@ export default function CardUserModal({
         className="bg-white rounded-lg p-6 w-96 relative"
         onClick={(e) => e.stopPropagation()}
       >
-      <div className="flex justify-between items-center mb-2">
-        <div>
-          <span className="text-xl text-pink-700 font-semibold">
-            {user.username}
-          </span>
-          <span className="text-sm text-gray-400"> ({user.gender})</span>
+        <div className="flex justify-between items-center mb-2">
+          <div>
+            <span className="text-xl text-pink-700 font-semibold">
+              {user.username}
+            </span>
+            <span className="text-sm text-gray-400"> ({user.gender}) </span>
+            <span className="text-sm text-gray-600">{user.age} ans</span>
+          </div>
+          <span className="text-sm text-gray-600">⭐{user.fame}</span>
         </div>
-        <span className="text-sm text-gray-600">
-          {user.age} ans
-        </span>
-      </div>
 
         { pics.length !== 0 &&
           <>

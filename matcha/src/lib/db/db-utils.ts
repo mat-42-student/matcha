@@ -13,9 +13,23 @@ export const pool =
     password: process.env.POSTGRES_PASSWORD,
     port: parseInt(process.env.POSTGRES_PORT || '5432'),
   });
+  if (process.env.NODE_ENV !== "production") {
+    global.cachedPool = pool;
+}
 
-if (process.env.NODE_ENV !== "production") {
-  global.cachedPool = pool;
+export async function addFame(score: number, userId: string) {
+  try {
+    const query = `
+      UPDATE users
+      SET fame = LEAST(100, GREATEST(0, fame + $1))
+      WHERE id = $2;`;
+    const res = await pool.query(query, [score, userId]);
+    return res.rowCount === 1;
+  }
+  catch (err) {
+    console.error("Error updating fame:", err);
+    return false;
+  }
 }
 
 export async function executeQuery<T extends QueryResultRow>(

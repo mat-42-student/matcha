@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
-import { pool } from "@/lib/db/db-utils";
+import { pool, addFame } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
 
 export async function POST(
@@ -24,12 +24,15 @@ export async function POST(
     }
 
     const query = `
-        INSERT INTO views (user_id, seen_by)
-        VALUES ($1, $2)
-        ON CONFLICT (user_id, seen_by)
-        DO UPDATE SET created_at = CURRENT_TIMESTAMP;
+      INSERT INTO views (user_id, seen_by)
+      VALUES ($1, $2)
+      ON CONFLICT (user_id, seen_by)
+      DO UPDATE SET created_at = CURRENT_TIMESTAMP
+      RETURNING (xmax = 0) AS inserted;
     `;
-    await pool.query(query, [userId, seen_by.id]);
+    const res = await pool.query(query, [userId, seen_by.id]);
+    if (res.rows[0]?.inserted) // only increase fame if it's a new view
+      await addFame(1, userId);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
