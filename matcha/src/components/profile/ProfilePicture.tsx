@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { Edit2 } from "lucide-react";
 import { ProfilePicturesModal } from "./ProfilePicturesModal";
@@ -10,35 +10,30 @@ export default function ProfilePicture({ userId }: { userId: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
-    async function fetchMainPic() {
-      try {
-
-        const res = await fetch(`/api/me/pictures/main`);
-   
-        if (res.status === 204) {
-          setMainPic(null);
-          return;
-        }
-
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-
-        if (data?.data) {
-          setMainPic(`data:${data.mime_type};base64,${data.data}`);
-        }
-      } catch (err) {
-        console.error("Erreur lors du chargement de la photo :", err);
-        setHasError(true);
+  const fetchMainPic = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/me/pictures/main`);
+      if (res.status === 204) {
+        setMainPic(null);
+        return;
       }
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      if (data?.data) {
+        setMainPic(`data:${data.mime_type};base64,${data.data}`);
+      }
+    } catch (err) {
+      console.error("Erreur lors du chargement de la photo :", err);
+      setHasError(true);
     }
+  }, []);
+
+  useEffect(() => {
     fetchMainPic();
-  }, [userId]);
+  }, [fetchMainPic, userId]);
 
   const imageSrc =
-    !hasError && mainPic
-      ? mainPic
-      : "/avatars/default.svg";
+    !hasError && mainPic ? mainPic : "/avatars/default.svg";
 
   return (
     <div
@@ -68,6 +63,7 @@ export default function ProfilePicture({ userId }: { userId: string }) {
         <ProfilePicturesModal
           userId={userId}
           onClose={() => setIsModalOpen(false)}
+          onUpdated={fetchMainPic}
         />
       )}
     </div>

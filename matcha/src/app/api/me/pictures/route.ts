@@ -36,26 +36,38 @@ export async function POST(req: Request) {
 
   const user = await getSessionUser(sessionId);
   if (!user)
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 401 });
+    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 400 });
 
   const formData = await req.formData();
   const file = formData.get("file") as File;
   if (!file)
     return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 });
 
+
+const countResult = await pool.query(
+  'SELECT COUNT(*) FROM pictures WHERE user_id = $1',
+  [user.id]
+);
+
+if (parseInt(countResult.rows[0].count) >= 5) {
+  return NextResponse.json(
+    { error: "you cannot add add more than 5 photos at a time" },
+    { status: 400 }
+  );
+}
+
   const buffer = Buffer.from(await file.arrayBuffer());
   const mimeType = file.type || "image/jpeg";
 
-  // 🧠 Vérifier si l'utilisateur a déjà une photo principale
+  // verify if it the first picture in order to make it main
   const { rows: existingMain } = await pool.query(
     `SELECT id FROM pictures WHERE user_id = $1 AND is_main = true`,
     [user.id]
   );
 
-  // Si aucune photo principale n'existe, celle-ci le devient automatiquement
   const isMain = existingMain.length === 0;
 
-  // 📸 Insérer la nouvelle photo
+  // insert the new picture
   const result = await pool.query(
     `INSERT INTO pictures (user_id, data, mime_type, is_main)
      VALUES ($1, $2, $3, $4)

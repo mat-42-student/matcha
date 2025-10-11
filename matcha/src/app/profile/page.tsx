@@ -1,8 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/db/session";
-import ProfileForm from "@/components/forms/ProfileForm";
-import ProfilePicture from "@/components/profile/ProfilePicture";
+import ProfileTabs from "@/components/profile/ProfileTabs";
 
 async function getCurrentUser() {
 	const cookieStore = await cookies();
@@ -19,6 +18,8 @@ async function getCurrentUser() {
 }
 
 export default async function ProfilePage() {
+  // ⚠️ Cette partie dépend de ton système d’authentification
+  // Si tu as déjà une session côté serveur, tu peux faire :
 	const user = await getCurrentUser();
 
 	if (!user) {
@@ -26,10 +27,9 @@ export default async function ProfilePage() {
 	}
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center">My profile</h1>
-            <ProfilePicture userId={user.id} />
-      <ProfileForm user={user} />
-    </div>
+    <main className="min-h-screen bg-pink-50 flex flex-col items-center py-10">
+      {/* Photo principale + onglets */}
+      <ProfileTabs user={user} />
+    </main>
   );
 }

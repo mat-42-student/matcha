@@ -9,7 +9,6 @@ export interface EmailVerification {
   created_at: Date;
 }
 
-// ➕ Créer un token de vérification
 export async function createEmailVerification(user_id: string, token: string, expiresAt: Date): Promise<EmailVerification> {
   const query = `
     INSERT INTO email_verifications (user_id, token, expires_at)
@@ -20,7 +19,7 @@ export async function createEmailVerification(user_id: string, token: string, ex
   return result.rows[0];
 }
 
-// 🔍 Récupérer un token par valeur
+
 export async function getEmailVerificationByToken(token: string): Promise<EmailVerification | null> {
   const query = `SELECT * FROM email_verifications WHERE token = $1`;
   const result = await executeQuery<EmailVerification>(query, [token]);

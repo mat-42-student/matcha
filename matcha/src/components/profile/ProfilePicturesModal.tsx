@@ -5,7 +5,15 @@ import Image from "next/image";
 import { X, Star, Trash2, Upload } from "lucide-react";
 import toast, { Toaster } from 'react-hot-toast';
 
-export function ProfilePicturesModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+export function ProfilePicturesModal({
+  userId,
+  onClose,
+  onUpdated,
+}: {
+  userId: string;
+  onClose: () => void;
+  onUpdated?: () => void;
+}) {
     const [pictures, setPictures] = useState<any[]>([]);
 
     const fetchPics = async () => {
@@ -42,19 +50,17 @@ export function ProfilePicturesModal({ userId, onClose }: { userId: string; onCl
             });
 
             if (res.ok) {
-            const newPic = await res.json();
-
-            setPictures((prev) => [newPic, ...prev]);
-
-            e.target.value = "";
-
-            toast.success("Photo ajoutée !");
+                const newPic = await res.json();
+                setPictures((prev) => [newPic, ...prev]);
+                e.target.value = "";
+                toast.success("Photo added !");
+                onUpdated && onUpdated();
             } else {
-            toast.error("Erreur lors de l'upload de la photo");
+                toast.error("Erreur during picture upload");
             }
         } catch (error) {
             console.error(error);
-            toast.error("Erreur réseau lors de l'upload");
+            toast.error("Network error during upload");
         }
     };
 
@@ -62,14 +68,15 @@ export function ProfilePicturesModal({ userId, onClose }: { userId: string; onCl
     try {
         const res = await fetch(`/api/me/pictures/${id}`, { method: "DELETE" });
         if (res.ok) {
-        toast.success("Photo supprimée !");
+        toast.success("Photo deleted !");
         await fetchPics();
+        onUpdated && onUpdated();
         } else {
-        toast.error("Erreur lors de la suppression !");
+        toast.error("Error during suppression !");
         }
     } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau !");
+        toast.error("Network error !");
     }
     };
 
@@ -80,14 +87,15 @@ export function ProfilePicturesModal({ userId, onClose }: { userId: string; onCl
         });
 
         if (res.ok) {
-        toast.success("Photo principale mise à jour !");
+        toast.success("Main picture updated !");
         await fetchPics();
+        onUpdated && onUpdated();
         } else {
-        toast.error("Erreur lors de la mise à jour !");
+        toast.error("Error during update !");
         }
     } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau !");
+        toast.error("Network error !");
     }
     };
 
