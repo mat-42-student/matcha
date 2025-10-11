@@ -24,8 +24,19 @@ export async function GET() {
     FROM views v
     JOIN users_with_interests u ON u.id = v.seen_by
     WHERE v.user_id = $3
-    ORDER BY v.created_at DESC
-    LIMIT 10;`, [me.latitude, me.longitude, me.id]);
+      AND NOT EXISTS (
+        SELECT 1
+        FROM matches m
+        WHERE
+          (
+            (m.user1_id = $3 AND m.user2_id = u.id)
+            OR
+            (m.user1_id = u.id AND m.user2_id = $3)
+          )
+          AND m.status = 'block'
+      )
+    ORDER BY v.created_at DESC;
+    `, [me.latitude, me.longitude, me.id]);
     return NextResponse.json(stalkers);
   } catch (err) {
       console.error(err);

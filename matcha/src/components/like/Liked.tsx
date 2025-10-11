@@ -16,7 +16,7 @@ export default function Liked() {
 
   return (
     <div className="p-4">
-      <Browse users={users}/>
+      <Browse users={users} refreshList={fetchUsers}/>
     </div>
   );
 }
