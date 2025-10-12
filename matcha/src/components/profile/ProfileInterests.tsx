@@ -9,13 +9,12 @@ interface Interest {
   name: string;
 }
 
-export default function ProfileInterests({ user }: { user: any }) {
+export default function ProfileInterests({ user, onUserUpdate }: { user: any, onUserUpdate?: (updates: Partial<any>) => void }) {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // 🔹 Charger tous les intérêts et ceux de l'utilisateur
   useEffect(() => {
     async function fetchData() {
       try {
@@ -39,7 +38,6 @@ export default function ProfileInterests({ user }: { user: any }) {
     fetchData();
   }, []);
 
-  // 🔹 Toggle d’un intérêt
   const toggleInterest = (id: number) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -47,7 +45,6 @@ export default function ProfileInterests({ user }: { user: any }) {
     setHasChanges(true);
   };
 
-  // 🔹 Sauvegarde
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -65,6 +62,7 @@ export default function ProfileInterests({ user }: { user: any }) {
         console.log("should send a toast");
         toast.success("Interests updated !");
         setHasChanges(false);
+        onUserUpdate && onUserUpdate({ interests: selected });
       } else {
         toast.error("Error during saving");
       }
@@ -80,7 +78,7 @@ export default function ProfileInterests({ user }: { user: any }) {
     <div className="bg-white p-6 rounded-xl shadow-sm">
       <h2 className="text-lg font-semibold mb-4">Vos intérêts</h2>
 
-      {/* Liste d’intérêts */}
+      {/* interests list */}
       <div className="flex flex-wrap gap-2">
         {interests.map((interest) => {
           const active = selected.includes(interest.id);
@@ -107,7 +105,7 @@ export default function ProfileInterests({ user }: { user: any }) {
             disabled={loading}
             className="bg-pink-500 hover:bg-pink-600 text-white rounded-full"
           >
-            {loading ? "Sauvegarde..." : "Confirmer"}
+            {loading ? "saving..." : "Confirm"}
           </Button>
         </div>
       )}

@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { Edit2 } from "lucide-react";
+import toast from 'react-hot-toast';
 
-export default function ProfileForm({ user }: { user: any }) {
+export default function ProfileForm({ user, onUserUpdate }: { user: any, onUserUpdate?: (updates: Partial<any>) => void }) {
   const [formData, setFormData] = useState({
     username: user.username || "",
     email: user.email || "",
@@ -17,17 +18,27 @@ export default function ProfileForm({ user }: { user: any }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
     const res = await fetch("/api/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
     });
 
-    if (res.ok) alert("Profil mis à jour ✅");
-    else alert("Erreur lors de la mise à jour ❌");
-  };
+    if (!res.ok) throw new Error("Erreur de mise à jour");
+
+    onUserUpdate && onUserUpdate(formData);
+
+    toast.success("Profile updated !");
+    setEditingField(null);
+  } catch (err) {
+    console.error(err);
+    toast.error("Error during update");
+  }
+};
 
   const renderRow = (label: string, name: string, type: "text" | "textarea" | "select" = "text") => {
     const isEditing = editingField === name;

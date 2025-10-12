@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import toast from "react-hot-toast";
 
 interface ProfileGeolocProps {
   city?: string;
@@ -14,6 +15,7 @@ interface ProfileGeolocProps {
     latitude: number | null;
     longitude: number | null;
   }) => void;
+  onUserUpdate?: (updates: Partial<any>) => void;
 }
 
 export default function ProfileGeoloc({
@@ -22,6 +24,7 @@ export default function ProfileGeoloc({
   latitude: initialLat = null,
   longitude: initialLon = null,
   onChange,
+  onUserUpdate,
 }: ProfileGeolocProps) {
   const [useGeoloc, setUseGeoloc] = useState(false);
   const [cityInput, setCityInput] = useState(initialCity);
@@ -34,34 +37,17 @@ export default function ProfileGeoloc({
 
   const { requestLocation, location, loading } = useGeolocation();
 
-  const handleCityLookup = async () => {
-    if (!cityInput) return;
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(
-        cityInput
-      )}&format=json&limit=1`
-    );
-    const data = await res.json();
-    if (!data.length) {
-      alert("Ville introuvable ❌");
-      return;
-    }
-    const result = data[0];
-    const newData = {
-      city: cityInput,
-      latitude: parseFloat(result.lat),
-      longitude: parseFloat(result.lon),
-      country: result.display_name.split(",").pop() || "",
-    };
-    setFormData(newData);
-    onChange?.(newData);
-    alert("Ville validée ✅");
-  };
-
+  // 🧭 Quand on clique sur "Me géolocaliser"
   const handleGeoloc = async () => {
-    requestLocation();
+    try {
+      await requestLocation();
+    } catch (err) {
+      console.error(err);
+      toast.error("Impossible d'obtenir la position.");
+    }
   };
 
+  // 🌍 Quand la position change (via hook)
   useEffect(() => {
     if (useGeoloc && location.latitude && location.longitude) {
       const newData = {
@@ -70,10 +56,64 @@ export default function ProfileGeoloc({
         latitude: location.latitude,
         longitude: location.longitude,
       };
-      setFormData(newData);
-      onChange?.(newData);
+      saveAndUpdate(newData);
     }
   }, [location, useGeoloc]);
+
+  // 🏙️ Quand on saisit manuellement une ville
+  const handleCityLookup = async () => {
+    if (!cityInput) return toast.error("Veuillez entrer une ville.");
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(
+          cityInput
+        )}&format=json&limit=1`
+      );
+      const data = await res.json();
+      if (!data.length) return toast.error("Ville introuvable ❌");
+
+      const result = data[0];
+      const newData = {
+        city: cityInput,
+        latitude: parseFloat(result.lat),
+        longitude: parseFloat(result.lon),
+        country: result.display_name.split(",").pop() || "",
+      };
+      saveAndUpdate(newData);
+      toast.success("Ville mise à jour ✅");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur lors de la recherche de la ville.");
+    }
+  };
+
+  // 💾 Fonction centrale pour enregistrer + notifier
+  const saveAndUpdate = async (newData: {
+    city: string;
+    country: string;
+    latitude: number | null;
+    longitude: number | null;
+  }) => {
+    setFormData(newData);
+
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newData),
+      });
+
+      if (!res.ok) throw new Error("Erreur lors de la mise à jour du profil");
+      toast.success("Profil géolocalisé mis à jour ✅");
+
+      // 🔁 On notifie le parent
+      onChange?.(newData);
+      onUserUpdate?.(newData);
+    } catch (err) {
+      console.error(err);
+      toast.error("Impossible de sauvegarder la localisation ❌");
+    }
+  };
 
   return (
     <div className="py-4 border-b text-gray-900">

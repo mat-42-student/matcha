@@ -4,7 +4,12 @@ import Image from "next/image";
 import { Edit2 } from "lucide-react";
 import { ProfilePicturesModal } from "./ProfilePicturesModal";
 
-export default function ProfilePicture({ userId }: { userId: string }) {
+interface ProfilePictureProps {
+  userId: string;
+  onUpdated?: () => void; // ✅ callback externe
+}
+
+export default function ProfilePicture({ userId, onUpdated }: ProfilePictureProps) {
   const [mainPic, setMainPic] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,8 +37,12 @@ export default function ProfilePicture({ userId }: { userId: string }) {
     fetchMainPic();
   }, [fetchMainPic, userId]);
 
-  const imageSrc =
-    !hasError && mainPic ? mainPic : "/avatars/default.svg";
+  const handleUpdated = useCallback(() => {
+    fetchMainPic();
+    onUpdated?.();
+  }, [fetchMainPic, onUpdated]);
+
+  const imageSrc = !hasError && mainPic ? mainPic : "/avatars/default.svg";
 
   return (
     <div
@@ -63,7 +72,7 @@ export default function ProfilePicture({ userId }: { userId: string }) {
         <ProfilePicturesModal
           userId={userId}
           onClose={() => setIsModalOpen(false)}
-          onUpdated={fetchMainPic}
+          onUpdated={handleUpdated} // ✅ combine les deux logiques
         />
       )}
     </div>
