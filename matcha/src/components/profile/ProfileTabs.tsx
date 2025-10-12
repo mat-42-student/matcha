@@ -55,7 +55,7 @@ export default function ProfileTabs({
         <ProfilePictures userId={user.id} onUpdated={refreshCompletion} />
       </div>
 
-      {/* --- Barre de complétion --- */}
+      {/* --- Completion bar --- */}
       <ProfileCompletionBar percentage={completion.percentage} />
       <ProfileMissingElements
         required={completion.missingRequired}
@@ -85,7 +85,6 @@ export default function ProfileTabs({
         </TabsContent>
 
         <TabsContent value="interests">
-          {/* 👇 On peut aussi rafraîchir après mise à jour des intérêts */}
           <ProfileInterests user={user} onUserUpdate={handleUserUpdate} />
         </TabsContent>
       </Tabs>

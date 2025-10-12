@@ -1,51 +1,86 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Edit2 } from "lucide-react";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
-export default function ProfileForm({ user, onUserUpdate }: { user: any, onUserUpdate?: (updates: Partial<any>) => void }) {
-  const [formData, setFormData] = useState({
-    username: user.username || "",
-    email: user.email || "",
-    sex_pref: user.sex_pref || "",
-    bio: user.bio || "",
-    gender: user.gender || "",
-  });
+export default function ProfileForm({
+  user,
+  onUserUpdate,
+}: {
+  user: any;
+  onUserUpdate?: (updates: Partial<any>) => void;
+}) {
+  const initialData = useMemo(
+    () => ({
+      username: user.username || "",
+      email: user.email || "",
+      sex_pref: user.sex_pref || "",
+      bio: user.bio || "",
+      gender: user.gender || "",
+    }),
+    [user]
+  );
 
+  const [formData, setFormData] = useState(initialData);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // 🔄 Met à jour formData si le user change (ex: rechargement après sauvegarde)
+  useEffect(() => {
+    setFormData(initialData);
+    setHasUnsavedChanges(false);
+  }, [initialData]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // Vérifie s’il y a une différence avec les données initiales
+      const modified =
+        Object.keys(initialData).some((key) => updated[key as keyof typeof updated] !== initialData[key as keyof typeof initialData]);
+
+      setHasUnsavedChanges(modified);
+      return updated;
+    });
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    if (!res.ok) throw new Error("Erreur de mise à jour");
+      if (!res.ok) throw new Error("Erreur de mise à jour");
 
-    onUserUpdate && onUserUpdate(formData);
+      onUserUpdate?.(formData);
+      toast.success("Profil mis à jour ✅");
 
-    toast.success("Profile updated !");
-    setEditingField(null);
-  } catch (err) {
-    console.error(err);
-    toast.error("Error during update");
-  }
-};
+      // Réinitialise les états
+      setEditingField(null);
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur pendant la mise à jour");
+    }
+  };
 
-  const renderRow = (label: string, name: string, type: "text" | "textarea" | "select" = "text") => {
+  const renderRow = (
+    label: string,
+    name: string,
+    type: "text" | "textarea" | "select" = "text"
+  ) => {
     const isEditing = editingField === name;
     return (
       <div className="flex items-center justify-between py-4 border-b text-gray-900">
         <div className="flex-1 flex items-center">
-          <span className="font-medium">{label}: </span>
+          <span className="font-medium">{label}:</span>
           {isEditing ? (
             type === "textarea" ? (
               <textarea
@@ -88,7 +123,14 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
         <button
           type="button"
-          onClick={() => setEditingField(isEditing ? null : name)}
+          onClick={() => {
+            if (hasUnsavedChanges && editingField && editingField !== name) {
+              toast.error("Save before leave");
+              return;
+            }
+
+            setEditingField(isEditing ? null : name);
+          }}
           className="ml-4 h-10 w-10 flex items-center justify-center bg-pink-100 hover:bg-pink-200 rounded-full"
         >
           <Edit2 className="text-pink-600" size={20} />
@@ -99,13 +141,16 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      {renderRow("Nom d’utilisateur", "username")}
+      {renderRow("Username", "username")}
       {renderRow("Email", "email")}
-      {renderRow("Préférence sexuelle", "sex_pref", "select")}
+      {renderRow("Sexual preference", "sex_pref", "select")}
       {renderRow("Bio", "bio", "textarea")}
 
-      {editingField && (
-        <button type="submit" className="mt-6 px-4 py-2 rounded-full bg-pink-600 text-white font-semibold">
+      {hasUnsavedChanges && (
+        <button
+          type="submit"
+          className="mt-6 px-4 py-2 rounded-full bg-pink-600 text-white font-semibold"
+        >
           Sauvegarder
         </button>
       )}
