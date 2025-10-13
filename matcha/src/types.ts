@@ -19,9 +19,20 @@ export type PublicUser = {
   age: number;
   sex_pref: string;
   interests: string[];
+  fame: number;
 };
 
 export type Picture = {
   mime_type: string;
   data: string;
 }
+
+export type SearchCriteria = {
+  distance?: number;
+  ageRange?: [number, number];
+  interests?: "similar" | "custom";
+  customInterests?: string[];
+  fame?: number;
+};
+
+export type LikeTabsTypes = "visitors" | "liked" | "likeMe" | "matches"

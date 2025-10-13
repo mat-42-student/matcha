@@ -26,13 +26,13 @@ export default function LikeButton({
 
   async function handleLike(e: React.MouseEvent) {
     e.stopPropagation();
-    let url = '';
+    let method = '';
     if (!liked)
-      url = `/api/match/${user.id}/like`;
+      method = 'POST';
     else
-      url = `/api/match/${user.id}/unlike`;
+      method = 'DELETE';
     try {
-      const res = await fetch(url, { method: "POST" });
+      const res = await fetch(`/api/match/${user.id}/like`, { method: method });
       if (res.status === 204){
         setDisabled(true);
         return;
@@ -51,7 +51,7 @@ export default function LikeButton({
   useEffect(() => {
     async function fetchLikeStatus() {
       try {
-        const res = await fetch(`/api/match/${user.id}/status`);
+        const res = await fetch(`/api/match/${user.id}/like`, { method: 'GET' });
         const data = await res.json();
         if (data.status === "like") {
           setLiked(true);

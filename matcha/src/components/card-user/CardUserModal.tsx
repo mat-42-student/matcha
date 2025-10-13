@@ -23,6 +23,19 @@ export default function CardUserModal({
   const [pics, setPics] = useState<Picture[] >([mainPic]);
   const [current, setCurrent] = useState(0);
 
+  async function reportUser() {
+    if (confirm("Do you really want to report this user ?"))
+      await fetch(`/api/users/${user.id}/report`, {method: 'POST'})
+  }
+
+  async function blockUser() {
+    if (!confirm("Do you really want to block this user ?"))
+      return;
+    await fetch(`/api/match/${user.id}/block`, {method: 'POST'})
+    onUserUpdate && onUserUpdate();
+    onClose();
+  }
+
   function nextPic() {
     if (current <= pics.length)
       setCurrent(current + 1);
@@ -58,17 +71,16 @@ export default function CardUserModal({
         className="bg-white rounded-lg p-6 w-96 relative"
         onClick={(e) => e.stopPropagation()}
       >
-      <div className="flex justify-between items-center mb-2">
-        <div>
-          <span className="text-xl text-pink-700 font-semibold">
-            {user.username}
-          </span>
-          <span className="text-sm text-gray-400"> ({user.gender})</span>
+        <div className="flex justify-between items-center mb-2">
+          <div>
+            <span className="text-xl text-pink-700 font-semibold">
+              {user.username}
+            </span>
+            <span className="text-sm text-gray-400"> ({user.gender}) </span>
+            <span className="text-sm text-gray-600">{user.age} ans</span>
+          </div>
+          <span className="text-sm text-gray-600" title="Fame">⭐{user.fame}</span>
         </div>
-        <span className="text-sm text-gray-600">
-          {user.age} ans
-        </span>
-      </div>
 
         { pics.length !== 0 &&
           <>
@@ -105,8 +117,13 @@ export default function CardUserModal({
 
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
-
-        <LikeButton user={user} onUserUpdate={onUserUpdate}/>
+        <div className="flex justify-between border border-pink-300">
+          <LikeButton user={user} onUserUpdate={onUserUpdate}/>
+          <span className="flex">
+            <button onClick={blockUser} title="Block user" className="px-2 text-xl">⛔</button>
+            <button onClick={reportUser} title="Report user" className="px-2 text-xl">🚨</button>
+          </span>
+        </div>
       </div>
     </div>
   );

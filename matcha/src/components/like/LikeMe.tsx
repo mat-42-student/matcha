@@ -26,7 +26,7 @@ export default function LikeMe() {
 
   return (
     <div className="p-4">
-      <Browse users={users}/>
+      <Browse users={users} refreshList={fetchLikeMe}/>
     </div>
   );
 }

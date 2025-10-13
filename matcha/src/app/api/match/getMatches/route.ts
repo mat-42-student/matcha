@@ -26,7 +26,18 @@ export async function GET() {
         ON uwi.id IN (m.user1_id, m.user2_id)
       WHERE m.status = 'match'
         AND $3 IN (m.user1_id, m.user2_id)
-        AND uwi.id <> $3;
+        AND uwi.id <> $3
+        AND NOT EXISTS (
+          SELECT 1
+          FROM matches m
+          WHERE
+            (
+              (m.user1_id = $3 AND m.user2_id = uwi.id)
+              OR
+              (m.user1_id = uwi.id AND m.user2_id = $3)
+            )
+            AND m.status = 'block'
+        );
       `, [me.latitude, me.longitude, me.id]);
     return NextResponse.json(matches);
   } catch (err) {

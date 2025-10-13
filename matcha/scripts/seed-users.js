@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import fs from "fs";
 import path from "path";
 
-const MIN_USERS = 10;
+const MIN_USERS = 20;
 const API_KEY = process.env.PIX_KEY;
 const filePath = path.join(process.cwd(), "src/data/fr-cities.json");
 const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
@@ -35,8 +35,8 @@ async function insertUser(pool) {
   const city = getRandomCity();
 
   const { rows } = await pool.query(
-    `INSERT INTO users (username, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate) VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+    `INSERT INTO users (username, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
     [
       username,
       username + '@' + faker.internet.domainName(),
@@ -47,7 +47,8 @@ async function insertUser(pool) {
       city.name,
       city.lat,
       city.lon,
-      faker.date.birthdate()
+      faker.date.birthdate(),
+      Math.floor(Math.random() * 100)
     ]
   );
   return [rows[0].id, gender];

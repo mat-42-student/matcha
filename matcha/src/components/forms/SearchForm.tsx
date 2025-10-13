@@ -1,36 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-type SearchCriteria = {
-  gender: "male" | "female" | "any";
-  distance: number;
-  ageRange: [number, number];
-  interests: "atLeastOne" | "custom";
-  customInterests: string[];
-  fame: number;
-};
+import { SearchCriteria } from "@/types";
 
 export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCriteria) => void }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  const [gender, setGender] = useState<SearchCriteria["gender"]>("any");
+  // Toggle filters on/off
+  const [useDistance, setUseDistance] = useState(false);
+  const [useAge, setUseAge] = useState(false);
+  const [useInterests, setUseInterests] = useState(false);
+  const [useFame, setUseFame] = useState(false);
+
+  // setters
   const [distance, setDistance] = useState(50);
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 99]);
-  const [interestsMode, setInterestsMode] = useState<"atLeastOne" | "custom">("atLeastOne");
+  const [interestsMode, setInterestsMode] = useState<"similar" | "custom">("similar");
   const [customInterests, setCustomInterests] = useState<string[]>([]);
   const [fame, setFame] = useState(0);
 
   const [allInterests, setAllInterests] = useState<string[]>([]);
 
-  // Charger la liste des intérêts depuis ton API
   useEffect(() => {
     async function fetchInterests() {
       try {
         const res = await fetch("/api/interests");
         if (!res.ok) throw new Error("Failed to fetch interests");
         const data = await res.json();
-        // ⚠️ j’imagine que ton API renvoie un tableau d’objets { id, name }
         const names = data.map((i: any) => i.name);
         setAllInterests(names);
       } catch (err) {
@@ -42,7 +38,14 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const criteria: SearchCriteria = { gender, distance, ageRange, interests: interestsMode, customInterests, fame };
+    const criteria: SearchCriteria = {};
+    if (useDistance) criteria.distance = distance;
+    if (useAge) criteria.ageRange = ageRange;
+    if (useInterests) {
+      criteria.interests = interestsMode;
+      criteria.customInterests = customInterests;
+    }
+    if (useFame) criteria.fame = fame;
     onSubmit(criteria);
     setCollapsed(true);
   }
@@ -58,7 +61,6 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
         className="p-3 bg-blue-50 border rounded flex items-center text-sm text-black"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <span className="mr-2">👤 {gender === "any" ? "Both" : gender}</span>
         <span className="mr-2">📍 {distance === 500 ? "500+ km" : `${distance} km`}</span>
         <span className="mr-2">🎂 {ageRange[0]} - {ageRange[1]} </span>
         <span className="mr-2">⭐ {fame > 0 ? `${fame}+` : "All"}</span>
@@ -72,27 +74,21 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 p-4 max-w-md mx-auto bg-white -md rounded-2xl text-black"
+      className="space-y-6 p-4 max-w-md mx-auto bg-white rounded-2xl text-black"
     >
-      {/* Gender */}
-      <div>
-        <label className="block font-medium mb-2"
-               onClick={() => setCollapsed(!collapsed)}
-        >Gender</label>
-        <select
-          value={gender}
-          onChange={(e) => setGender(e.target.value as any)}
-          className="w-full border rounded p-2"
-        >
-          <option value="any">Both</option>
-          <option value="male">Men</option>
-          <option value="female">Women</option>
-        </select>
+      <div className="flex justify-between">
+        <button onClick={() => setCollapsed(!collapsed)}>🔺</button>
+        <span>Advanced search</span>
       </div>
-
       {/* Distance */}
-      <div>
-        <label className="block font-medium mb-2">Distance (km)</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={useDistance}
+          onChange={() => setUseDistance(!useDistance)}
+          id="distance-filter"
+        />
+        <label htmlFor="distance-filter" className="block font-medium mb-2">Distance (km)</label>
         <input
           type="range"
           min="0"
@@ -100,47 +96,64 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
           step="5"
           value={distance}
           onChange={(e) => setDistance(Number(e.target.value))}
-          className="w-full"
+          className="flex-1"
+          disabled={!useDistance}
         />
-        <p className="text-sm mt-1">{distance === 500 ? "500+ km" : `${distance} km`}</p>
+        <span className="text-sm ml-2">{distance === 500 ? "500+ km" : `${distance} km`}</span>
       </div>
 
       {/* Age */}
-      <div>
-        <label className="block font-medium mb-2">Age</label>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            min={18}
-            max={ageRange[1]}
-            value={ageRange[0]}
-            onChange={(e) => setAgeRange([+e.target.value, ageRange[1]])}
-            className="w-1/2 border rounded p-2"
-          />
-          <input
-            type="number"
-            min={ageRange[0]}
-            max={99}
-            value={ageRange[1]}
-            onChange={(e) => setAgeRange([ageRange[0], +e.target.value])}
-            className="w-1/2 border rounded p-2"
-          />
-        </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={useAge}
+          onChange={() => setUseAge(!useAge)}
+          id="age-filter"
+        />
+        <label htmlFor="age-filter" className="block font-medium mb-2">Age</label>
+        <input
+          type="number"
+          min={18}
+          max={ageRange[1]}
+          value={ageRange[0]}
+          onChange={(e) => setAgeRange([+e.target.value, ageRange[1]])}
+          className="border rounded p-2 w-20"
+          disabled={!useAge}
+        />
+        <span>-</span>
+        <input
+          type="number"
+          min={ageRange[0]}
+          max={99}
+          value={ageRange[1]}
+          onChange={(e) => setAgeRange([ageRange[0], +e.target.value])}
+          className="border rounded p-2 w-20"
+          disabled={!useAge}
+        />
       </div>
 
-      {/* Tags */}
+      {/* Interests */}
       <div>
-        <label className="block font-medium mb-2">Interested in people who</label>
+        <div className="flex items-center gap-2 mb-2">
+          <input
+            type="checkbox"
+            checked={useInterests}
+            onChange={() => setUseInterests(!useInterests)}
+            id="interests-filter"
+          />
+          <label htmlFor="interests-filter" className="font-medium">Looking for people</label>
+        </div>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
             <input
               type="radio"
               name="interests"
-              value="atLeastOne"
-              checked={interestsMode === "atLeastOne"}
-              onChange={() => setInterestsMode("atLeastOne")}
+              value="similar"
+              checked={interestsMode === "similar"}
+              onChange={() => setInterestsMode("similar")}
+              disabled={!useInterests}
             />
-            <span>Share at least one interest with me</span>
+            <span>who share my interests</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -149,11 +162,12 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
               value="custom"
               checked={interestsMode === "custom"}
               onChange={() => setInterestsMode("custom")}
+              disabled={!useInterests}
             />
-            <span>Have at least one of these</span>
+            <span>with at least one of these interests</span>
           </label>
         </div>
-        {interestsMode === "custom" && (
+        {useInterests && interestsMode === "custom" && (
           <select
             multiple
             value={customInterests}
@@ -172,16 +186,22 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
       </div>
 
       {/* Fame */}
-      <div>
-        <label className="block font-medium mb-2">Fame</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={useFame}
+          onChange={() => setUseFame(!useFame)}
+          id="fame-filter"
+        />
+        <label htmlFor="fame-filter" className="block font-medium mb-2">Fame</label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <span
               key={star}
-              onClick={() => setFame(star)}
+              onClick={() => useFame && setFame(star)}
               className={`cursor-pointer text-2xl ${
                 fame >= star ? "text-yellow-500" : "text-gray-400"
-              }`}
+              } ${!useFame ? "opacity-50 pointer-events-none" : ""}`}
             >
               ★
             </span>

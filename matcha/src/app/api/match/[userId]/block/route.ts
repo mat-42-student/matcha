@@ -1,8 +1,9 @@
-// matcha/src/app/api/match/[userId]/unlike/route.ts
+// matcha/src/app/api/match/[userId]/block/route.ts
+
+import { pool, addFame } from "@/lib/db/db-utils";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
-import { pool } from "@/lib/db/db-utils";
-import { cookies } from "next/headers";
 
 export async function POST(
   req: Request,
@@ -23,11 +24,14 @@ export async function POST(
     }
 
     const query = `
-      DELETE FROM matches
-      WHERE (user1_id = $1 AND user2_id = $2)
-      OR (user1_id = $2 AND user2_id = $1);
+      INSERT INTO matches (user1_id, user2_id, status)
+      VALUES ($1, $2, 'block')
+      ON CONFLICT (user1_id, user2_id)
+      DO UPDATE SET status = 'block';
     `;
     const result = await pool.query(query, [me.id, userId]);
+    addFame(-5, userId);
+
     return NextResponse.json({ success: true, deleted: result.rowCount });
   } catch (err) {
     console.error(err);

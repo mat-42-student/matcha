@@ -17,7 +17,7 @@ export default function Matches() {
 
   return (
     <div className="p-4">
-      <Browse users={users}/>
+      <Browse users={users} refreshList={fetchMatches}/>
     </div>
   );
 }

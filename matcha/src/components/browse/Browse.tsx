@@ -1,3 +1,5 @@
+// matcha/src/components/browse/Browse.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +8,8 @@ import Navigation from "./Navigation";
 import { PublicUser } from "@/types";
 import FilterBar from "./FilterBar";
 
-export default function Browse({ users }: { users: PublicUser[] }) {
+export default function Browse({ users, refreshList }: { users: PublicUser[]; refreshList: () => void
+ }) {
   const [page, setPage] = useState(1);
   const [filteredUsers, setFilteredUsers] = useState(users);
   const perPage = 12;
@@ -37,7 +40,7 @@ export default function Browse({ users }: { users: PublicUser[] }) {
       <FilterBar users={users} onChange={setFilteredUsers} />
       <div className="flex flex-wrap justify-center">
         {currentUsers.map((u) => (
-          <CardUser key={u.username} user={u} />
+          <CardUser key={u.username} user={u} onUserUpdate={refreshList}/>
         ))}
       </div>
 

@@ -23,6 +23,17 @@ export async function GET() {
       SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(u.latitude, u.longitude))/1000) AS distance
       FROM users_me_like u
       WHERE u.me = $3
+      AND NOT EXISTS (
+        SELECT 1
+        FROM matches m
+        WHERE
+          (
+            (m.user1_id = $3 AND m.user2_id = u.id)
+            OR
+            (m.user1_id = u.id AND m.user2_id = $3)
+          )
+          AND m.status = 'block'
+      );
     `,
     [me.latitude, me.longitude, me.id]
     );

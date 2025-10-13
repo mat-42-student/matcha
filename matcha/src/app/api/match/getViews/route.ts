@@ -1,4 +1,4 @@
-// matcha/src/app/api/match/getLikeMe/route.ts
+// matcha/src/app/api/match/getViews/route.ts
 
 import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
-
+    
     if (!sessionId) {
       return NextResponse.json({ error: "No session found" }, { status: 401 });
     }
@@ -19,10 +19,11 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: likedBy } = await pool.query(`
-      SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude))/1000) AS distance
-      FROM users_who_like_me u
-      WHERE u.me = $3
+    const { rows: stalkers } = await pool.query(`
+    SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(u.latitude, u.longitude))/1000) AS distance
+    FROM views v
+    JOIN users_with_interests u ON u.id = v.seen_by
+    WHERE v.user_id = $3
       AND NOT EXISTS (
         SELECT 1
         FROM matches m
@@ -33,10 +34,10 @@ export async function GET() {
             (m.user1_id = u.id AND m.user2_id = $3)
           )
           AND m.status = 'block'
-      );
-    `,
-    [me.latitude, me.longitude, me.id]);
-    return NextResponse.json(likedBy);
+      )
+    ORDER BY v.created_at DESC;
+    `, [me.latitude, me.longitude, me.id]);
+    return NextResponse.json(stalkers);
   } catch (err) {
       console.error(err);
       return NextResponse.json({ error: "Error" }, { status: 500 });

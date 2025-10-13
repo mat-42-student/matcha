@@ -2,45 +2,65 @@
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
+import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/db/session";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { gender, distance, ageMin, ageMax, fame, interests } = body;
 
-    // Exemple de construction dynamique
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value;
+    
+    if (!sessionId) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const me = await getSessionUser(sessionId);
+    if (!me) {
+      return NextResponse.json({ error: "Session invalide" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { distance, ageRange, fame, interests, customInterests } = body;
+
     let query = `
       SELECT *
-      FROM users_with_interests uwi
+      FROM compatible_users_from($1) AS c
       WHERE 1=1
     `;
-    const params: any[] = [];
+    const params: any[] = [me.id];
 
-    if (gender && gender !== "any") {
-      query += ` AND u.gender = $${params.length + 1}`;
-      params.push(gender);
+    if (distance && distance < 500) {
+      query += ` AND c.distance <= $${params.length + 1}`;
+      params.push(distance);
     }
-    if (ageMin) {
-      query += ` AND u.age >= $${params.length + 1}`;
-      params.push(ageMin);
-    }
-    if (ageMax) {
-      query += ` AND u.age <= $${params.length + 1}`;
-      params.push(ageMax);
+    if (ageRange) {
+      query += ` AND c.age >= $${params.length + 1}`;
+      params.push(ageRange[0]);
+      query += ` AND c.age <= $${params.length + 1}`;
+      params.push(ageRange[1]);
     }
     if (fame) {
-      query += ` AND u.fame >= $${params.length + 1}`;
-      params.push(fame);
+      query += ` AND c.fame >= $${params.length + 1}`;
+      params.push((fame - 1) * 20); // because fame is 0-100 in DB
     }
-    if (interests && interests.length > 0) {
+    if (interests === "similar") {
       query += ` AND EXISTS (
-        SELECT 1 FROM user_interests ui
-        WHERE ui.user_id = u.id
-        AND ui.interest_id = ANY($${params.length + 1})
+        SELECT 1
+        FROM user_interests ui_me
+        JOIN user_interests ui_them ON ui_them.interest_id = ui_me.interest_id
+        WHERE ui_me.user_id = $1 AND ui_them.user_id = c.id
       )`;
-      params.push(interests);
     }
-
+    if (interests === "custom" && customInterests.length > 0) {
+      query += ` AND (
+        SELECT ARRAY_AGG(value)
+        FROM jsonb_array_elements_text(interests::jsonb) AS t(value)
+      ) && $${params.length + 1}
+    `;
+      params.push(customInterests);
+    }
+    // console.log("Executing query:", query, "with params:", params);
     const result = await pool.query(query, params);
     return NextResponse.json({ users: result.rows });
   } catch (err) {

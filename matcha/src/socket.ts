@@ -1,3 +1,5 @@
+// matcha/src/socket.ts
+
 import { io } from "socket.io-client";
 
 // Utilise window.location.origin pour ne pas hardcoder l’URL
