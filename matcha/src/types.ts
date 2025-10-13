@@ -34,3 +34,5 @@ export type SearchCriteria = {
   customInterests?: string[];
   fame?: number;
 };
+
+export type LikeTabsTypes = "visitors" | "liked" | "likeMe" | "matches"
