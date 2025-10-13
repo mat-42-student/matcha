@@ -13,8 +13,8 @@ export interface User {
   latitude?: number;
   longitude?: number;
   birthdate: string;
-  gender: string;
-  sex_pref: string;
+  gender?: string;
+  sex_pref?: string;
   bio?: string;
   fame?: number;
   created_at?: Date;
@@ -36,13 +36,13 @@ export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise
       user.username,
       user.email,
       user.passwd,
-      user.country ?? 'France',
-      user.city,
+      user.country ?? null,
+      user.city ?? null,
       user.latitude ?? null,
       user.longitude ?? null,
       user.birthdate,
-      user.gender,
-      user.sex_pref,
+      user.gender ?? null,
+      user.sex_pref ?? null,
       user.bio ?? null,
       user.fame ?? 0
     ]

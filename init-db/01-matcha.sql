@@ -6,13 +6,13 @@ CREATE TABLE "users" (
   "username" varchar(50) UNIQUE NOT NULL,
   "email" varchar(255) UNIQUE NOT NULL,
   "passwd" varchar(255) NOT NULL,
-  "country" varchar(30) NOT NULL DEFAULT 'France',
+  "birthdate" DATE NOT NULL,
+  "country" varchar(30),
   "city" varchar(50),
   "latitude" float,
   "longitude" float,
-  "birthdate" DATE NOT NULL,
-  "gender" char(1) NOT NULL,
-  "sex_pref" char(1) NOT NULL DEFAULT 'B',
+  "gender" char(1) CHECK (gender IN ('M', 'F')),
+  "sex_pref" char(1) CHECK (sex_pref IN ('M', 'F', 'B')),
   "bio" text,
   "fame" float,
   "is_verified" boolean DEFAULT false,
@@ -27,7 +27,7 @@ CREATE TABLE pictures (
   "is_main" boolean DEFAULT false
 );
 
--- Fonction qui bloque l'insertion si l'utilisateur a déjà 5 photos
+-- Fonction that prevent to addd more that 5 pic
 CREATE OR REPLACE FUNCTION check_max_pictures()
 RETURNS trigger AS $$
 BEGIN
@@ -38,7 +38,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger qui appelle la fonction avant chaque insertion
+-- trigger that call check_max_pictures at every insertion
 CREATE TRIGGER pictures_limit_trigger
 BEFORE INSERT ON pictures
 FOR EACH ROW

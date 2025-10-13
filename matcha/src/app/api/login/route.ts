@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
 		res.cookies.set("session_id", sessionId, {
 			httpOnly: true,
-			secure: true, // ⚠️ ok si HTTPS
+			secure: true, // enable if https
 			sameSite: "lax",
 			path: "/",
 		});

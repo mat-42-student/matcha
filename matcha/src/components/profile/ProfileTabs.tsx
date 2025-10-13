@@ -62,12 +62,11 @@ export default function ProfileTabs({
         optional={completion.missingOptional}
       />
 
-      {/* --- Onglets --- */}
       <Tabs defaultValue="info" className="w-full mt-4">
         <TabsList className="flex gap-2 justify-around bg-pink-50 p-2 rounded-full">
           <TabsTrigger value="info">Profil</TabsTrigger>
-          <TabsTrigger value="geoloc">Géolocalisation</TabsTrigger>
-          <TabsTrigger value="interests">Intérêts</TabsTrigger>
+          <TabsTrigger value="geoloc">Geolocation</TabsTrigger>
+          <TabsTrigger value="interests">Interests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">

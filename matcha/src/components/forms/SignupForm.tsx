@@ -78,15 +78,15 @@ export function SignupForm() {
             className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900"
         />
 
-        <input 
+        {/* <input 
             name="city" 
             type="text" 
             placeholder="Ville" 
             required 
             className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900" 
-        />
+        /> */}
 
-        <select 
+        {/* <select 
             name="gender" 
             required 
             className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900"
@@ -95,9 +95,9 @@ export function SignupForm() {
             <option value="M">Homme</option>
             <option value="F">Femme</option>
             <option value="O">Autre</option>
-        </select>
+        </select> */}
 
-        <select 
+        {/* <select 
             name="sex_pref" 
             required 
             className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900"
@@ -106,7 +106,7 @@ export function SignupForm() {
             <option value="M">Hommes</option>
             <option value="F">Femmes</option>
             <option value="B">Les deux</option>
-        </select>
+        </select> */}
 
       <button
         type="submit"

@@ -13,11 +13,11 @@ export async function POST(req: NextRequest) {
     const password = formData.get('password') as string;
     const username = formData.get('username') as string;
     const birthdate = formData.get('birthdate') as string;
-    const gender = formData.get('gender') as string;
-    const sex_pref = formData.get('sex_pref') as string;
-    const city = formData.get('city') as string;
+    // const gender = formData.get('gender') as string;
+    // const sex_pref = formData.get('sex_pref') as string;
+    // const city = formData.get('city') as string;
 
-    if (!email || !password || !username || !gender || !birthdate || !sex_pref || !city) {
+    if (!email || !password || !username || !birthdate ) {
       return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
     }
 
@@ -29,24 +29,17 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // 📍 Get GPS loc from city
-    const coords = await getGPSFromCityName(city);
-    if (!coords) {
-      return NextResponse.json({ error: "Unable to resolve gps coords of target city"}, { status: 400 });
-    }
+    // const coords = await getGPSFromCityName(city);
+    // if (!coords) {
+    //   return NextResponse.json({ error: "Unable to resolve gps coords of target city"}, { status: 400 });
+    // }
 
     // 📝 Création en DB
     const newUser = await createUser({
       username,
       email,
       passwd: passwordHash,
-      country: 'France',
-      city,
-      gender,
-      sex_pref,
       bio: '',
-      fame: 0,
-      latitude: coords.lat,
-      longitude: coords.lon,
       birthdate: birthdate,
     });
 

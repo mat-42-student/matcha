@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { Edit2 } from "lucide-react";
+import { Edit2, Check } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ProfileForm({
@@ -14,9 +14,9 @@ export default function ProfileForm({
     () => ({
       username: user.username || "",
       email: user.email || "",
+      gender: user.gender || "",
       sex_pref: user.sex_pref || "",
       bio: user.bio || "",
-      gender: user.gender || "",
     }),
     [user]
   );
@@ -25,11 +25,34 @@ export default function ProfileForm({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // 🔄 Met à jour formData si le user change (ex: rechargement après sauvegarde)
+  // Update when user prop changes
   useEffect(() => {
     setFormData(initialData);
     setHasUnsavedChanges(false);
   }, [initialData]);
+
+  // Auto-save when leaving edit mode
+  useEffect(() => {
+    const autoSave = async () => {
+      if (hasUnsavedChanges && !editingField) {
+        try {
+          const res = await fetch("/api/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          });
+          if (!res.ok) throw new Error("Update error");
+          onUserUpdate?.(formData);
+          toast.success("Profile saved automatically");
+          setHasUnsavedChanges(false);
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to save profile");
+        }
+      }
+    };
+    autoSave();
+  }, [editingField]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -37,38 +60,12 @@ export default function ProfileForm({
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-
-      // Vérifie s’il y a une différence avec les données initiales
-      const modified =
-        Object.keys(initialData).some((key) => updated[key as keyof typeof updated] !== initialData[key as keyof typeof initialData]);
-
+      const modified = Object.keys(initialData).some(
+        (key) => updated[key as keyof typeof updated] !== initialData[key as keyof typeof initialData]
+      );
       setHasUnsavedChanges(modified);
       return updated;
     });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const res = await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error("Erreur de mise à jour");
-
-      onUserUpdate?.(formData);
-      toast.success("Profil mis à jour ✅");
-
-      // Réinitialise les états
-      setEditingField(null);
-      setHasUnsavedChanges(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Erreur pendant la mise à jour");
-    }
   };
 
   const renderRow = (
@@ -96,9 +93,19 @@ export default function ProfileForm({
                 onChange={handleChange}
                 className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400"
               >
-                <option value="M">Homme</option>
-                <option value="F">Femme</option>
-                <option value="B">Les deux</option>
+                <option value="">Select...</option>
+                {name === "gender" ? (
+                  <>
+                    <option value="M">Man</option>
+                    <option value="F">Woman</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="M">Men</option>
+                    <option value="F">Women</option>
+                    <option value="B">Both</option>
+                  </>
+                )}
               </select>
             ) : (
               <input
@@ -111,49 +118,58 @@ export default function ProfileForm({
             )
           ) : (
             <span className="ml-2 text-gray-700">
-              {name === "sex_pref"
+              {name === "gender"
+                ? formData.gender === "M"
+                  ? "Man"
+                  : formData.gender === "F"
+                  ? "Woman"
+                  : formData.gender === "O"
+                  ? "Other"
+                  : "-"
+                : name === "sex_pref"
                 ? formData.sex_pref === "M"
-                  ? "Homme"
+                  ? "Men"
                   : formData.sex_pref === "F"
-                  ? "Femme"
-                  : "Les deux"
+                  ? "Women"
+                  : formData.sex_pref === "B"
+                  ? "Both"
+                  : "-"
                 : (formData as any)[name] || "-"}
             </span>
           )}
         </div>
+
         <button
           type="button"
           onClick={() => {
-            if (hasUnsavedChanges && editingField && editingField !== name) {
-              toast.error("Save before leave");
+            if (!isEditing && editingField && editingField !== name) {
+              toast.error("Finish editing the current field first.");
               return;
             }
 
+            // Toggle edit/done state
             setEditingField(isEditing ? null : name);
           }}
-          className="ml-4 h-10 w-10 flex items-center justify-center bg-pink-100 hover:bg-pink-200 rounded-full"
+          className={`ml-4 h-10 w-10 flex items-center justify-center rounded-full transition 
+          ${isEditing ? "bg-green-100 hover:bg-green-200" : "bg-pink-100 hover:bg-pink-200"}`}
         >
-          <Edit2 className="text-pink-600" size={20} />
+          {isEditing ? (
+            <Check className="text-green-600" size={20} />
+          ) : (
+            <Edit2 className="text-pink-600" size={20} />
+          )}
         </button>
       </div>
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
+    <div className="w-full">
       {renderRow("Username", "username")}
       {renderRow("Email", "email")}
+      {renderRow("Gender", "gender", "select")}
       {renderRow("Sexual preference", "sex_pref", "select")}
       {renderRow("Bio", "bio", "textarea")}
-
-      {hasUnsavedChanges && (
-        <button
-          type="submit"
-          className="mt-6 px-4 py-2 rounded-full bg-pink-600 text-white font-semibold"
-        >
-          Sauvegarder
-        </button>
-      )}
-    </form>
+    </div>
   );
 }

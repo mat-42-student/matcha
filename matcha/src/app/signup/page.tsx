@@ -10,7 +10,7 @@ export default async function SignupPage() {
   if (sessionId) {
     const user = await getSessionUser(sessionId);
     if (user) {
-      redirect("/"); // déjà connecté → redirigé
+      redirect("/");
     }
   }
 
