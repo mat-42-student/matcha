@@ -1,7 +1,6 @@
 // components/Header.tsx
 "use client";
 
-import { useState } from "react";
 import { useUser } from "@/context/UserContext";
 import MenuDesktop from "./MenuDesktop";
 import MenuMobile from "./MenuMobile";

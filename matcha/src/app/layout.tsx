@@ -1,3 +1,5 @@
+// matcha/src/app/layout.tsx
+
 import "./globals.css"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
@@ -16,11 +18,9 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
 
-
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session_id")?.value || null;
 
-  // 🔑 Appel direct DB
   const user: PublicUser | null = sessionId ? await getSessionUser(sessionId) : null;
 
   return (

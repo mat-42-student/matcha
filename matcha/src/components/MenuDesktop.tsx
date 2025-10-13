@@ -1,6 +1,10 @@
+// matcha/src/components/MenuDesktop.tsx
+
+import { PublicUser } from "@/types";
 import Link from "next/link"
 
-export default function MenuDesktop({ user, onLogout }: { user: any; onLogout: () => void }) {
+export default function MenuDesktop({ user, onLogout }: { user: PublicUser; onLogout: () => void }) {
+  // console.log("USER:", user, typeof user);
   return (
     <nav className="hidden md:flex gap-4">
       <Link href="/" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">

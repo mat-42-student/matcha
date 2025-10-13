@@ -11,7 +11,13 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export function UserProvider({ children, initialUser }: { children: ReactNode; initialUser: PublicUser | null }) {
+export function UserProvider({
+  children,
+  initialUser
+}: {
+  children: ReactNode;
+  initialUser: PublicUser | null }) {
+
   const [user, setUser] = useState<PublicUser | null>(initialUser);
 
   return (
