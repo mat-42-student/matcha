@@ -23,7 +23,7 @@ export default function ProfileInterests({ user, onUserUpdate }: { user: any, on
           fetch("/api/me/interests"),
         ]);
 
-        if (!allRes.ok || !userRes.ok) throw new Error("Erreur de chargement");
+        if (!allRes.ok || !userRes.ok) throw new Error("Network error");
 
         const allInterests = await allRes.json();
         const userInterests = await userRes.json();
@@ -32,7 +32,7 @@ export default function ProfileInterests({ user, onUserUpdate }: { user: any, on
         setSelected(userInterests.map((i: Interest) => i.id));
       } catch (error) {
         console.error(error);
-        toast.error("Impossible de charger les intérêts");
+        toast.error("Interests loading failed");
       }
     }
     fetchData();
@@ -54,12 +54,10 @@ export default function ProfileInterests({ user, onUserUpdate }: { user: any, on
         body: JSON.stringify({ interestIds: selected }),
       });
 
-        const data = await res.json();
-        console.log("Réponse du serveur :", data);
+      const data = await res.json();
 
 
       if (res.ok) {
-        console.log("should send a toast");
         toast.success("Interests updated !");
         setHasChanges(false);
         onUserUpdate && onUserUpdate({ interests: selected });
@@ -76,7 +74,7 @@ export default function ProfileInterests({ user, onUserUpdate }: { user: any, on
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
-      <h2 className="text-lg font-semibold mb-4">Vos intérêts</h2>
+      <h2 className="text-lg font-semibold mb-4">My interest</h2>
 
       {/* interests list */}
       <div className="flex flex-wrap gap-2">

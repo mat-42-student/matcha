@@ -80,10 +80,10 @@ export default function ProfileGeoloc({
         country: result.display_name.split(",").pop() || "",
       };
       saveAndUpdate(newData);
-      toast.success("Ville mise à jour ✅");
+      toast.success("Town updated");
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de la recherche de la ville.");
+      toast.error("City not found");
     }
   };
 
@@ -103,21 +103,21 @@ export default function ProfileGeoloc({
         body: JSON.stringify(newData),
       });
 
-      if (!res.ok) throw new Error("Erreur lors de la mise à jour du profil");
-      toast.success("Profil géolocalisé mis à jour ✅");
+      if (!res.ok) throw new Error("Error during profile update");
+      toast.success("Profile location updated");
 
       // 🔁 On notifie le parent
       onChange?.(newData);
       onUserUpdate?.(newData);
     } catch (err) {
       console.error(err);
-      toast.error("Impossible de sauvegarder la localisation ❌");
+      toast.error("Location save failed");
     }
   };
 
   return (
     <div className="py-4 border-b text-gray-900">
-      <p className="font-medium mb-2">Localisation :</p>
+      <p className="font-medium mb-2">Location :</p>
 
       <div className="flex gap-4 mb-3">
         <label className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export default function ProfileGeoloc({
             checked={useGeoloc}
             onChange={() => setUseGeoloc(true)}
           />
-          Utiliser ma position actuelle
+          Use my current position
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -134,7 +134,7 @@ export default function ProfileGeoloc({
             checked={!useGeoloc}
             onChange={() => setUseGeoloc(false)}
           />
-          Entrer une ville manuellement
+          Enter a city manualy
         </label>
       </div>
 
@@ -169,7 +169,7 @@ export default function ProfileGeoloc({
             onClick={handleCityLookup}
             className="mt-2 bg-pink-500 text-white px-4 py-2 rounded-lg"
           >
-            Vérifier la ville
+            Verify the city
           </button>
 
           {formData.city && (

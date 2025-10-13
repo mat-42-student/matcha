@@ -19,10 +19,10 @@ export default function ProfileIncompleteModal({ missing }: { missing: string[] 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-6 text-center">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">
-          Profil incomplet
+          Incomplete profile
         </h2>
         <p className="text-gray-600 mb-6">
-          Vous devez compléter votre profil pour pouvoir matcher.
+          You must complete your profile to able to match.
         </p>
 
         {missing.length > 0 && (
@@ -37,7 +37,7 @@ export default function ProfileIncompleteModal({ missing }: { missing: string[] 
           onClick={() => router.push("/profile")}
           className="px-4 py-2 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition"
         >
-          Compléter mon profil
+          Complete my profile
         </button>
       </div>
     </div>
@@ -47,10 +47,10 @@ export default function ProfileIncompleteModal({ missing }: { missing: string[] 
 function fieldLabel(field: string) {
   switch (field) {
     case "gender": return "Genre";
-    case "birthdate": return "Date de naissance";
+    case "birthdate": return "birthdate";
     case "bio": return "Bio";
-    case "location": return "Localisation";
-    case "picture": return "Photo de profil";
+    case "location": return "location";
+    case "picture": return "picture";
     default: return field;
   }
 }

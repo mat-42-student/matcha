@@ -56,7 +56,7 @@ export function ProfilePicturesModal({
                 toast.success("Photo added !");
                 onUpdated && onUpdated();
             } else {
-                toast.error("Erreur during picture upload");
+                toast.error("Error during picture upload");
             }
         } catch (error) {
             console.error(error);
@@ -68,7 +68,7 @@ export function ProfilePicturesModal({
     try {
         const res = await fetch(`/api/me/pictures/${id}`, { method: "DELETE" });
         if (res.ok) {
-        toast.success("Photo deleted !");
+        toast.success("Picture deleted !");
         await fetchPics();
         onUpdated && onUpdated();
         } else {

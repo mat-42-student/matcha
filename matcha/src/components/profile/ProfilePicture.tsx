@@ -52,7 +52,7 @@ export default function ProfilePicture({ userId, onUpdated }: ProfilePictureProp
     >
       <Image
         src={imageSrc}
-        alt="Photo de profil"
+        alt="Profile picture"
         fill
         className="object-cover rounded-full border-4 border-pink-300 shadow-lg cursor-pointer transition"
         onClick={() => setIsModalOpen(true)}

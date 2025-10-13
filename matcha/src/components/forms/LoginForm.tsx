@@ -29,7 +29,7 @@ export default function LoginForm() {
 			const data = await res.json();
 
 			if (!res.ok) {
-				setError(data.error || "Identifiants invalides");
+				setError(data.error || "Invalid login");
 				return;
 			}
 
@@ -40,7 +40,7 @@ export default function LoginForm() {
 
 		} catch (err) {
 			console.error(err);
-			setError("Erreur réseau");
+			setError("Network error");
 		} finally {
 			setLoading(false);
 		}
@@ -52,7 +52,7 @@ export default function LoginForm() {
 			className="flex flex-col gap-4 w-80 mx-auto mt-10 bg-white p-8 rounded-2xl shadow-md"
 		>
 			<h1 className="text-2xl font-bold text-center text-pink-700">
-				Connexion
+				Login
 			</h1>
 
 			{error && (
@@ -72,7 +72,7 @@ export default function LoginForm() {
 			<input
 				type="password"
 				name="password"
-				placeholder="Mot de passe"
+				placeholder="Password"
 				required
 				className="px-4 py-2 rounded-full border border-gray-300 
                    focus:outline-none focus:ring-2 focus:ring-pink-400
@@ -85,7 +85,7 @@ export default function LoginForm() {
 				className="px-4 py-2 rounded-full bg-pink-600 text-white font-semibold 
                    hover:bg-pink-700 transition disabled:opacity-50"
 			>
-				{loading ? "Connexion..." : "Se connecter"}
+				{loading ? "Loging in..." : "Log in"}
 			</button>
 		</form>
 	);
