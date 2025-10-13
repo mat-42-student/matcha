@@ -5,7 +5,8 @@ import { executeQuery } from "./db-utils";
 
 export interface User {
   id: string;
-  username: string;
+  first_name: string;
+  last_name: string;
   email: string;
   passwd: string;
   country?: string;
@@ -28,12 +29,13 @@ export interface User {
 export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
   const query = {
     text: `
-      INSERT INTO users (username, email, passwd, country, city, latitude, longitude, birthdate, gender, sex_pref, bio, fame)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      INSERT INTO users (first_name, last_name, email, passwd, country, city, latitude, longitude, birthdate, gender, sex_pref, bio, fame)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13)
       RETURNING *;
     `,
     values: [
-      user.username,
+      user.first_name,
+      user.last_name,
       user.email,
       user.passwd,
       user.country ?? null,
@@ -119,7 +121,8 @@ export async function updateUser(
 ): Promise<User | null> {
   // Liste blanche des champs qu’un utilisateur peut modifier
   const allowedFields: (keyof User)[] = [
-    "username",
+    "first_name",
+    "last_name",
     "email",
     "city",
     "country",

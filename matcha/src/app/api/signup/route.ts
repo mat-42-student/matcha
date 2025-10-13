@@ -11,13 +11,14 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const username = formData.get('username') as string;
+    const first_name = formData.get('first_name') as string;
+    const last_name = formData.get('last_name') as string;
     const birthdate = formData.get('birthdate') as string;
     // const gender = formData.get('gender') as string;
     // const sex_pref = formData.get('sex_pref') as string;
     // const city = formData.get('city') as string;
 
-    if (!email || !password || !username || !birthdate ) {
+    if (!email || !password || !first_name || !last_name || !birthdate ) {
       return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
     }
 
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
 
     // 📝 Création en DB
     const newUser = await createUser({
-      username,
+      first_name,
+      last_name,
       email,
       passwd: passwordHash,
       bio: '',

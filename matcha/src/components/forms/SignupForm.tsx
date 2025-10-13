@@ -64,9 +64,16 @@ export function SignupForm() {
         />
 
         <input 
-            name="username" 
+            name="first_name" 
             type="text" 
-            placeholder="username" 
+            placeholder="First Name" 
+            required 
+            className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900"
+        />
+        <input 
+            name="last_name" 
+            type="text" 
+            placeholder="Last Name" 
             required 
             className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900"
         />

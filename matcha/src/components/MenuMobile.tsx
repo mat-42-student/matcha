@@ -1,8 +1,9 @@
 
 import Link from "next/link"
 import { useState } from "react";
+import { PublicUser } from "@/types";
 
-export default function MenuMobile({ user, onLogout }: { user: any; onLogout: () => void }) {
+export default function MenuMobile({ user, onLogout }: { user: PublicUser; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,7 +31,7 @@ export default function MenuMobile({ user, onLogout }: { user: any; onLogout: ()
             🗨️ Chat
           </Link>
           <Link href="/profile" className="px-2 py-1 text-fuchsia-100 hover:bg-pink-800 transition" onClick={() => setOpen(false)}>
-            👤 {user.username}
+            👤 {user.first_name}
           </Link>
           <button
             onClick={() => { onLogout(); setOpen(false); }}

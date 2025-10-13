@@ -57,7 +57,7 @@ export default function CardUser({
         <div className="flex justify-between items-center mb-2">
           <div>
             <span className="text-xl text-pink-700 font-semibold">
-              {user.username}
+              {user.first_name}
             </span>
             <span className="text-sm text-gray-400"> ({user.gender})</span>
             <span className="text-sm text-gray-600">{user.age} ans</span>

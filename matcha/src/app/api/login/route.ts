@@ -1,3 +1,5 @@
+// matcha/src/app/api/login/route.ts
+
 import { NextResponse, NextRequest } from "next/server";
 import { createSession } from "@/lib/db/session";
 import { loginUser } from "@/lib/db/users";
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
 
 		const res = NextResponse.json({
 			success: true,
-			user: { id: user.id, email: user.email, username: user.username }
+			user: { id: user.id, email: user.email }
 		});
 
 		res.cookies.set("session_id", sessionId, {

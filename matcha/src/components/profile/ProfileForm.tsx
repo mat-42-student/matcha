@@ -12,7 +12,8 @@ export default function ProfileForm({
 }) {
   const initialData = useMemo(
     () => ({
-      username: user.username || "",
+      first_name: user.first_name || "",
+      last_name: user.last_name || "",
       email: user.email || "",
       gender: user.gender || "",
       sex_pref: user.sex_pref || "",
@@ -165,7 +166,8 @@ export default function ProfileForm({
 
   return (
     <div className="w-full">
-      {renderRow("Username", "username")}
+      {renderRow("First Name", "first_name")}
+      {renderRow("Last Name", "last_name")}
       {renderRow("Email", "email")}
       {renderRow("Gender", "gender", "select")}
       {renderRow("Sexual preference", "sex_pref", "select")}

@@ -23,23 +23,26 @@ function getRandomCity() {
   return frCities[index];
 }
 
-function getRandomUsername(sex) {
+function getRandomName(sex) {
   const gender = sex === 'M'? 'male' : "female";
-  return faker.person.firstName(gender) + faker.number.int(9999);
+  return (faker.person.firstName(gender));
 }
 
 async function insertUser(pool) {
   const gender = Math.random() < 0.5 ? 'M' : 'F';
   const sexPref = 'B'
-  const username = getRandomUsername(gender);
+
+  const firstName = getRandomName(gender);
+  const lastName = faker.person.lastName()
   const city = getRandomCity();
 
   const { rows } = await pool.query(
-    `INSERT INTO users (username, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+    `INSERT INTO users (first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
     [
-      username,
-      username + '@' + faker.internet.domainName(),
+      firstName,
+      lastName,
+      firstName + '.' + lastName + '@' + faker.internet.domainName(),
       faker.internet.password(),
       gender,
       sexPref,

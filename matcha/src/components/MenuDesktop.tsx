@@ -16,7 +16,7 @@ export default function MenuDesktop({ user, onLogout }: { user: any; onLogout: (
         🗨️ Chat
       </Link>
       <Link href="/profile" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">
-        👤 {user.username}
+        👤 {user.first_name}
       </Link>
       <button
         onClick={onLogout}

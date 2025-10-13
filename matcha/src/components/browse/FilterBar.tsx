@@ -21,7 +21,7 @@ export default function FilterBar({ users, onChange }: FilterBarProps) {
 
     if (search) {
       result = result.filter((u) =>
-        u.username.toLowerCase().includes(search.toLowerCase())
+        u.first_name.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -55,13 +55,6 @@ export default function FilterBar({ users, onChange }: FilterBarProps) {
       onClick={() => setFilersVisisble(!filtersVisible)}>☰</button>
       { filtersVisible &&
       <div className="flex space-x-2 w-full justify-center">
-        <input
-          type="text"
-          placeholder="Search username"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border-pink-800 border-2 p-2 rounded"
-        />
         <input
           type="number"
           placeholder="Min age"

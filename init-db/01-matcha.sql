@@ -3,7 +3,8 @@ CREATE EXTENSION IF NOT EXISTS earthdistance;
 
 CREATE TABLE "users" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "username" varchar(50) UNIQUE NOT NULL,
+  "first_name" varchar(50) NOT NULL,
+  "last_name" varchar(50) NOT NULL,
   "email" varchar(255) UNIQUE NOT NULL,
   "passwd" varchar(255) NOT NULL,
   "birthdate" DATE NOT NULL,
@@ -104,7 +105,8 @@ CREATE TABLE "email_verifications" (
 CREATE VIEW "users_with_interests" AS
 SELECT
   u.id,
-  u.username,
+  u.first_name,
+  LEFT(u.last_name, 1) AS last_name,
   u.gender,
   u.city,
   u.latitude,
@@ -122,7 +124,8 @@ GROUP BY u.id;
 CREATE VIEW my_profile AS
 SELECT
   u.id,
-  u.username,
+  u.first_name,
+  u.last_name,
   u.email,
   u.gender,
   u.city,
@@ -135,7 +138,7 @@ SELECT
 FROM users u
 LEFT JOIN user_interests ui ON u.id = ui.user_id
 LEFT JOIN interests i ON ui.interest_id = i.id
-GROUP BY u.id, u.username, u.email, u.gender, u.city, u.latitude, u.longitude, u.bio, u.sex_pref, u.birthdate;
+GROUP BY u.id;
 
 CREATE VIEW users_me_like AS
 SELECT m.user1_id AS me, uwi.*
@@ -154,7 +157,8 @@ CREATE OR REPLACE FUNCTION compatible_users_from(
 )
 RETURNS TABLE (
   id UUID,
-  username TEXT,
+  first_name TEXT,
+  last_name TEXT,
   gender TEXT,
   city TEXT,
   bio TEXT,
@@ -166,7 +170,8 @@ RETURNS TABLE (
 AS $$
   SELECT
     u.id,
-    u.username,
+    u.first_name,
+    u.last_name,
     u.gender,
     u.city,
     u.bio,

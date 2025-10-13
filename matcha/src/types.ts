@@ -2,13 +2,13 @@ export type User = {
   id: string;
   email: string;
   passwordHash: string;
-  username: string; // 👈 assure-toi que la colonne existe bien dans ta DB
 };
 
 // Type exposé au front (pas de passwordHash)
 export type PublicUser = {
   id: string;
-  username: string;
+  first_name: string;
+  last_name: string;
   email: string;
   gender: string;
   city: string;
