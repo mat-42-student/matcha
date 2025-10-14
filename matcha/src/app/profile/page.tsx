@@ -13,7 +13,7 @@ async function getCurrentUser() {
 	try {
 		return await getSessionUser(sessionId);
 	} catch (err) {
-		console.error("❌ Erreur récupération user depuis session:", err);
+		console.error("❌ Could not get user from session:", err);
 		return null;
 	}
 }

@@ -19,7 +19,6 @@ export default async function Homepage() {
   const completion = await analyzeProfileCompletion(me);
 
   if (completion.missingRequired.length > 0) {
-    // Affiche la modale avec les infos manquantes
     return <ProfileIncompleteModal missing={completion.missingRequired} />;
   }
 

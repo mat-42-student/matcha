@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import type { PublicUser } from "@/types";
 import { UserProvider } from "@/context/UserContext";
+//@ts-ignore
 import { Toaster } from "react-hot-toast";
 
 
@@ -27,14 +28,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="fr">
       <body className="h-screen flex flex-col bg-gray-100">
         <UserProvider initialUser={user}>
-            <Header />
+          <Header />
             <main className="flex-1 overflow-auto">
               <div className="w-full mx-auto h-full">
-                  <Toaster   position="top-center" reverseOrder={false} />
-                  {children}
+                <Toaster   position="top-center" reverseOrder={false} />
+                {children}
               </div>
             </main>
-            <Footer />
+          <Footer />
         </UserProvider>
       </body>
     </html>

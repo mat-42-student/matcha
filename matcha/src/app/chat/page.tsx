@@ -1,74 +1,21 @@
-// matcha/src/app/test-chat/page.tsx
+// matcha/src/app/chat/page.tsx
 
-"use client";
-import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/db/session";
+import { redirect } from "next/navigation";
+import Chat from "@/components/MainComponents/Chat";
 
-export default function Chat() {
-// (from previous category Matches)
-// import { useEffect, useState } from "react";
-// import Browse from "@/components/browse/Browse";
-// import { PublicUser } from "@/types";
+export default async function SearchPage() {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("session_id")?.value || null;
 
-// export default function Matches() {
-//   const [users, setUsers] = useState<PublicUser[]>([]);
-  
-//   async function fetchMatches() {
-//     const res = await fetch("/api/match/getMatches");
-//     const data = await res.json();
-//     setUsers(data);
-//   }
-  
-//   useEffect(() => { fetchMatches() }, []);
+  const user = sessionId ? await getSessionUser(sessionId) : null;
 
-//   return (
-//     <div className="p-4">
-//       <Browse users={users} refreshList={fetchMatches}/>
-//     </div>
-//   );
-// }
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [messages, setMessages] = useState<string[]>([]);
-  const [input, setInput] = useState("");
-
-  useEffect(() => {
-    const s = io(window.location.origin, {
-      path: "/socket.io",
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-    });
-
-    setSocket(s);
-
-    s.on("chat-message", (msg: string) => {
-      setMessages((prev) => [...prev, msg]);
-    });
-
-    return () => {
-      s.disconnect();
-    };
-  }, []);
-
-  const send = () => {
-    if (socket && input.trim()) {
-      socket.emit("chat-message", input);
-      setInput("");
-    }
-  };
+  if (!user) {
+    redirect("/auth");
+  }
 
   return (
-    <div>
-      <h1>Chat Test</h1>
-      <ul>
-        {messages.map((m, i) => (
-          <li key={i}>{m}</li>
-        ))}
-      </ul>
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-      <button onClick={send}>Send</button>
-    </div>
+    <Chat />
   );
 }
