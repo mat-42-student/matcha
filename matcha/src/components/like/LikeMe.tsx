@@ -1,4 +1,5 @@
 // matcha/src/components/like/LikeMe.tsx
+"use client";
 
 import { useEffect, useState } from "react";
 import Browse from "@/components/browse/Browse";
