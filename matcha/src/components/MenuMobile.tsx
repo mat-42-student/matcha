@@ -1,3 +1,5 @@
+// matcha/src/components/MenuMobile.tsx
+"use client"
 
 import Link from "next/link"
 import { useState } from "react";
@@ -31,7 +33,7 @@ export default function MenuMobile({ user, onLogout }: { user: PublicUser; onLog
             🗨️ Chat
           </Link>
           <Link href="/profile" className="px-2 py-1 text-fuchsia-100 hover:bg-pink-800 transition" onClick={() => setOpen(false)}>
-            👤 {user.first_name}
+            👤 Profile
           </Link>
           <button
             onClick={() => { onLogout(); setOpen(false); }}

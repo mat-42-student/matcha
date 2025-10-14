@@ -1,3 +1,6 @@
+// matcha/src/components/like/LButton.tsx
+"use client";
+
 import { LikeTabsTypes } from "@/types";
 
 type LButtonProps = {
