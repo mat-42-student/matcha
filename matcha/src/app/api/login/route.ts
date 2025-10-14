@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
 		const res = NextResponse.json({
 			success: true,
-			user: { id: user.id, email: user.email }
+			user: { id: user.id, email: user.email, first_name: user.first_name }
 		});
 
 		res.cookies.set("session_id", sessionId, {

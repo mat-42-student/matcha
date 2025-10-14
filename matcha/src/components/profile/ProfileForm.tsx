@@ -24,49 +24,38 @@ export default function ProfileForm({
 
   const [formData, setFormData] = useState(initialData);
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Update when user prop changes
+  // 🔄 update local form if user prop changes
   useEffect(() => {
     setFormData(initialData);
-    setHasUnsavedChanges(false);
   }, [initialData]);
 
-  // Auto-save when leaving edit mode
-  useEffect(() => {
-    const autoSave = async () => {
-      if (hasUnsavedChanges && !editingField) {
-        try {
-          const res = await fetch("/api/profile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
-          });
-          if (!res.ok) throw new Error("Update error");
-          onUserUpdate?.(formData);
-          toast.success("Profile saved automatically");
-          setHasUnsavedChanges(false);
-        } catch (err) {
-          console.error(err);
-          toast.error("Failed to save profile");
-        }
-      }
-    };
-    autoSave();
-  }, [editingField]);
+  // ✅ Save only the edited field when leaving edit mode
+  const saveField = async (field: string) => {
+    const value = (formData as any)[field];
+
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }), // only send one field
+      });
+
+      if (!res.ok) throw new Error("Update error");
+
+      onUserUpdate?.({ [field]: value });
+      toast.success(`${field.replace("_", " ")} updated successfully`);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to update ${field}`);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      const updated = { ...prev, [name]: value };
-      const modified = Object.keys(initialData).some(
-        (key) => updated[key as keyof typeof updated] !== initialData[key as keyof typeof initialData]
-      );
-      setHasUnsavedChanges(modified);
-      return updated;
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const renderRow = (
@@ -75,10 +64,12 @@ export default function ProfileForm({
     type: "text" | "textarea" | "select" = "text"
   ) => {
     const isEditing = editingField === name;
+
     return (
       <div className="flex items-center justify-between py-4 border-b text-gray-900">
         <div className="flex-1 flex items-center">
           <span className="font-medium">{label}:</span>
+
           {isEditing ? (
             type === "textarea" ? (
               <textarea
@@ -92,9 +83,11 @@ export default function ProfileForm({
                 name={name}
                 value={(formData as any)[name]}
                 onChange={handleChange}
-                className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400"
+                className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 text-gray-900"
               >
-                <option value="">Select...</option>
+                <option value="" disabled hidden>
+                  Select...
+                </option>
                 {name === "gender" ? (
                   <>
                     <option value="M">Man</option>
@@ -114,7 +107,7 @@ export default function ProfileForm({
                 type={type}
                 value={(formData as any)[name]}
                 onChange={handleChange}
-                className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400"
+                className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 text-gray-900"
               />
             )
           ) : (
@@ -124,8 +117,6 @@ export default function ProfileForm({
                   ? "Man"
                   : formData.gender === "F"
                   ? "Woman"
-                  : formData.gender === "O"
-                  ? "Other"
                   : "-"
                 : name === "sex_pref"
                 ? formData.sex_pref === "M"
@@ -142,17 +133,21 @@ export default function ProfileForm({
 
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
             if (!isEditing && editingField && editingField !== name) {
               toast.error("Finish editing the current field first.");
               return;
             }
 
-            // Toggle edit/done state
-            setEditingField(isEditing ? null : name);
+            if (isEditing) {
+              setEditingField(null);
+              await saveField(name); // ✅ save only that field
+            } else {
+              setEditingField(name);
+            }
           }}
           className={`ml-4 h-10 w-10 flex items-center justify-center rounded-full transition 
-          ${isEditing ? "bg-green-100 hover:bg-green-200" : "bg-pink-100 hover:bg-pink-200"}`}
+            ${isEditing ? "bg-green-100 hover:bg-green-200" : "bg-pink-100 hover:bg-pink-200"}`}
         >
           {isEditing ? (
             <Check className="text-green-600" size={20} />
@@ -170,7 +165,7 @@ export default function ProfileForm({
       {renderRow("Last Name", "last_name")}
       {renderRow("Email", "email")}
       {renderRow("Gender", "gender", "select")}
-      {renderRow("Sexual preference", "sex_pref", "select")}
+      {renderRow("Sexual Preference", "sex_pref", "select")}
       {renderRow("Bio", "bio", "textarea")}
     </div>
   );
