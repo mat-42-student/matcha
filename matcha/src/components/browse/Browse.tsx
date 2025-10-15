@@ -8,7 +8,7 @@ import Navigation from "./Navigation";
 import { PublicUser } from "@/types";
 import FilterBar from "./FilterBar";
 
-export default function Browse({ users, refreshList }: { users: PublicUser[]; refreshList: () => void
+export default function Browse({ users, refreshList }: { users: PublicUser[]; refreshList?: () => void
  }) {
   const [page, setPage] = useState(1);
   const [filteredUsers, setFilteredUsers] = useState(users);
