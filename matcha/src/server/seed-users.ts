@@ -8,6 +8,10 @@ const API_KEY = process.env.PIX_KEY;
 const filePath = path.join(process.cwd(), "src/data/fr-cities.json");
 const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
+interface Hit {
+  webformatURL: string;
+}
+
 export function getPool() {
   return new Pool({
     user: process.env.POSTGRES_USER,
@@ -23,12 +27,12 @@ function getRandomCity() {
   return frCities[index];
 }
 
-function getRandomName(sex) {
+function getRandomName(sex: string) {
   const gender = sex === 'M'? 'male' : "female";
   return (faker.person.firstName(gender));
 }
 
-async function insertUser(pool) {
+async function insertUser(pool: Pool) {
   const gender = Math.random() < 0.5 ? 'M' : 'F';
   const sexPref = 'B'
 
@@ -57,11 +61,13 @@ async function insertUser(pool) {
   return [rows[0].id, gender];
 }
 
-async function getPixabayPictureUrls(g, remainingUsers, page = 1) {
+async function getPixabayPictureUrls(
+  g: 'M'|'F', remainingUsers: number, page = 1
+): Promise<string[]> {
   const nb_users = remainingUsers > 200 ? 200 : remainingUsers;
   const gender = g === 'M' ? 'male' : 'female';
   const params = new URLSearchParams({
-    key: API_KEY,
+    key: API_KEY as string,
     q: gender,
     category: "people",
     image_type: "photo",
@@ -77,7 +83,7 @@ async function getPixabayPictureUrls(g, remainingUsers, page = 1) {
       throw new Error(`Pixabay API error: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    const urls = data.hits.map(hit => hit.webformatURL);
+    const urls = data.hits.map((hit: Hit) => hit.webformatURL);
 
     const remaining = remainingUsers - nb_users;
     if (remaining > 0) {
@@ -92,7 +98,7 @@ async function getPixabayPictureUrls(g, remainingUsers, page = 1) {
   }
 }
 
-async function insertUserInterests(pool, userId) {
+async function insertUserInterests(pool: Pool, userId: string) {
   try {
     const interestsCount = await pool.query("SELECT COUNT(*) FROM interests");
     const interests = new Set();
@@ -129,7 +135,7 @@ export async function seed() {
       const [ id, gender ] = await insertUser(pool);
       await insertUserInterests(pool, id);
       const urlPic = gender === 'M' ? malePics.pop() : femalePics.pop();
-      await insertUserPic(pool, id, urlPic);
+      await insertUserPic(pool, id, urlPic as string);
     }
     console.log("... Done");
   } catch (err) {
@@ -139,7 +145,7 @@ export async function seed() {
   }
 }
 
-async function downloadImage(url) {
+async function downloadImage(url: string) {
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to download ${url}`);
@@ -149,7 +155,7 @@ async function downloadImage(url) {
   return { buffer: Buffer.from(buffer), mimeType };
 }
 
-async function insertUserPic(pool, id, urlPic) {
+async function insertUserPic(pool: Pool, id: string, urlPic: string) {
     const { buffer, mimeType } = await downloadImage(urlPic);
 
     await pool.query(

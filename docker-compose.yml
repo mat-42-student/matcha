@@ -17,6 +17,7 @@ services:
       - "8443:443"
     depends_on:
       - matcha_server
+    stop_grace_period: 2s
     networks:
       - main-network
     restart: on-failure

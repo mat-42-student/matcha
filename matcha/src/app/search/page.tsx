@@ -1,4 +1,4 @@
-// // matcha/src/app/search/page.tsx
+// matcha/src/app/search/page.tsx
 
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";

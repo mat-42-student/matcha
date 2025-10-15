@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { redirect } from "next/navigation";
-import Chat from "@/components/MainComponents/Chat";
+import MainChat from "@/components/chat/MainChat";
 
 export default async function SearchPage() {
   const cookieStore = await cookies();
@@ -16,6 +16,6 @@ export default async function SearchPage() {
   }
 
   return (
-    <Chat />
+      <MainChat/>
   );
 }

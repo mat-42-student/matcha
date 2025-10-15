@@ -9,6 +9,7 @@ import type { PublicUser } from "@/types";
 import { UserProvider } from "@/context/UserContext";
 //@ts-ignore
 import { Toaster } from "react-hot-toast";
+import { SocketProvider } from "@/context/SocketContext";
 
 
 
@@ -27,16 +28,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="fr">
       <body className="h-screen flex flex-col bg-gray-100">
-        <UserProvider initialUser={user}>
-          <Header />
-            <main className="flex-1 overflow-auto">
-              <div className="w-full mx-auto h-full">
-                <Toaster   position="top-center" reverseOrder={false} />
-                {children}
-              </div>
-            </main>
-          <Footer />
-        </UserProvider>
+        <SocketProvider>
+          <UserProvider initialUser={user}>
+            <Header />
+              <main className="flex-1 overflow-auto">
+                <div className="w-full mx-auto h-full">
+                  <Toaster   position="top-center" reverseOrder={false} />
+                  {children}
+                </div>
+              </main>
+            <Footer />
+          </UserProvider>
+        </SocketProvider>
       </body>
     </html>
   );

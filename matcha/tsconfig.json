@@ -25,6 +25,6 @@
   "ts-node": {
     "esm": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/server.js", "src/lib/db/seed-users.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/server/server.js", "src/lib/db/seed-users.ts"],
   "exclude": ["node_modules"]
 }

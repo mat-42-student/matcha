@@ -1,3 +1,5 @@
+// ce fichier ne sert pas
+
 import { Server } from "socket.io";
 import type { Server as HttpServer } from "http";
 

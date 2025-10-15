@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node src/app/server.js",
-    "seed": "ts-node src/lib/db/seed-users.ts",
+    "dev": "ts-node src/server/server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
