@@ -1,3 +1,5 @@
+// matcha/src/server/seed-users.ts
+
 import { fakerFR as faker } from "@faker-js/faker";
 import { Pool } from 'pg';
 import fs from "fs";

@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { redirect } from "next/navigation";
-import Search from "@/components/MainComponents/Search";
+import Search from "@/components/browse/Search";
 
 export default async function SearchPage() {
   const cookieStore = await cookies();

@@ -1,9 +1,17 @@
+// matcha/src/components/chat/ChatWindow.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
+import { Socket } from "socket.io-client";
 
-export default function ChatWindow({ selectedUser }: { selectedUser: string | null }) {
+export default function ChatWindow({
+  selectedUser,
+  s
+}: {
+  s: Socket
+  selectedUser: string | null;
+}) {
   const { socket } = useSocket();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");

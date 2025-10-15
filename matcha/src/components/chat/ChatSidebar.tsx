@@ -19,7 +19,7 @@ export default function ChatSidebar({
     { id: "u3", username: "Charlie" },
   ];
   return (
-    <div className="w-1/3 bg-gray-900 text-gray-200 border-r border-gray-700 overflow-y-auto">
+    <div className="w-1/6 bg-gray-900 text-gray-200 border-r border-gray-700 overflow-y-auto">
       <div className="p-3 font-semibold text-lg border-b border-gray-700">
         Utilisateurs
       </div>
