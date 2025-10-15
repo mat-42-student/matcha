@@ -8,6 +8,7 @@ import SearchForm from "@/components/forms/SearchForm";
 import Browse from "@/components/browse/Browse";
 
 export default function SearchPage() {
+    
   const [results, setResults] = useState<PublicUser[]>([]);
 
   async function handleSearch(criteria: SearchCriteria) {

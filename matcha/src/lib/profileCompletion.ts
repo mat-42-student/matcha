@@ -1,4 +1,7 @@
 import { getPictures } from "./db/pictures";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/db/session";
 
 export interface Completion {
   percentage: number;
@@ -45,4 +48,26 @@ export async function analyzeProfileCompletion(user: any): Promise<Completion> {
   const percentage = Math.round((filledCriteria / totalCriteria) * 100);
 
   return { percentage, missingRequired, missingOptional };
+}
+
+export async function checkSessionAndCompletion() {
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value;
+
+    if (!sessionId) {
+      return { user: null, completion: null };
+    }
+
+    const user = await getSessionUser(sessionId);
+    if (!user) {
+      return { user: null, completion: null };
+    }
+
+    const completion = await analyzeProfileCompletion(user);
+    return { user, completion };
+  } catch (err) {
+    console.error("Error checking session:", err);
+    return { user: null, completion: null };
+  }
 }
