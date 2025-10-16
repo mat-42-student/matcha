@@ -3,19 +3,39 @@ CREATE EXTENSION IF NOT EXISTS earthdistance;
 
 CREATE TABLE "users" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "first_name" varchar(50) NOT NULL,
-  "last_name" varchar(50) NOT NULL,
-  "email" varchar(255) UNIQUE NOT NULL,
+
+  "first_name" varchar(50) NOT NULL
+    CHECK (char_length(first_name) >= 2 AND first_name !~ $$[^A-Za-zÀ-ÖØ-öø-ÿ' -]$$),
+
+  "last_name" varchar(50) NOT NULL
+    CHECK (char_length(last_name) >= 2 AND last_name !~ $$[^A-Za-zÀ-ÖØ-öø-ÿ' -]$$),
+
+  "email" varchar(255) UNIQUE NOT NULL
+    CHECK (email ~ $$^[^@\s]+@[^@\s]+\.[^@\s]+$$),
+
   "passwd" varchar(255) NOT NULL,
-  "birthdate" DATE NOT NULL,
-  "country" varchar(30),
-  "city" varchar(50),
-  "latitude" float,
-  "longitude" float,
+
+  "birthdate" date NOT NULL
+    CHECK (
+      birthdate <= (current_date - interval '18 years') AND
+      birthdate >= (current_date - interval '100 years')
+    ),    
+
+  "country" varchar(30)
+    CHECK (country IS NULL OR country !~ $$[^A-Za-zÀ-ÖØ-öø-ÿ' -]$$),
+
+  "city" varchar(50)
+    CHECK (city IS NULL OR city !~ $$[^A-Za-zÀ-ÖØ-öø-ÿ' -]$$),
+
+  "latitude" float CHECK (latitude BETWEEN -90 AND 90),
+  "longitude" float CHECK (longitude BETWEEN -180 AND 180),
+
   "gender" char(1) CHECK (gender IN ('M', 'F')),
   "sex_pref" char(1) CHECK (sex_pref IN ('M', 'F', 'B')),
+
   "bio" text,
-  "fame" float,
+  "fame" float CHECK (fame >= 0),
+
   "is_verified" boolean DEFAULT false,
   "created_at" timestamp DEFAULT (current_timestamp)
 );
@@ -206,6 +226,10 @@ AS $$
         AND m.status = 'block'
     );
 $$ LANGUAGE sql STABLE;
+
+
+
+
 
 
 CREATE INDEX ON "sessions" ("user_id");

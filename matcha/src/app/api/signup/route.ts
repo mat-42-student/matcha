@@ -1,10 +1,10 @@
+import { validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, getUserByEmail } from '@/lib/db/users';
 import { createEmailVerification } from '@/lib/db/emailVerifications';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import { getGPSFromCityName } from '@/lib/gps'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,28 +14,28 @@ export async function POST(req: NextRequest) {
     const first_name = formData.get('first_name') as string;
     const last_name = formData.get('last_name') as string;
     const birthdate = formData.get('birthdate') as string;
-    // const gender = formData.get('gender') as string;
-    // const sex_pref = formData.get('sex_pref') as string;
-    // const city = formData.get('city') as string;
 
-    if (!email || !password || !first_name || !last_name || !birthdate ) {
-      return NextResponse.json({ error: 'Champs manquants' }, { status: 400 });
+    const { valid, errors } = validateSignupData({
+      email,
+      password,
+      first_name,
+      last_name,
+      birthdate,
+    });
+
+    console.log("errors");
+
+    if (!valid) {
+      return NextResponse.json({ errors }, { status: 400 });
     }
 
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
-      return NextResponse.json({ error: 'Email déjà utilisé' }, { status: 400 });
+      return NextResponse.json({ errors: { email: 'Email is already used' } }, { status: 400 });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // 📍 Get GPS loc from city
-    // const coords = await getGPSFromCityName(city);
-    // if (!coords) {
-    //   return NextResponse.json({ error: "Unable to resolve gps coords of target city"}, { status: 400 });
-    // }
-
-    // 📝 Création en DB
     const newUser = await createUser({
       first_name,
       last_name,
@@ -52,30 +52,26 @@ export async function POST(req: NextRequest) {
 
     const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-email?token=${token}`;
 
-    // ⚡ Nodemailer pour Mailpit
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,       // "localhost" ou "mailpit" selon docker
+      host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || "1025"),
-      secure: false,                     // Mailpit ne nécessite pas TLS
-      // Pas besoin d'auth si Mailpit est en mode par défaut
+      secure: false,
     });
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"Matcha" <${process.env.EMAIL_FROM}>`,
       to: email,
-      subject: "Vérifie ton email",
+      subject: "Verify your email",
       html: `
-        <h1>Bienvenue sur Matcha 🎉</h1>
-        <p>Pour activer ton compte, clique ici :</p>
+        <h1>Welcome to Matcha 🎉</h1>
+        <p>Click here to verify your account:</p>
         <a href="${verifyUrl}">${verifyUrl}</a>
       `,
     });
-    console.log("Mail envoyé :", info);
 
-
-    return NextResponse.json({ success: true, message: 'Utilisateur créé, email de vérification envoyé' });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Erreur lors de l'inscription :", error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("Signup error:", error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
