@@ -84,3 +84,29 @@ export function validateSignupForm(fields: {
 
   return { valid: Object.keys(errors).length === 0, errors };
 }
+
+export function validateProfileField(field: string, value: string) {
+  switch (field) {
+    case "first_name":
+    case "last_name":
+      if (!value || value.length < 2) return { valid: false, error: "Too short" };
+      if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(value))
+        return { valid: false, error: "Invalid characters" };
+      return { valid: true };
+    case "email":
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value))
+        return { valid: false, error: "Invalid email" };
+      return { valid: true };
+    case "bio":
+      return { valid: true }; // pas de restriction pour l'instant
+    case "gender":
+      if (!["M", "F"].includes(value)) return { valid: false, error: "Invalid gender" };
+      return { valid: true };
+    case "sex_pref":
+      if (!["M", "F", "B"].includes(value))
+        return { valid: false, error: "Invalid sexual preference" };
+      return { valid: true };
+    default:
+      return { valid: true };
+  }
+}

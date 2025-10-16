@@ -62,3 +62,53 @@ export function validateSignupData(data: {
 
   return { valid: Object.keys(errors).length === 0, errors };
 }
+
+export interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export function validateProfileField(
+  field: string,
+  value: any
+): ValidationResult {
+  if (value === null || value === undefined) {
+    return { valid: false, error: "Champ vide" };
+  }
+
+  switch (field) {
+    case "first_name":
+    case "last_name": {
+      const str = String(value).trim();
+      if (str.length < 2) return { valid: false, error: "Doit contenir au moins 2 caractères" };
+      if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(str)) return { valid: false, error: "Caractères invalides" };
+      return { valid: true };
+    }
+
+    case "email": {
+      const str = String(value).trim();
+      const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      if (!emailRegex.test(str)) return { valid: false, error: "Adresse email invalide" };
+      return { valid: true };
+    }
+
+    case "gender": {
+      if (!["M", "F"].includes(value)) return { valid: false, error: "Doit être 'M' ou 'F'" };
+      return { valid: true };
+    }
+
+    case "sex_pref": {
+      if (!["M", "F", "B"].includes(value)) return { valid: false, error: "Doit être 'M', 'F' ou 'B'" };
+      return { valid: true };
+    }
+
+    case "bio": {
+      const str = String(value);
+      if (str.length > 500) return { valid: false, error: "Bio trop longue (max 500 caractères)" };
+      return { valid: true };
+    }
+
+    default:
+      return { valid: true }; // champs inconnus validés par défaut
+  }
+}

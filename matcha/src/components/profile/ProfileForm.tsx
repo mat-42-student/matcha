@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Edit2, Check } from "lucide-react";
 import toast from "react-hot-toast";
+import { validateProfileField } from "@/lib/validators/clientValidator";
 
 export default function ProfileForm({
   user,
@@ -30,26 +31,35 @@ export default function ProfileForm({
     setFormData(initialData);
   }, [initialData]);
 
-  // ✅ Save only the edited field when leaving edit mode
-  const saveField = async (field: string) => {
-    const value = (formData as any)[field];
+const saveField = async (field: string) => {
+  const value = (formData as any)[field];
 
-    try {
-      const res = await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value }), // only send one field
-      });
+  const { valid, error } = validateProfileField(field, value);
+  if (!valid) {
+    toast.error(error || "Invalid value");
+    setEditingField(field);
+    return false;
+  }
 
-      if (!res.ok) throw new Error("Update error");
+  try {
+    const res = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
 
-      onUserUpdate?.({ [field]: value });
-      toast.success(`${field.replace("_", " ")} updated successfully`);
-    } catch (err) {
-      console.error(err);
-      toast.error(`Failed to update ${field}`);
-    }
-  };
+    if (!res.ok) throw new Error("Update error");
+
+    onUserUpdate?.({ [field]: value });
+    toast.success(`${field.replace("_", " ")} updated successfully`);
+    return true; // success
+  } catch (err) {
+    console.error(err);
+    toast.error(`Failed to update ${field}`);
+    setEditingField(field); // keep editing mode
+    return false;
+  }
+};
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -140,8 +150,8 @@ export default function ProfileForm({
             }
 
             if (isEditing) {
-              setEditingField(null);
-              await saveField(name); // ✅ save only that field
+              const success = await saveField(name);
+              if (success) setEditingField(null); // only exit editing mode if valid
             } else {
               setEditingField(name);
             }
