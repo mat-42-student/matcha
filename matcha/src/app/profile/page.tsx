@@ -1,3 +1,5 @@
+// matcha/src/app/profile/page.tsx
+
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -14,7 +16,7 @@ async function getCurrentUser() {
 	try {
 		return await getSessionUser(sessionId);
 	} catch (err) {
-		console.error("❌ Could not get user from session:", err);
+		console.error("failed getting session user:", err);
 		return null;
 	}
 }
