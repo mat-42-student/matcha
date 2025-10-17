@@ -5,8 +5,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { io, Socket } from "socket.io-client";
 import { useUser } from "@/context/UserContext";
 import toast from "react-hot-toast";
-import { Payload } from "@/types";
-import { PublicUser } from "@/types";
+import { Payload } from "@/lib/types";
+import { PublicUser } from "@/lib/types";
 
 interface SocketContextType {
   socket: Socket | null;

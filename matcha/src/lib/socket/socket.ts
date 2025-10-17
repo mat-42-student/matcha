@@ -5,7 +5,7 @@ import type { Server as HttpServer } from "http";
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
 import { Socket } from "socket.io";
-import { Payload, PublicUser } from "@/types";
+import { Payload, PublicUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo } from "./chat";
 
 export const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
@@ -25,7 +25,6 @@ const system: PublicUser = {
   sex_pref: "System",
   interests: ["System"],
   fame: 0,
-
 }
 
 export function initSocket(httpServer: HttpServer) {

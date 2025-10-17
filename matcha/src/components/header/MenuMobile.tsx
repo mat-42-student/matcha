@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { useState } from "react";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 export default function MenuMobile({ user, onLogout }: { user: PublicUser; onLogout: () => void }) {
   const [open, setOpen] = useState(false);

@@ -1,11 +1,11 @@
 // matcha/src/app/layout.tsx
 
 import "./globals.css"
-import { Header } from "@/components/Header"
-import { Footer } from "@/components/Footer"
+import { Header } from "@/components/header/Header"
+import { Footer } from "@/components/header/Footer"
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
-import type { PublicUser } from "@/types";
+import type { PublicUser } from "@/lib/types";
 import { UserProvider } from "@/context/UserContext";
 //@ts-ignore
 import { Toaster } from "react-hot-toast";

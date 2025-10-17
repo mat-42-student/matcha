@@ -1,7 +1,7 @@
 // matcha/src/components/MenuDesktop.tsx
 "use client"
 
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 import Link from "next/link"
 
 export default function MenuDesktop({ user, onLogout }: { user: PublicUser; onLogout: () => void }) {

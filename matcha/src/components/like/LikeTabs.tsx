@@ -7,7 +7,7 @@ import LikeMe from "@/components/like/LikeMe";
 // import Matches from "@/components/like/Matches";
 import Visitors from "@/components/like/Visitors";
 import LButton from "./LButton";
-import { LikeTabsTypes } from "@/types";
+import { LikeTabsTypes } from "@/lib/types";
 
 export default function LikeTabs() {
   const [activeTab, setActiveTab] = useState<LikeTabsTypes>(

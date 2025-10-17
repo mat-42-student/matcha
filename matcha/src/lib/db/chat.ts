@@ -1,4 +1,4 @@
-import { PublicUser } from '@/types';
+import { PublicUser } from '@/lib/types';
 import { executeQuery } from './db-utils';
 
 export interface ChatMessage {
@@ -15,8 +15,8 @@ export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]>
     FROM users_with_interests uwi
     JOIN matches m
       ON (uwi.id = m.user1_id OR uwi.id = m.user2_id)
-    WHERE ${user} IN (m.user1_id, m.user2_id)
-      AND uwi.id != ${user};
+    WHERE '${user}' IN (m.user1_id, m.user2_id)
+      AND uwi.id != '${user}';
   `
   const result = await executeQuery<PublicUser>(query);
   return result.rows;

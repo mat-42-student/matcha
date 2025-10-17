@@ -7,24 +7,12 @@ import { Socket } from "socket.io-client";
 
 export default function ChatWindow({
   selectedUser,
-  s
 }: {
-  s: Socket
   selectedUser: string | null;
 }) {
   const { socket } = useSocket();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
-
-  // useEffect(() => {
-  //   if (!socket) return;
-  //   const handler = (msg: { from: string; to: string; text: string }) => {
-  //     if (selectedUser && (msg.from === selectedUser || msg.to === selectedUser))
-  //       setMessages((p) => [...p, msg]);
-  //   };
-  //   socket.on("chat:receive", handler);
-  //   return () => socket.off("chat:receive", handler);
-  // }, [socket, selectedUser]);
 
   const send = () => {
     if (socket && selectedUser && input.trim()) {

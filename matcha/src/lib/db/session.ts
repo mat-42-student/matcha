@@ -2,7 +2,7 @@
 
 import { pool } from "./db-utils";
 import { v4 as uuidv4 } from "uuid";
-import type { PublicUser } from "@/types";
+import type { PublicUser } from "@/lib/types";
 
 export async function createSession(userId: string): Promise<string> {
 	const sessionId = uuidv4();
