@@ -1,3 +1,4 @@
+import { PublicUser } from '@/types';
 import { executeQuery } from './db-utils';
 
 export interface ChatMessage {
@@ -8,8 +9,20 @@ export interface ChatMessage {
   created_at: Date;
 }
 
+export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]> {
+  const query = `
+    SELECT uwi.*
+    FROM users_with_interests uwi
+    JOIN matches m
+      ON (uwi.id = m.user1_id OR uwi.id = m.user2_id)
+    WHERE ${user} IN (m.user1_id, m.user2_id)
+      AND uwi.id != ${user};
+  `
+  const result = await executeQuery<PublicUser>(query);
+  return result.rows;
+}
 
-export async function sendMessage(sender_id: string, recipient_id: string, message: string): Promise<ChatMessage> {
+export async function storeMessage(sender_id: string, recipient_id: string, message: string): Promise<ChatMessage> {
   const query = `
     INSERT INTO chat (sender_id, recipient_id, message)
     VALUES ('${sender_id}', '${recipient_id}', '${message}')
