@@ -21,8 +21,8 @@ http://localhost:8080/
 - pass `caglisse`
 - database `matcha`
 
-### Mailpit
-http://localhost:8025/
-
 ### old fashioned way:
 `docker exec -it postgres psql -U alice -d matcha`
+
+### Mailpit
+http://localhost:8025/
