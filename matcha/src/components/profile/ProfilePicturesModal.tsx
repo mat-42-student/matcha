@@ -133,6 +133,7 @@ export function ProfilePicturesModal({
                     alt="photo"
                     fill
                     className="object-cover"
+                    priority
                 />
 
                 {pic.is_main && (

@@ -57,6 +57,7 @@ export default function ProfilePicture({ userId, onUpdated }: ProfilePictureProp
         className="object-cover rounded-full border-4 border-pink-300 shadow-lg cursor-pointer transition"
         onClick={() => setIsModalOpen(true)}
         onError={() => setHasError(true)}
+        priority
       />
 
       {isHovered && (
