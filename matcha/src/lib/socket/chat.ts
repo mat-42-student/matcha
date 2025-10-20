@@ -20,6 +20,6 @@ export function handleChatMessage(payload: Payload, io: Server) {
 
 export async function handleUsersInfo(payload: Payload, io: Server) {
   const users = await getOnlineMatchedUsers(payload.from.id);
-  console.log("Sending chat users to ", payload.from.first_name, users);
+  console.log(`Sending ${users.length} chat users to ${payload.from.first_name}`);
   send(payload.from.id, "chat-users", users, io);
 }

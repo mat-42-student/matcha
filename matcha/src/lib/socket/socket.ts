@@ -53,7 +53,6 @@ export function initSocket(httpServer: HttpServer) {
     console.log(`\x1b[31mUser ${socket.data.user.first_name} disconnected\x1b[0m`);
   }
 
-
   function addSocket(s: Socket) {
     if (!connectedUsers.has(s.data.user.id)) connectedUsers.set(s.data.user.id, new Set())
     connectedUsers.get(s.data.user.id)!.add(s.id)
