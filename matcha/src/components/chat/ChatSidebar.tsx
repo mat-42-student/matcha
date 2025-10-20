@@ -1,29 +1,38 @@
 // matcha/src/components/chat/ChatSidebar.tsx
 "use client";
 
-import { Socket } from "socket.io-client";
+import { useEffect, useState } from "react";
+import { useUser } from "@/context/UserContext";
+import { useSocket } from "@/context/SocketContext";
+import { PublicUser } from "@/lib/types";
 
 export default function ChatSidebar({
-  s,
   onSelectUser,
   selectedUser,
 }: {
-  s: Socket;
   onSelectUser: (id: string) => void;
   selectedUser: string | null;
 }) {
-  s.send({})
-  const matches = [
-    { id: "u1", username: "Alice" },
-    { id: "u2", username: "Bob" },
-    { id: "u3", username: "Charlie" },
-  ];
+  const { socket, chatUsers } = useSocket();
+  const { user } = useUser();
+  useEffect(() => {
+    if (socket)
+      socket.emit("get-chat-users", {
+        from: user,
+        to: user,
+        msg: ""
+      }
+    );
+  }, [socket]);
+
+  if (!chatUsers) return <div>No match</div>;
+
   return (
     <div className="w-1/6 bg-gray-900 text-gray-200 border-r border-gray-700 overflow-y-auto">
       <div className="p-3 font-semibold text-lg border-b border-gray-700">
-        Utilisateurs
+        Users
       </div>
-      {matches.map((u) => {
+      {chatUsers.map((u) => {
         return (
           <div
             key={u.id}
@@ -31,7 +40,7 @@ export default function ChatSidebar({
             className=
               "cursor-pointer p-3 flex items-center justify-between hover:bg-gray-800"
           >
-            <span>{u.username}</span>
+            <span>{u.first_name} {u.last_name}</span>
             <span className="w-2 h-2 rounded-full"/>
           </div>
         );

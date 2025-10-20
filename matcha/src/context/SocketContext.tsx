@@ -1,49 +1,82 @@
+// src/context/SocketProvider.tsx
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
+import { useUser } from "@/context/UserContext";
+import toast from "react-hot-toast";
+import { Payload } from "@/lib/types";
+import { PublicUser } from "@/lib/types";
 
 interface SocketContextType {
   socket: Socket | null;
-  isConnected: boolean;
+}
+
+interface SocketContextType {
+  socket: Socket | null;
+  chatMsg: Payload | null;
+  like: Payload | null;
+  unlike: Payload | null;
+  match: Payload | null;
+  chatUsers: PublicUser[] | null;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
-  isConnected: false,
-});
+  chatMsg: null,
+  like: null,
+  unlike: null,
+  match: null,
+  chatUsers: null,
+})
 
 export function SocketProvider({ children }: { children: ReactNode }) {
+  const { user } = useUser();
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [chatMsg, setChatMsg] = useState<Payload | null>(null);
+  const [like, setLike] = useState<Payload | null>(null);
+  const [unlike, setUnlike] = useState<Payload | null>(null);
+  const [match, setMatch] = useState<Payload | null>(null);
+  const [chatUsers, setChatUsers] = useState<PublicUser[]| null>(null);
 
+  function handleNotif(payload: Payload) {
+    toast.success(/*payload.from.first_name + ": " + */payload.msg);
+  }  
+  
   useEffect(() => {
+    if (!user) {
+      if (socket) {
+        socket.disconnect();
+        toast.success("Bye");
+        setSocket(null);
+      }
+      return;
+    }
+
     const s = io(window.location.origin, {
       path: "/socket.io",
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
 
+    console.log("ouverture de la socket")
     setSocket(s);
 
-    s.on("connect", () => {
-      console.log("[socket] Connected:", s.id);
-      setIsConnected(true);
-    });
+    s.on("notif", (payload: Payload) => handleNotif(payload));
+    s.on("like", (payload: Payload) => setLike(payload));
+    s.on("match", (payload: Payload) => setMatch(payload));
+    s.on("unlike", (payload: Payload) => setUnlike(payload));
+    s.on("chat-msg", (payload: Payload) => { console.log(payload); setChatMsg(payload) });
+    s.on("chat-users", setChatUsers);
 
-    s.on("disconnect", () => {
-      console.log("[socket] Disconnected");
-      setIsConnected(false);
-    });
-
-    // Nettoyage à la fermeture du composant
     return () => {
-      s.disconnect();
+      s.disconnect()
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    <SocketContext.Provider value={{ socket, like, unlike, match, chatMsg, chatUsers }}>
       {children}
     </SocketContext.Provider>
   );

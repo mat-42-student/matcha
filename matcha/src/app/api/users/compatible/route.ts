@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 export async function GET() {
   try {

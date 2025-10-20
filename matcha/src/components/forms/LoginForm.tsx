@@ -33,11 +33,9 @@ export default function LoginForm() {
 				return;
 			}
 
-			// ✅ Succès → redirection
-            //window.dispatchEvent(new Event("user-logged-in"));
-            setUser(data.user);
+			setUser(data.user);
+			// Launch socket here
 			router.push("/");
-
 		} catch (err) {
 			console.error(err);
 			setError("Network error");

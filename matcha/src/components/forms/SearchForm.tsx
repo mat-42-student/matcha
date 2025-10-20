@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { SearchCriteria } from "@/types";
+import { SearchCriteria } from "@/lib/types";
 
 export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCriteria) => void }) {
   const [collapsed, setCollapsed] = useState(false);

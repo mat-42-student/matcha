@@ -1,6 +1,6 @@
 "use client";
 
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 import Browse from "@/components/browse/Browse";
 import { useState, useEffect } from "react";
 

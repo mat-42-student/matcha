@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import type { PublicUser } from "@/types";
+import type { PublicUser } from "@/lib/types";
 
 interface UserContextType {
   user: PublicUser | null;

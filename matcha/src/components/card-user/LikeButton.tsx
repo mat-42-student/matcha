@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 
 export default function LikeButton({

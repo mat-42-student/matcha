@@ -4,10 +4,10 @@
 import { useState } from "react";
 import Liked from "@/components/like/Liked";
 import LikeMe from "@/components/like/LikeMe";
-// import Matches from "@/components/like/Matches";
+import Matches from "@/components/like/Matches";
 import Visitors from "@/components/like/Visitors";
 import LButton from "./LButton";
-import { LikeTabsTypes } from "@/types";
+import { LikeTabsTypes } from "@/lib/types";
 
 export default function LikeTabs() {
   const [activeTab, setActiveTab] = useState<LikeTabsTypes>(
@@ -20,7 +20,7 @@ export default function LikeTabs() {
         <LButton tab="visitors" activeTab={activeTab} setActiveTab={setActiveTab}>Visitors</LButton>
         <LButton tab="liked" activeTab={activeTab} setActiveTab={setActiveTab}>People I like</LButton>
         <LButton tab="likeMe" activeTab={activeTab} setActiveTab={setActiveTab}>People who likes me</LButton>
-        {/* <LButton tab="matches" activeTab={activeTab} setActiveTab={setActiveTab}>Matches</LButton> */}
+        <LButton tab="matches" activeTab={activeTab} setActiveTab={setActiveTab}>Matches</LButton>
 
       </div>
 
@@ -28,7 +28,7 @@ export default function LikeTabs() {
         {activeTab === "visitors" && <Visitors />}
         {activeTab === "liked" && <Liked />}
         {activeTab === "likeMe" && <LikeMe />}
-        {/* {activeTab === "matches" && <Matches />} */}
+        {activeTab === "matches" && <Matches />}
       </div>
     </div>
   );
