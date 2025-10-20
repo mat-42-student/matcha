@@ -35,17 +35,19 @@ export default function CardUser({
     async function fetchMainPic() {
       try {
         const res = await fetch(`/api/users/${user.id}/pics/`);
-        if (res.status === 204 || !res.ok) {
-          return;
-        }
-        const pic: Picture = await res.json();
-        setMainPic(pic);
+        if (!res.ok || res.status === 204) return;
+
+        const picJson: Picture = await res.json();
+        // Convert base64 to data URL
+        const imageUrl = `data:${picJson.mime_type};base64,${picJson.data}`;
+        setMainPic({ ...picJson, data: imageUrl });
       } catch (err) {
         console.error("Could not retrieve main picture:", err);
       }
     }
-    fetchMainPic()
-  }, []);
+
+    fetchMainPic();
+  }, [user.id]);
 
   return (
     <>
@@ -73,7 +75,7 @@ export default function CardUser({
               height={0}
               style={{ width: "auto", height: "auto" }}
               className="max-h-48 rounded shadow-md"
-              src={`data:${mainPic.mime_type};base64,${mainPic.data}`}
+              src={mainPic.data}
               alt="profile picture"
             />
           ) : (

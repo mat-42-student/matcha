@@ -1,15 +1,14 @@
 // matcha/src/app/api/match/getMatches/route.ts
-
-import { pool } from "@/lib/db/db-utils";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
+import { getMatchesForUser } from "@/lib/db/matches";
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
-    
+
     if (!sessionId) {
       return NextResponse.json({ error: "No session found" }, { status: 401 });
     }
@@ -19,29 +18,10 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: matches } = await pool.query(`
-      SELECT uwi.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(uwi.latitude, uwi.longitude))/1000) AS distance
-      FROM matches m
-      JOIN users_with_interests uwi 
-        ON uwi.id IN (m.user1_id, m.user2_id)
-      WHERE m.status = 'match'
-        AND $3 IN (m.user1_id, m.user2_id)
-        AND uwi.id <> $3
-        AND NOT EXISTS (
-          SELECT 1
-          FROM matches m
-          WHERE
-            (
-              (m.user1_id = $3 AND m.user2_id = uwi.id)
-              OR
-              (m.user1_id = uwi.id AND m.user2_id = $3)
-            )
-            AND m.status = 'block'
-        );
-      `, [me.latitude, me.longitude, me.id]);
+    const matches = await getMatchesForUser(me.id, me.latitude!, me.longitude!);
     return NextResponse.json(matches);
   } catch (err) {
-      console.error(err);
-      return NextResponse.json({ error: "Error" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

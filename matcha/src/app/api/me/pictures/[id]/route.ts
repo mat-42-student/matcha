@@ -1,52 +1,36 @@
+// matcha/src/app/api/me/pictures/[id]/route.ts
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
-import { getSessionUser } from "@/lib/db/session";
 import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/db/session";
+import { deleteUserPicture } from "@/lib/db/pictures";
 
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value || null;
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value || null;
 
-  if (!sessionId)
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-
-  const user = await getSessionUser(sessionId);
-  if (!user)
-    return NextResponse.json({ error: "User not found" }, { status: 401 });
-
-  const { id } = params;
-
-  // Vérifie si la photo supprimée est la principale
-  const mainCheckRes = await pool.query(
-    `SELECT is_main FROM pictures WHERE id = $1 AND user_id = $2`,
-    [id, user.id]
-  );
-  const isMain = mainCheckRes.rows[0]?.is_main;
-
-  // Supprime la photo
-  await pool.query(`DELETE FROM pictures WHERE id = $1 AND user_id = $2`, [
-    id,
-    user.id,
-  ]);
-
-  // Si c'était la photo principale, en choisir une autre
-  if (isMain) {
-    const res = await pool.query(
-      `SELECT id FROM pictures WHERE user_id = $1 LIMIT 1`,
-      [user.id]
-    );
-    const newMainId = res.rows[0]?.id;
-
-    if (newMainId) {
-      await pool.query(
-        `UPDATE pictures SET is_main = TRUE WHERE id = $1`,
-        [newMainId]
-      );
+    if (!sessionId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
-  }
 
-  return NextResponse.json({ success: true });
+    const user = await getSessionUser(sessionId);
+    if (!user) {
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    const { id } = params;
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Invalid picture ID" }, { status: 400 });
+    }
+
+    await deleteUserPicture(user.id, id);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Error deleting picture:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

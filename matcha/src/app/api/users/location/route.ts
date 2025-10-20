@@ -1,28 +1,19 @@
-// app/api/users/location/route.ts
-
+// matcha/src/app/api/users/location/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { pool } from "@/lib/db/db-utils";
+import { updateUserLocationBySession } from "@/lib/db/users";
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session_id")?.value || null;
+
+  if (!sessionId) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   const { latitude, longitude, city, country } = await req.json();
 
-  const query = `
-  UPDATE users
-  SET country = $1, city = $2, latitude = $3, longitude = $4
-  WHERE id = (
-    SELECT user_id 
-    FROM sessions 
-    WHERE id = $5 
-      AND expires_at > now()
-  )`;
-
-  await pool.query(
-      query,
-      [country, city, latitude, longitude, sessionId]
-  );
+  await updateUserLocationBySession(sessionId, latitude, longitude, city, country);
 
   return NextResponse.json({ success: true });
 }

@@ -11,12 +11,12 @@ export async function POST(req: NextRequest) {
 		const password = formData.get("password") as string;
 
 		if (!email || !password) {
-			return NextResponse.json({ error: "Champs manquants" }, { status: 400 });
+			return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 		}
 
 		const user = await loginUser(email, password);
 		if (!user) {
-			return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
+			return NextResponse.json({ error: "Invalid login" }, { status: 401 });
 		}
 
 		const sessionId = await createSession(user.id);
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
 		return res;
 	} catch (err) {
-		console.error("Erreur login:", err);
-		return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+		console.error("Error login:", err);
+		return NextResponse.json({ error: "Server error" }, { status: 500 });
 	}
 }

@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Récupérer l’utilisateur depuis la session
     const sessionId = req.cookies.get("session_id")?.value || null;
     if (!sessionId) {
       return NextResponse.json({ error: "Not authentificated" }, { status: 401 });
@@ -23,8 +22,9 @@ export async function POST(req: NextRequest) {
     for (const [field, value] of Object.entries(body)) {
       const { valid, error } = validateProfileField(field, value);
       if (!valid) {
-        return NextResponse.json({ error: error || "Valeur invalide" }, { status: 400 });
+        return NextResponse.json({ error: error || "Invalid value" }, { status: 400 });
       }
+      updates[field] = value;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, user: updated });
   } catch (e) {
-    console.error("Erreur update profile:", e);
+    console.error("Error update profile:", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

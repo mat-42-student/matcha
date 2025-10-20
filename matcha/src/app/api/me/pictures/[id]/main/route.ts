@@ -1,35 +1,36 @@
+// matcha/src/app/api/me/pictures/[id]/main/route.ts
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
-import { getSessionUser } from "@/lib/db/session";
 import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/db/session";
+import { setMainPicture } from "@/lib/db/pictures";
 
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value || null;
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value || null;
 
-  if (!sessionId)
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    if (!sessionId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
 
-  const user = await getSessionUser(sessionId);
-  if (!user)
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 401 });
+    const user = await getSessionUser(sessionId);
+    if (!user) {
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
 
-  const { id } = params;
+    const { id } = params;
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Invalid picture ID" }, { status: 400 });
+    }
 
-  // On retire le flag "is_main" des autres images
-  await pool.query(
-    `UPDATE pictures SET is_main = false WHERE user_id = $1`,
-    [user.id]
-  );
+    await setMainPicture(user.id, id);
 
-  // On définit celle-ci comme principale
-  await pool.query(
-    `UPDATE pictures SET is_main = true WHERE id = $1 AND user_id = $2`,
-    [id, user.id]
-  );
-
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Error setting main picture:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

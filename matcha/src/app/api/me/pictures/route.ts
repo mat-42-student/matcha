@@ -1,79 +1,70 @@
+// matcha/src/app/api/me/pictures/route.ts
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
-import { getSessionUser } from "@/lib/db/session";
 import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/db/session";
+import {
+  getUserPictures,
+  addUserPicture,
+  countUserPictures,
+} from "@/lib/db/pictures";
 
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value || null;
 
-export async function GET(req: Request) {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value || null;
+    if (!sessionId)
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  if (!sessionId)
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    const user = await getSessionUser(sessionId);
+    if (!user)
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
 
-  const user = await getSessionUser(sessionId);
-  if (!user)
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 401 });
+    const pictures = await getUserPictures(user.id);
 
-  const result = await pool.query(
-    `SELECT id, mime_type, encode(data, 'base64') AS data, is_main
-     FROM pictures WHERE user_id = $1`,
-    [user.id]
-  );
+    if (pictures.length === 0)
+      return new NextResponse(null, { status: 204 });
 
-  if (result.rows.length === 0)
-    return new NextResponse(null, { status: 204 });
-
-  return NextResponse.json(result.rows);
+    return NextResponse.json(pictures);
+  } catch (err) {
+    console.error("Error in GET /api/me/pictures:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value || null;
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value || null;
 
-  if (!sessionId)
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    if (!sessionId)
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const user = await getSessionUser(sessionId);
-  if (!user)
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 400 });
+    const user = await getSessionUser(sessionId);
+    if (!user)
+      return NextResponse.json({ error: "User not found" }, { status: 400 });
 
-  const formData = await req.formData();
-  const file = formData.get("file") as File;
-  if (!file)
-    return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 });
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+    if (!file)
+      return NextResponse.json({ error: "No file received" }, { status: 400 });
 
+    const pictureCount = await countUserPictures(user.id);
+    if (pictureCount >= 5) {
+      return NextResponse.json(
+        { error: "You cannot upload more than 5 pictures." },
+        { status: 400 }
+      );
+    }
 
-const countResult = await pool.query(
-  'SELECT COUNT(*) FROM pictures WHERE user_id = $1',
-  [user.id]
-);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const mimeType = file.type || "image/jpeg";
 
-if (parseInt(countResult.rows[0].count) >= 5) {
-  return NextResponse.json(
-    { error: "you cannot add add more than 5 photos at a time" },
-    { status: 400 }
-  );
-}
+    const picture = await addUserPicture(user.id, buffer, mimeType);
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const mimeType = file.type || "image/jpeg";
-
-  // verify if it the first picture in order to make it main
-  const { rows: existingMain } = await pool.query(
-    `SELECT id FROM pictures WHERE user_id = $1 AND is_main = true`,
-    [user.id]
-  );
-
-  const isMain = existingMain.length === 0;
-
-  // insert the new picture
-  const result = await pool.query(
-    `INSERT INTO pictures (user_id, data, mime_type, is_main)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, mime_type, encode(data, 'base64') as data, is_main`,
-    [user.id, buffer, mimeType, isMain]
-  );
-
-  return NextResponse.json(result.rows[0], { status: 201 });
+    return NextResponse.json(picture, { status: 201 });
+  } catch (err) {
+    console.error("Error in POST /api/me/pictures:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

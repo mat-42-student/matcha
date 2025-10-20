@@ -41,6 +41,9 @@ async function insertUser(pool: Pool) {
   const firstName = getRandomName(gender);
   const lastName = faker.person.lastName()
   const city = getRandomCity();
+  const email = `${firstName}.${lastName}@${faker.internet.domainName()}`
+    .toLowerCase()
+    .replace(/\s+/g, ""); // supprime tout espace éventuel
 
   const { rows } = await pool.query(
     `INSERT INTO users (first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
@@ -48,7 +51,7 @@ async function insertUser(pool: Pool) {
     [
       firstName,
       lastName,
-      firstName + '.' + lastName + '@' + faker.internet.domainName(),
+      email,
       faker.internet.password(),
       gender,
       sexPref,

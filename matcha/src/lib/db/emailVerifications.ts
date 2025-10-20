@@ -26,21 +26,18 @@ export async function getEmailVerificationByToken(token: string): Promise<EmailV
   return result.rows[0] || null;
 }
 
-// 📜 Liste des tokens pour un user
 export async function listEmailVerificationsForUser(userId: string): Promise<EmailVerification[]> {
   const query = `SELECT * FROM email_verifications WHERE user_id = $1`;
   const result = await executeQuery<EmailVerification>(query, [userId]);
   return result.rows;
 }
 
-// ❌ Supprimer un token
 export async function deleteEmailVerificationByToken(token: string): Promise<boolean> {
   const query = `DELETE FROM email_verifications WHERE token = $1`;
   const result = await executeQuery(query, [token]);
   return (result.rowCount ?? 0) > 0;
 }
 
-// ❌ Supprimer tous les tokens d’un user
 export async function deleteEmailVerificationsForUser(userId: string): Promise<boolean> {
   const query = `DELETE FROM email_verifications WHERE user_id = $1`;
   const result = await executeQuery(query, [userId]);

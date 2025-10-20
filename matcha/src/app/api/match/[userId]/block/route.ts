@@ -1,9 +1,7 @@
-// matcha/src/app/api/match/[userId]/block/route.ts
-
-import { pool, addFame } from "@/lib/db/db-utils";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
+import { blockUser } from "@/lib/db/matches";
 
 export async function POST(
   req: Request,
@@ -13,28 +11,25 @@ export async function POST(
     const { userId } = await context.params;
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
-    
+
     if (!sessionId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const me = await getSessionUser(sessionId);
     if (!me) {
-      return NextResponse.json({ error: "Session invalide" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const query = `
-      INSERT INTO matches (user1_id, user2_id, status)
-      VALUES ($1, $2, 'block')
-      ON CONFLICT (user1_id, user2_id)
-      DO UPDATE SET status = 'block';
-    `;
-    const result = await pool.query(query, [me.id, userId]);
-    addFame(-5, userId);
+    if (me.id === userId) {
+      return NextResponse.json({ error: "You cannot block yourself" }, { status: 400 });
+    }
 
-    return NextResponse.json({ success: true, deleted: result.rowCount });
+    const success = await blockUser(me.id, userId);
+
+    return NextResponse.json({ success });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("Error in POST /api/match/[userId]/block:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

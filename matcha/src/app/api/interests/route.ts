@@ -1,9 +1,9 @@
 // matcha/src/app/api/interests/route.ts
 
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
+import { getAllInterests } from "@/lib/db/interests";
 
 export async function GET() {
   try {
@@ -11,18 +11,19 @@ export async function GET() {
     const sessionId = cookieStore.get("session_id")?.value;
 
     if (!sessionId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const me = await getSessionUser(sessionId);
     if (!me) {
-      return NextResponse.json({ error: "Session invalide" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows } = await pool.query("SELECT * FROM interests ORDER BY name");
-    return NextResponse.json(rows);
+    const interests = await getAllInterests();
+    return NextResponse.json(interests);
+    
   } catch (err) {
-    console.error("Erreur /api/users:", err);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("Error in /api/interests:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

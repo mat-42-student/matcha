@@ -1,51 +1,58 @@
-import { executeQuery } from './db-utils';
+// matcha/src/lib/db/match.ts
+import { executeQuery } from "@/lib/db/db-utils";
+import { PublicUser } from "@/types";
+import { addFame } from "./likes";
 
-export interface Match {
-  id: number;
-  user1_id: string;
-  user2_id: string;
-  status: string;
-  created_at: Date;
+
+export async function blockUser(currentUserId: string, targetUserId: string): Promise<boolean> {
+  try {
+    // Insert or update the match status
+    const query = `
+      INSERT INTO matches (user1_id, user2_id, status)
+      VALUES ($1, $2, 'block')
+      ON CONFLICT (user1_id, user2_id)
+      DO UPDATE SET status = 'block';
+    `;
+    const result = await executeQuery(query, [currentUserId, targetUserId]);
+
+    // Decrease fame score
+    await addFame(-5, targetUserId);
+
+    return (result.rowCount ?? 0) > 0;
+  } catch (error) {
+    console.error("Error blocking user:", error);
+    throw new Error("Database error while blocking user");
+  }
 }
 
-export async function createMatch(user1_id: string, user2_id: string, status = "pending"): Promise<Match> {
+/**
+ * Get all users matched with me, excluding blocked users
+ * Distance is calculated in km based on latitude/longitude
+ */
+export async function getMatchesForUser(
+  meId: string,
+  myLatitude: number,
+  myLongitude: number
+): Promise<(PublicUser & { distance: number })[]> {
   const query = `
-    INSERT INTO matches (user1_id, user2_id, status)
-    VALUES ('${user1_id}', '${user2_id}', '${status}')
-    RETURNING *;
+    SELECT uwi.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(uwi.latitude, uwi.longitude))/1000) AS distance
+    FROM matches m
+    JOIN users_with_interests uwi 
+      ON uwi.id IN (m.user1_id, m.user2_id)
+    WHERE m.status = 'match'
+      AND $3 IN (m.user1_id, m.user2_id)
+      AND uwi.id <> $3
+      AND NOT EXISTS (
+        SELECT 1
+        FROM matches m2
+        WHERE (
+          (m2.user1_id = $3 AND m2.user2_id = uwi.id)
+          OR
+          (m2.user1_id = uwi.id AND m2.user2_id = $3)
+        )
+        AND m2.status = 'block'
+      );
   `;
-  const result = await executeQuery<Match>(query);
-  return result.rows[0];
-}
-
-export async function getMatchById(id: number): Promise<Match | null> {
-  const query = `SELECT * FROM matches WHERE id = ${id}`;
-  const result = await executeQuery<Match>(query);
-  return result.rows[0] || null;
-}
-
-export async function listMatchesForUser(userId: string): Promise<Match[]> {
-  const query = `
-    SELECT * FROM matches 
-    WHERE user1_id = '${userId}' OR user2_id = '${userId}'
-  `;
-  const result = await executeQuery<Match>(query);
+  const result = await executeQuery<PublicUser & { distance: number }>(query, [myLatitude, myLongitude, meId]);
   return result.rows;
-}
-
-export async function updateMatchStatus(id: number, status: string): Promise<Match | null> {
-  const query = `
-    UPDATE matches
-    SET status = '${status}'
-    WHERE id = ${id}
-    RETURNING *;
-  `;
-  const result = await executeQuery<Match>(query);
-  return result.rows[0] || null;
-}
-
-export async function deleteMatch(id: number): Promise<boolean> {
-  const query = `DELETE FROM matches WHERE id = ${id}`;
-  const result = await executeQuery(query);
-  return (result.rowCount ?? 0) > 0;
 }

@@ -82,18 +82,18 @@ export async function getUserById(id: string): Promise<User | null> {
 /**
  * Get user by email
  */
-export async function getUserByEmail(email: string): Promise<User | null> {
-  const result = await executeQuery<User>('SELECT * FROM users WHERE email = $1', [email]);
-  return result.rows[0] ?? null;
+export async function isEmailUsed(email: string): Promise<boolean> {
+  const result = await executeQuery<User>('SELECT 1 FROM users WHERE email = $1', [email]);
+  return result.rows.length > 0;
 }
 
 /**
  * List all users
  */
-export async function listUsers(): Promise<User[]> {
-  const result = await executeQuery<User>('SELECT * FROM users ORDER BY created_at DESC');
-  return result.rows;
-}
+// export async function listUsers(): Promise<User[]> {
+//   const result = await executeQuery<User>('SELECT * FROM users ORDER BY created_at DESC');
+//   return result.rows;
+// }
 
 /**
  * Try to log user
@@ -135,4 +135,34 @@ export async function markUserAsVerified(userId: string): Promise<boolean> {
   `;
   const result = await executeQuery(query, [userId]);
   return (result.rowCount ?? 0) > 0;
+}
+
+
+/**
+ * Get the total number of users with interests.
+ */
+export async function getUsersCount(): Promise<number> {
+  const query = `SELECT COUNT(id) AS total FROM users_with_interests;`;
+  const result = await executeQuery<{ total: string }>(query);
+  return parseInt(result.rows[0].total, 10);
+}
+
+export async function updateUserLocationBySession(
+  sessionId: string,
+  latitude: number,
+  longitude: number,
+  city: string,
+  country: string
+): Promise<void> {
+  const query = `
+    UPDATE users
+    SET country = $1, city = $2, latitude = $3, longitude = $4
+    WHERE id = (
+      SELECT user_id 
+      FROM sessions 
+      WHERE id = $5 
+        AND expires_at > now()
+    )
+  `;
+  await executeQuery(query, [country, city, latitude, longitude, sessionId]);
 }

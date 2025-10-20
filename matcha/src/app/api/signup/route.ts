@@ -1,7 +1,7 @@
 import { validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { createUser, getUserByEmail } from '@/lib/db/users';
+import { createUser, isEmailUsed } from '@/lib/db/users';
 import { createEmailVerification } from '@/lib/db/emailVerifications';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ errors }, { status: 400 });
     }
 
-    const existingUser = await getUserByEmail(email);
+    const existingUser = await isEmailUsed(email);
     if (existingUser) {
       return NextResponse.json({ errors: { email: 'Email is already used' } }, { status: 400 });
     }

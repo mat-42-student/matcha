@@ -1,10 +1,10 @@
 // matcha/src/types.ts
 
-export type User = {
-  id: string;
-  email: string;
-  passwordHash: string;
-};
+// export type User = {
+//   id: string;
+//   email: string;
+//   passwordHash: string;
+// };
 
 // Type exposé au front (pas de passwordHash)
 export type PublicUser = {

@@ -1,28 +1,28 @@
+// matcha/src/app/api/me/pictures/main/route.ts
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
-import { getSessionUser } from "@/lib/db/session";
 import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/db/session";
+import { getMainPicture } from "@/lib/db/pictures";
 
-export async function GET(req: Request) {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value || null;
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value || null;
 
-  if (!sessionId)
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    if (!sessionId)
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const user = await getSessionUser(sessionId);
-  if (!user)
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 401 });
+    const user = await getSessionUser(sessionId);
+    if (!user)
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
 
-  const result = await pool.query(
-    `SELECT mime_type, encode(data, 'base64') as data
-     FROM pictures WHERE user_id = $1 AND is_main = true`,
-    [user.id]
-  );
+    const picture = await getMainPicture(user.id);
+    if (!picture)
+      return new NextResponse(null, { status: 204 });
 
-  if (result.rows.length === 0)
-    return new NextResponse(null, { status: 204 });
-
-  const { mime_type, data } = result.rows[0];
-  return NextResponse.json({ mime_type, data });
+    return NextResponse.json(picture);
+  } catch (err) {
+    console.error("Error in GET /api/me/pictures/main:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

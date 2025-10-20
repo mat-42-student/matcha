@@ -1,5 +1,4 @@
 // app/api/users/route.ts
-
 // it seems this endpoint is never called
 
 import { NextResponse } from "next/server";

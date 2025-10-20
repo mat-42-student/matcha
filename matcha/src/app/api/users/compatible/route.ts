@@ -1,32 +1,26 @@
-// app/api/users/compatible/route.ts
+// matcha/src/app/api/users/compatible/route.ts
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
-import { PublicUser } from "@/types";
+import { getCompatibleUsers } from "@/lib/db/search";
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
 
-    if (!sessionId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+    if (!sessionId)
+      return NextResponse.json({ error: "Not authentificated" }, { status: 401 });
 
     const me = await getSessionUser(sessionId);
-    if (!me) {
-      return NextResponse.json({ error: "Session invalide" }, { status: 401 });
-    }
+    if (!me)
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
 
-    const query = "SELECT * FROM compatible_users_from($1);";
-    const params = [me.id];
-    const res = await pool.query(query, params);
-    const users: PublicUser[] = res.rows;
-
+    const users = await getCompatibleUsers(me.id);
     return NextResponse.json(users);
+
   } catch (err) {
-    console.error("Erreur /api/users:", err);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("Erreur /api/users/compatible:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

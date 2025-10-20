@@ -1,31 +1,33 @@
 // app/api/users/[userId]/pics/route.ts
-
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db/db-utils";
+import { getMainPicture } from "@/lib/db/pictures";
 
+/**
+ * GET main picture of a user.
+ * Returns JSON: { mime_type, data } where data is base64 encoded.
+ */
 export async function GET(
-  req: Request,
-  context: { params: Promise<{ userId: string }> }
+  request: Request,
+  { params }: { params: { userId: string } }
 ) {
-  const { userId } = await context.params;
+  try {
+    const userId = params.userId;
+    const picture = await getMainPicture(userId);
 
-  const result = await pool.query(`
-    SELECT mime_type, encode(data, 'base64') as data 
-    FROM pictures WHERE user_id = $1 AND is_main = true`,
-    [userId]
-  );
+    // If no main picture found → 204 No Content
+    if (!picture) {
+      return new NextResponse(null, { status: 204 });
+    }
 
-if (result.rows.length === 0)
-  return new NextResponse(null, { status: 204 });
-
-  const { mime_type, data } = result.rows[0];
-
-  if (data) {
+    // Return JSON with base64 data
     return NextResponse.json({
-      mime_type: mime_type ?? "image/jpeg",
-      data: data,
+      mime_type: picture.mime_type ?? "image/jpeg",
+      data: picture.data,
     });
+  } catch (err) {
+    console.error("Error fetching main picture:", err);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
+}
 
 
-return new NextResponse(null, { status: 204 });}

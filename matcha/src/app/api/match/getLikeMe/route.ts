@@ -1,9 +1,8 @@
 // matcha/src/app/api/match/getLikeMe/route.ts
-
-import { pool } from "@/lib/db/db-utils";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
+import { getUsersWhoLikedMe } from "@/lib/db/likes";
 
 export async function GET() {
   try {
@@ -19,26 +18,10 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { rows: likedBy } = await pool.query(`
-      SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude))/1000) AS distance
-      FROM users_who_like_me u
-      WHERE u.me = $3
-      AND NOT EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE
-          (
-            (m.user1_id = $3 AND m.user2_id = u.id)
-            OR
-            (m.user1_id = u.id AND m.user2_id = $3)
-          )
-          AND m.status = 'block'
-      );
-    `,
-    [me.latitude, me.longitude, me.id]);
+    const likedBy = await getUsersWhoLikedMe(me.id, me.latitude!, me.longitude!);
     return NextResponse.json(likedBy);
   } catch (err) {
-      console.error(err);
-      return NextResponse.json({ error: "Error" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
