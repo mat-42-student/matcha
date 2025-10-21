@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { PublicUser, SearchCriteria } from "@/types";
+import { PublicUser, SearchCriteria } from "@/lib/types";
 import SearchForm from "@/components/forms/SearchForm";
 import Browse from "@/components/browse/Browse";
 

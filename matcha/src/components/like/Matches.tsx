@@ -1,40 +1,40 @@
 // matcha/src/components/like/Matches.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+// import { useRouter } from "next/navigation";
+// import { useEffect } from "react";
 
-export default function Matches() {
-  const router = useRouter();
+// export default function Matches() {
+//   const router = useRouter();
 
-  function handleClick() {
-    router.push("/chat");
-  }
+//   function handleClick() {
+//     router.push("/chat");
+//   }
 
-  useEffect(handleClick);
-}
+//   useEffect(handleClick);
+// }
 
 
 // copy paste into chat
 
-// import { useEffect, useState } from "react";
-// import Browse from "@/components/browse/Browse";
-// import { PublicUser } from "@/types";
+import { useEffect, useState } from "react";
+import Browse from "@/components/browse/Browse";
+import { PublicUser } from "@/lib/types";
 
-// export default function Matches() {
-//   const [users, setUsers] = useState<PublicUser[]>([]);
+export default function Matches() {
+  const [users, setUsers] = useState<PublicUser[]>([]);
   
-//   async function fetchMatches() {
-//     const res = await fetch("/api/match/getMatches");
-//     const data = await res.json();
-//     setUsers(data);
-//   }
+  async function fetchMatches() {
+    const res = await fetch("/api/match/getMatches");
+    const data = await res.json();
+    setUsers(data);
+  }
   
-//   useEffect(() => { fetchMatches() }, []);
+  useEffect(() => { fetchMatches() }, []);
 
-//   return (
-//     <div className="p-4">
-//       <Browse users={users} refreshList={fetchMatches}/>
-//     </div>
-//   );
-// }
+  return (
+    <div className="p-4">
+      <Browse users={users} refreshList={fetchMatches}/>
+    </div>
+  );
+}

@@ -7,24 +7,12 @@ import { Socket } from "socket.io-client";
 
 export default function ChatWindow({
   selectedUser,
-  s
 }: {
-  s: Socket
   selectedUser: string | null;
 }) {
   const { socket } = useSocket();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
-
-  // useEffect(() => {
-  //   if (!socket) return;
-  //   const handler = (msg: { from: string; to: string; text: string }) => {
-  //     if (selectedUser && (msg.from === selectedUser || msg.to === selectedUser))
-  //       setMessages((p) => [...p, msg]);
-  //   };
-  //   socket.on("chat:receive", handler);
-  //   return () => socket.off("chat:receive", handler);
-  // }, [socket, selectedUser]);
 
   const send = () => {
     if (socket && selectedUser && input.trim()) {
@@ -67,13 +55,13 @@ export default function ChatWindow({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none"
-          placeholder="Écris un message..."
+          placeholder="Your message"
         />
         <button
           onClick={send}
           className="bg-pink-700 px-4 rounded hover:bg-pink-800"
         >
-          Envoyer
+          Send
         </button>
       </div>
     </div>

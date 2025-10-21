@@ -1,7 +1,6 @@
 // matcha/src/components/MenuDesktop.tsx
 "use client";
-
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 import Link from "next/link";
 import { Users, Search, Heart, MessageCircle, User, LogOut } from "lucide-react";
 

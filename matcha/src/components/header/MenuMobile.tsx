@@ -1,9 +1,8 @@
 // matcha/src/components/MenuMobile.tsx
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 import {
   Menu,
   X,

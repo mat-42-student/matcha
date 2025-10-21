@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { PublicUser, Picture } from "@/types";
+import { PublicUser, Picture } from "@/lib/types";
 import Image from "next/image";
 import LikeButton from "./LikeButton";
 

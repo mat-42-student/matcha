@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PublicUser, Picture } from "@/types";
+import { PublicUser, Picture } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";

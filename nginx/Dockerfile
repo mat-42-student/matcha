@@ -1,6 +1,6 @@
 FROM nginx:alpine
 
-RUN apk add --no-cache openssl && mkdir -p /etc/nginx/certs /run/nginx
+RUN apk add --no-cache openssl wget && mkdir -p /etc/nginx/certs /run/nginx
 
 RUN openssl req -x509 -nodes -days 365 \
     -subj "/C=FR/ST=IDF/L=Paris/O=42/OU=Dev/CN=localhost" \
@@ -14,4 +14,4 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # USER nginx
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["sh", "-c", "until wget -q --spider http://matcha_server:3000/api/health; do sleep 2; done && nginx -g 'daemon off;'"]

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 type FilterBarProps = {
   users: PublicUser[];

@@ -38,3 +38,9 @@ export type SearchCriteria = {
 };
 
 export type LikeTabsTypes = "visitors" | "liked" | "likeMe" | "matches"
+
+export interface Payload {
+  from: PublicUser;
+  to: PublicUser;
+  msg: string;
+}

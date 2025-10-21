@@ -1,8 +1,7 @@
 // matcha/src/lib/db/session.ts
-
 import { v4 as uuidv4 } from "uuid";
-import type { PublicUser } from "@/types";
 import { executeQuery } from "./db-utils";
+import type { PublicUser } from "@/lib/types";
 
 export async function createSession(userId: string): Promise<string> {
   const sessionId = uuidv4();

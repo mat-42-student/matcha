@@ -4,17 +4,13 @@
 import { useState } from "react";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
-import { useSocket } from "@/context/SocketContext";
 
 export default function MainChat() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const { socket } = useSocket()
-
-  if (!socket) return <div>Socket error</div>;
   return (
     <div className="flex h-full">
-      <ChatSidebar s={socket} onSelectUser={setSelectedUser} selectedUser={selectedUser} />
-      <ChatWindow s={socket} selectedUser={selectedUser} />
+      <ChatSidebar onSelectUser={setSelectedUser} selectedUser={selectedUser} />
+      <ChatWindow selectedUser={selectedUser} />
     </div>
   );
 }

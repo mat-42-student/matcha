@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import CardUser from "@/components/card-user/CardUser";
 import Navigation from "./Navigation";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 import FilterBar from "./FilterBar";
 
 export default function Browse({ users, refreshList }: { users: PublicUser[]; refreshList?: () => void

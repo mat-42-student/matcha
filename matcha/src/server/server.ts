@@ -1,12 +1,12 @@
 // matcha/src/server/server.ts
 
 import { createServer } from "http";
-// @ts-ignore
+// @ts-expect-error vscode cant handle extension in include path
 import { app, handler } from "./nextHandler.ts";
-// @ts-ignore
-import { initSocket } from "./socket.ts";
-// @ts-ignore
-import { seed } from "./seed-users.ts";
+// @ts-expect-error vscode cant handle extension in include path
+import { initSocket } from "../lib/socket/socket.ts";
+// @ts-expect-error vscode cant handle extension in include path
+import { seed } from "../lib/seed-users.ts";
 
 await seed();
 

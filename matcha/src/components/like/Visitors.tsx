@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Browse from "@/components/browse/Browse";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 export default function Visitors() {
   const [users, setUsers] = useState<PublicUser[]>([]);
