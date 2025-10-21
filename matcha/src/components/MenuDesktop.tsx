@@ -1,33 +1,46 @@
 // matcha/src/components/MenuDesktop.tsx
-"use client"
+"use client";
 
 import { PublicUser } from "@/types";
-import Link from "next/link"
+import Link from "next/link";
+import { Users, Search, Heart, MessageCircle, User, LogOut } from "lucide-react";
 
-export default function MenuDesktop({ user, onLogout }: { user: PublicUser; onLogout: () => void }) {
-  // console.log("USER:", user, typeof user);
+export default function MenuDesktop({
+  user,
+  onLogout,
+}: {
+  user: PublicUser;
+  onLogout: () => void;
+}) {
+  const links = [
+    { href: "/", label: "Browse", icon: <Users size={18} /> },
+    { href: "/search", label: "Search", icon: <Search size={18} /> },
+    { href: "/likes", label: "Likes", icon: <Heart size={18} /> },
+    { href: "/chat", label: "Chat", icon: <MessageCircle size={18} /> },
+    { href: "/profile", label: "Profile", icon: <User size={18} /> },
+  ];
+
   return (
-    <nav className="hidden md:flex gap-4">
-      <Link href="/" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">
-        👥 Me@t
-      </Link>
-      <Link href="/search" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">
-        🔍 Search
-      </Link>
-      <Link href="/likes" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">
-        ❤️ Likes
-      </Link>
-      <Link href="/chat" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">
-        🗨️ Chat
-      </Link>
-      <Link href="/profile" className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition">
-        👤 Profile
-      </Link>
+    <nav className="hidden md:flex items-center gap-3">
+      {links.map(({ href, label, icon }) => (
+        <Link
+          key={href}
+          href={href}
+          className="flex items-center gap-2 px-4 py-2 text-fuchsia-100 hover:text-white hover:bg-pink-600/30 rounded-xl transition-all duration-200 transform hover:scale-105
+                    focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
+        >
+          {icon}
+          <span className="text-base font-medium">{label}</span>
+        </Link>
+      ))}
+
       <button
         onClick={onLogout}
-        className="px-4 py-2 text-fuchsia-100 hover:text-pink-50 transition"
+        className="flex items-center gap-2 px-4 py-2 text-fuchsia-100 hover:text-white hover:bg-pink-600/30 rounded-xl transition-all duration-200 transform hover:scale-105
+                  focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
       >
-        👋 Logout
+        <LogOut size={18} />
+        <span className="text-base font-medium">Logout</span>
       </button>
     </nav>
   );

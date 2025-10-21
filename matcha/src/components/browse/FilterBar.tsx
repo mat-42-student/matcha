@@ -71,25 +71,29 @@ return (
           placeholder="Min age"
           value={ageMin}
           onChange={(e) => setAgeMin(e.target.value)}
-          className="border-pink-800 border-2 p-2 rounded w-full md:w-24"
+          className="border-pink-800 border-2 p-2 rounded w-full md:w-24
+           focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
         />
         <input
           type="text"
           placeholder="Max age"
           value={ageMax}
           onChange={(e) => setAgeMax(e.target.value)}
-          className="border-pink-800 border-2 p-2 rounded w-full md:w-24"
+          className="border-pink-800 border-2 p-2 rounded w-full md:w-24
+           focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
         />
         <input
           type="text"
           placeholder="Max km"
           value={distance}
           onChange={(e) => setDistance(e.target.value)}
-          className="border-pink-800 border-2 p-2 rounded w-full md:w-32"
+          className="border-pink-800 border-2 p-2 rounded w-full md:w-24
+           focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
         />
         <select
           onChange={(e) => setSortBy(e.target.value)}
-          className="border-pink-800 border-2 p-2 rounded w-full md:w-24 inline"
+          className="border-pink-800 border-2 p-2 rounded w-full md:w-24
+           focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
           >
           <option value="">Sort By</option>
           <option value="age-asc">Age ▲</option>
@@ -102,13 +106,15 @@ return (
         <div className="flex gap-2">
           <button
             onClick={applyFilters}
-            className="bg-pink-800 text-white px-4 py-2 rounded w-full md:w-auto"
+            className="bg-pink-800 text-white px-4 py-2 rounded w-full md:w-auto
+            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
           >
             Apply
           </button>
           <button
             onClick={resetFilters}
-            className="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto"
+            className="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto
+            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
           >
             Reset
           </button>

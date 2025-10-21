@@ -40,7 +40,7 @@ export default function Browse({ users, refreshList }: { users: PublicUser[]; re
       <FilterBar users={users} onChange={setFilteredUsers} />
       <div className="flex flex-wrap justify-center">
         {currentUsers.map((u) => (
-          <CardUser key={u.first_name} user={u} onUserUpdate={refreshList}/>
+          <CardUser key={u.id} user={u} onUserUpdate={refreshList}/>
         ))}
       </div>
 
