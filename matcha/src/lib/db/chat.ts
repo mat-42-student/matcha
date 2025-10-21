@@ -15,11 +15,11 @@ export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]>
     FROM users_with_interests uwi
     JOIN matches m
       ON (uwi.id = m.user1_id OR uwi.id = m.user2_id)
-    WHERE '${user}' IN (m.user1_id, m.user2_id)
-      AND uwi.id != '${user}'
+    WHERE $1 IN (m.user1_id, m.user2_id)
+      AND uwi.id != $1
       AND status = 'match';
   `
-  const result = await executeQuery<PublicUser>(query);
+  const result = await executeQuery<PublicUser>(query, [user]);
   return result.rows;
 }
 

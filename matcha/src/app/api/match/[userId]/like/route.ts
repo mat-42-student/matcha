@@ -31,30 +31,6 @@ export async function GET(
   } catch (err) {
     console.error("Error in GET /api/match/[userId]/like:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
-
-//     const query = `
-//       SELECT CASE
-//         WHEN EXISTS (
-//           SELECT 1 FROM matches WHERE ((user1_id = $1 AND user2_id = $2)
-//             OR(user1_id = $2 AND user2_id = $1))
-//             AND status = 'match'
-//         )
-//         THEN 'match'
-//         WHEN EXISTS (
-//           SELECT 1 FROM matches WHERE user1_id = $1 AND user2_id = $2 AND status = 'like'
-//         )
-//         THEN 'like'
-//         WHEN EXISTS (
-//           SELECT 1 FROM matches WHERE user1_id = $2 AND user2_id = $1 AND status = 'like'
-//         )
-//         THEN 'isLiked'
-//         ELSE 'none'
-//       END AS status
-//     `;
-//     const result = await pool.query(query, [me.id, userId]);
-//     return NextResponse.json({ status: result.rows[0].status });  } catch (err) {
-//     console.error(err);
-//     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 

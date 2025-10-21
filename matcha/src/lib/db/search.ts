@@ -1,7 +1,7 @@
 // matcha/src/lib/db/search.ts
 import { executeQuery } from "./db-utils";
 import { QueryResultRow } from "pg";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 /**
  * Perform a user search based on filters such as distance, age, fame, and interests.

@@ -1,6 +1,6 @@
 // matcha/src/lib/db/likes.ts
 import { executeQuery } from "./db-utils";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 
 
 
@@ -28,7 +28,7 @@ export async function getMatchStatus(userA: string, userB: string): Promise<'mat
       WHEN EXISTS (
         SELECT 1 FROM matches 
         WHERE ((user1_id = $1 AND user2_id = $2)
-            OR  (user1_id = $2 AND user2_id = $1))
+          OR  (user1_id = $2 AND user2_id = $1))
           AND status = 'match'
       )
       THEN 'match'

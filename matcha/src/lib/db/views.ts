@@ -1,6 +1,6 @@
 // matcha/src/lib/db/views.ts
 import { executeQuery } from "@/lib/db/db-utils";
-import { PublicUser } from "@/types";
+import { PublicUser } from "@/lib/types";
 import { addFame } from "./likes";
 
 /**
