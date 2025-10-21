@@ -19,7 +19,7 @@ export async function searchCompatibleUsers(
     FROM compatible_users_from($1) AS c
     WHERE 1=1
   `;
-  const params: any[] = [userId];
+  const params: [string | string[] | number] = [userId];
 
   // Distance filter (ignore values over 500 km)
   if (distance && distance < 500) {

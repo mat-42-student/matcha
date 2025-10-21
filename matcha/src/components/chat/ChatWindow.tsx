@@ -4,11 +4,13 @@
 import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { Socket } from "socket.io-client";
+import { PublicUser } from "@/lib/types";
+import ChatCardUser from "../card-user/ChatCardUser";
 
 export default function ChatWindow({
   selectedUser,
 }: {
-  selectedUser: string | null;
+  selectedUser: PublicUser | null;
 }) {
   const { socket } = useSocket();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
@@ -25,7 +27,7 @@ export default function ChatWindow({
   if (!selectedUser)
     return (
       <div className="flex-1 flex items-center justify-center text-gray-400">
-        Sélectionne un utilisateur pour commencer à discuter
+        Select a user
       </div>
     );
 
@@ -50,6 +52,9 @@ export default function ChatWindow({
         ))}
       </div>
       <div className="p-3 border-t border-gray-700 flex gap-2">
+        <div>
+          <ChatCardUser user={selectedUser}/>
+        </div>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}

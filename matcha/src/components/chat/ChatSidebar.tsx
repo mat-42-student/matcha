@@ -1,17 +1,15 @@
 // matcha/src/components/chat/ChatSidebar.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { useSocket } from "@/context/SocketContext";
 import { PublicUser } from "@/lib/types";
 
 export default function ChatSidebar({
   onSelectUser,
-  selectedUser,
 }: {
-  onSelectUser: (id: string) => void;
-  selectedUser: string | null;
+  onSelectUser: (user: PublicUser) => void;
 }) {
   const { socket, chatUsers } = useSocket();
   const { user } = useUser();
@@ -23,6 +21,7 @@ export default function ChatSidebar({
         msg: ""
       }
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
   if (!chatUsers) return <div>No match</div>;
@@ -36,7 +35,7 @@ export default function ChatSidebar({
         return (
           <div
             key={u.id}
-            onClick={() => onSelectUser(u.id)}
+            onClick={() => onSelectUser(u)}
             className=
               "cursor-pointer p-3 flex items-center justify-between hover:bg-gray-800"
           >
