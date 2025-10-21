@@ -8,11 +8,11 @@ import { getAllPicturesButMain } from "@/lib/db/pictures";
  * where data is base64 encoded.
  */
 export async function GET(
-  request: Request,
-  { params }: { params: { userId: string } }
+  req: Request,
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const userId = params.userId;
+    const { userId } = await context.params;
     const pictures = await getAllPicturesButMain(userId);
 
     if (pictures.length === 0) {

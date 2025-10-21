@@ -7,11 +7,11 @@ import { getMainPicture } from "@/lib/db/pictures";
  * Returns JSON: { mime_type, data } where data is base64 encoded.
  */
 export async function GET(
-  request: Request,
-  { params }: { params: { userId: string } }
+  req: Request,
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const userId = params.userId;
+    const { userId } = await context.params;
     const picture = await getMainPicture(userId);
 
     // If no main picture found → 204 No Content
