@@ -32,13 +32,13 @@ export default function ChatCardUser({
   }, [user.id]);
 
   return (
-    <div className="flex justify-between items-center mb-2">
+    <div className="flex justify-between items-center mb-2 max-w-80">
       {mainPic.data ? (
         <Image
         unoptimized
         width={0}
         height={0}
-        className="w-20 h-20 rounded-full object-cover shadow-md border-2 border-pink-500"
+        className="w-25 h-25 rounded-full object-cover shadow-md border-2 border-pink-500"
         src={mainPic.data}
         alt="profile picture"
         />
@@ -47,8 +47,14 @@ export default function ChatCardUser({
           <span className="text-gray-500 text-sm">No photo</span>
         </div>
       )}
-      <span className="text-xl text-pink-700 font-semibold p-2">
+      <span className="text-pink-700 font-semibold p-2 text-right">
         {user.first_name}
+        <br/>
+        {user.age} 🎂
+        <br/>
+        {user.fame} ⭐
+        <br/>
+        {user.city} 🏠
       </span>
     </div>
   );

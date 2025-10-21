@@ -40,7 +40,7 @@ export async function getConversation(user1: string, user2: string): Promise<Cha
     WHERE (sender_id = '${user1}' AND recipient_id = '${user2}')
        OR (sender_id = '${user2}' AND recipient_id = '${user1}')
     ORDER BY created_at ASC;
-  `;
+  `; // Todo: Send only 10 last messages
   const result = await executeQuery<ChatMessage>(query);
   return result.rows;
 }

@@ -3,9 +3,19 @@
 
 import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
-import { Socket } from "socket.io-client";
-import { PublicUser } from "@/lib/types";
+import { PublicUser, Payload } from "@/lib/types";
 import ChatCardUser from "../card-user/ChatCardUser";
+import { useUser } from "@/context/UserContext";
+
+type RawMessage = {
+  id: number;
+  sender_id: string;
+  recipient_id: string;
+  message: string;
+  created_at: string | Date;
+};
+
+type Message = { from: "me" | "you"; text: string };
 
 export default function ChatWindow({
   selectedUser,
@@ -13,16 +23,50 @@ export default function ChatWindow({
   selectedUser: PublicUser | null;
 }) {
   const { socket } = useSocket();
+  const { user } = useUser();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
 
-  const send = () => {
-    if (socket && selectedUser && input.trim()) {
-      socket.emit("chat:send", { to: selectedUser, text: input });
-      setMessages((p) => [...p, { from: "me", text: input }]);
+
+
+  function send() {
+    if (user && socket && selectedUser && input.trim()) {
+      const payload: Payload = {
+        from: user,
+        to: selectedUser,
+        msg: input
+      }
+      socket.emit("chat-msg", payload);
       setInput("");
     }
-  };
+  }
+
+
+useEffect(() => {
+
+  function transformMessages(raw: RawMessage[]): Message[] {
+    return raw.map((m) => ({
+      from: m.sender_id === user?.id ? "me" : "you",
+      text: m.message,
+    }));
+  }
+
+  async function fetchMessages(): Promise<RawMessage[]> {
+    if (!selectedUser) return [];
+    try {
+      const res = await fetch(`/api/chat/${selectedUser?.id}`, { method: "GET", credentials: "include" });
+      console.log("fetchMsg", res)
+      return await res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  (async () => {
+    const fetchedMessages = await fetchMessages();
+    setMessages(transformMessages(fetchedMessages));
+  })();
+}, [selectedUser, user]);
 
   if (!selectedUser)
     return (
@@ -42,7 +86,7 @@ export default function ChatWindow({
             }`}
           >
             <div
-              className={`max-w-xs p-2 rounded-lg ${
+              className={`p-2 rounded-lg ${
                 m.from === "me" ? "bg-pink-700" : "bg-gray-800"
               }`}
             >
@@ -55,13 +99,15 @@ export default function ChatWindow({
         <div>
           <ChatCardUser user={selectedUser}/>
         </div>
-        <input
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none"
+          onKeyDown={(e) => (e.key === "Enter" && !e.shiftKey) && send()}
+          className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none resize-none"
+          autoFocus
           placeholder="Your message"
-        />
+        >
+        </textarea>
         <button
           onClick={send}
           className="bg-pink-700 px-4 rounded hover:bg-pink-800"

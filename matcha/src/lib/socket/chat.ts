@@ -1,16 +1,7 @@
 import { Server } from "socket.io";
 import { Payload } from "@/lib/types";
-import { connectedUsers } from "./socket";
+import { send } from "./socket";
 import { storeMessage, getOnlineMatchedUsers } from "../db/chat";
-
-function send<T>(userId: string, action: string, data: T, io: Server) {
-  const targetSockets = connectedUsers.get(userId);
-  if (!targetSockets || targetSockets.size === 0) return;
-
-  for (const socketId of targetSockets) {
-    io.to(socketId).emit(action, data);
-  }
-}
 
 export function handleChatMessage(payload: Payload, io: Server) {
   send(payload.to.id, "chat-msg", payload.msg, io); // send to recipient

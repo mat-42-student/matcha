@@ -27,6 +27,15 @@ const system: PublicUser = {
   fame: 0,
 }
 
+export function send<T>(userId: string, action: string, data: T, io: Server) {
+  const targetSockets = connectedUsers.get(userId);
+  if (!targetSockets || targetSockets.size === 0) return;
+
+  for (const socketId of targetSockets) {
+    io.to(socketId).emit(action, data);
+  }
+}
+
 export function initSocket(httpServer: HttpServer) {
   const io = new Server(httpServer, {
     cors: {
@@ -68,7 +77,7 @@ export function initSocket(httpServer: HttpServer) {
     }
     socket.emit("notif", welcome)
     socket.on("disconnect", () => handleDisconnect(socket));
-    socket.on("chat-message", (payload: Payload) => handleChatMessage(payload, io));
+    socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload, io));
     socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload, io))
   }
 
