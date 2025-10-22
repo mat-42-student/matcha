@@ -66,7 +66,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("like", (payload: Payload) => setLike(payload));
     s.on("match", (payload: Payload) => setMatch(payload));
     s.on("unlike", (payload: Payload) => setUnlike(payload));
-    s.on("chat-msg", (payload: Payload) => { console.log(payload); setChatMsg(payload) });
+    s.on("chat-msg", (payload: Payload) => { console.log("payload: ", payload); setChatMsg(payload) });
     s.on("chat-users", setChatUsers);
 
     return () => {

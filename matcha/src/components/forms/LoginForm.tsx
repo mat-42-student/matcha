@@ -11,7 +11,7 @@ export default function LoginForm() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
-    const { setUser } = useUser();
+	const { setUser } = useUser();
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();

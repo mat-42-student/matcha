@@ -67,7 +67,7 @@ export async function likeUser(meId: string, targetId: string) {
     );
 
     if (existing.rows.length > 0 && existing.rows[0].status === 'like') {
-      // Reciprocated like → match
+      // Reciprocal like → match
       await executeQuery(
         `UPDATE matches SET status = 'match' WHERE user1_id = $1 AND user2_id = $2`,
         [targetId, meId]
