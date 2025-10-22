@@ -45,13 +45,6 @@ export default function LikeButton({
       const data = await res.json();
       if (data.success) {
         setLiked(!liked);
-        // ici socket.emit likenotif
-        socket?.emit("get-chat-users", {
-          from: user,
-          to: user,
-          msg: ""
-          }
-        );
         if (onUserUpdate)
           onUserUpdate();
       }
@@ -83,7 +76,7 @@ export default function LikeButton({
       }
     }
     fetchLikeStatus()
-  }, []);
+  });
 
   return (
     <>

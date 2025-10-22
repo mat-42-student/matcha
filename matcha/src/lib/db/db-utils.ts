@@ -1,6 +1,7 @@
 // matcha/src/lib/db/db-utils.ts
 
 import { Pool, QueryResultRow, QueryResult } from 'pg';
+import { PublicUser } from '../types';
 
 declare global {
   var cachedPool: Pool | undefined;
@@ -23,6 +24,7 @@ export const pool =
 
 export async function executeQuery<T extends QueryResultRow> (
     queryString: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     values: any[] = [] 
     ): Promise<QueryResult<T>> 
 {
@@ -66,4 +68,44 @@ export async function addFame(score: number, userId: string) {
     console.error("Error updating fame:", err);
     return false;
   }
+}
+
+function calcDistance(refUser: PublicUser, user: PublicUser): number {
+  // Haversine
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(user.latitude - refUser.latitude);
+  const dLon = toRad(user.longitude - refUser.longitude);
+  const lat1 = toRad(refUser.latitude);
+  const lat2 = toRad(user.latitude);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function calcScore(refUser: PublicUser, user: PublicUser): number {
+  const maxDistance = 500;
+  const distanceScore = Math.max(0, (1 - user.distance / maxDistance)) * 40;
+
+  const fameScore = Math.min(user.fame / 100, 1) * 30;
+
+  const sharedInterests = user.interests.filter(i => refUser.interests.includes(i)).length;
+  const maxShared = Math.max(refUser.interests.length, 1);
+  const interestsScore = (sharedInterests / maxShared) * 30;
+
+  const totalScore = distanceScore + fameScore + interestsScore;
+  return Math.round(totalScore);
+}
+
+export function completeDistanceAndScore(refUser: PublicUser, users: PublicUser[]): PublicUser[] {
+  users.map(u => ({
+    ...u,
+    distance: calcDistance(refUser, u),
+    score: calcScore(refUser, u)
+  }))
+  users.sort((a, b) => b.score - a.score)
+  return users
 }

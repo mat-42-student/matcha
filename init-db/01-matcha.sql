@@ -183,9 +183,10 @@ RETURNS TABLE (
   city TEXT,
   bio TEXT,
   age INT,
+  latitude FLOAT,
+  longitude FLOAT,
   interests JSON,
-  fame INT,
-  distance INT
+  fame INT
 )
 AS $$
   SELECT
@@ -196,14 +197,10 @@ AS $$
     u.city,
     u.bio,
     u.age,
+    u.latitude,
+    u.longitude,
     u.interests,
-    u.fame,
-    ceil(
-      earth_distance(
-        ll_to_earth(me.latitude, me.longitude),
-        ll_to_earth(u.latitude, u.longitude)
-      ) / 1000
-    )::int AS distance
+    u.fame
   FROM users_with_interests u
   JOIN users me ON me.id = ref_user_id
   WHERE
@@ -227,16 +224,9 @@ AS $$
     );
 $$ LANGUAGE sql STABLE;
 
-
-
-
-
-
 CREATE INDEX ON "sessions" ("user_id");
 
 CREATE UNIQUE INDEX ON "user_interests" ("user_id", "interest_id");
-
-CREATE UNIQUE INDEX ON "matches" ("user1_id", "user2_id");
 
 CREATE UNIQUE INDEX ON "views" ("user_id", "seen_by");
 

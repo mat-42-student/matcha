@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { getCompatibleUsers } from "@/lib/db/search";
+import { completeDistanceAndScore } from "@/lib/db/db-utils";
 
 export async function GET() {
   try {
@@ -17,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
 
     const users = await getCompatibleUsers(me.id);
-    return NextResponse.json(users);
+    return NextResponse.json(completeDistanceAndScore(me, users));
 
   } catch (err) {
     console.error("Erreur /api/users/compatible:", err);

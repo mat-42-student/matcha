@@ -22,7 +22,7 @@ export async function addFame(delta: number, userId: string) {
 /**
  * Get the like/match status between two users
  */
-export async function getMatchStatus(userA: string, userB: string): Promise<'match' | 'like' | 'isLiked' | 'none'> {
+export async function getMatchStatus(userA: string, userB: string): Promise<'match' | 'like' | 'isLiked' | 'block' | 'none'> {
   const query = `
     SELECT CASE
       WHEN EXISTS (
@@ -32,21 +32,32 @@ export async function getMatchStatus(userA: string, userB: string): Promise<'mat
           AND status = 'match'
       )
       THEN 'match'
+
+      WHEN EXISTS (
+        SELECT 1 FROM matches 
+        WHERE ((user1_id = $1 AND user2_id = $2)
+          OR  (user1_id = $2 AND user2_id = $1))
+          AND status = 'block'
+      )
+      THEN 'block'
+
       WHEN EXISTS (
         SELECT 1 FROM matches 
         WHERE user1_id = $1 AND user2_id = $2 AND status = 'like'
       )
       THEN 'like'
+
       WHEN EXISTS (
         SELECT 1 FROM matches 
         WHERE user1_id = $2 AND user2_id = $1 AND status = 'like'
       )
       THEN 'isLiked'
+
       ELSE 'none'
     END AS status;
   `;
-  const result = await executeQuery<{ status: 'match' | 'like' | 'isLiked' | 'none' }>(query, [userA, userB]);
-  return result.rows[0]?.status ?? 'none';
+  const result = await executeQuery(query, [userA, userB]);
+  return result.rows[0]?.status;
 }
 
 /**
@@ -76,8 +87,7 @@ export async function likeUser(meId: string, targetId: string) {
       // Normal like
       await executeQuery(
         `INSERT INTO matches (user1_id, user2_id, status)
-         VALUES ($1, $2, 'like')
-         ON CONFLICT (user1_id, user2_id) DO NOTHING`,
+         VALUES ($1, $2, 'like')`,
         [meId, targetId]
       );
     }
@@ -117,52 +127,22 @@ export async function unlikeUser(meId: string, targetId: string) {
   }
 }
 
-/**
- * Get all users who liked me, excluding blocked users
- * Distance is calculated in km based on latitude/longitude
- */
-export async function getUsersWhoLikedMe(
-  meId: string,
-  myLatitude: number,
-  myLongitude: number
-): Promise<(PublicUser & { distance: number })[]> {
+export async function getUsersWhoLikedMe(meId: string): Promise<PublicUser[]> {
   const query = `
-    SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(latitude, longitude))/1000) AS distance
+    SELECT u.*
     FROM users_who_like_me u
-    WHERE u.me = $3
-      AND NOT EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE (
-          (m.user1_id = $3 AND m.user2_id = u.id)
-          OR
-          (m.user1_id = u.id AND m.user2_id = $3)
-        ) AND m.status = 'block'
-      );
+    WHERE u.me = $1
   `;
-  const result = await executeQuery<PublicUser & { distance: number }>(query, [myLatitude, myLongitude, meId]);
+  const result = await executeQuery<PublicUser>(query, [meId]);
   return result.rows;
 }
 
-export async function getUsersILike(
-  meId: string,
-  myLatitude: number,
-  myLongitude: number
-): Promise<(PublicUser & { distance: number })[]> {
+export async function getUsersILike(meId: string): Promise<PublicUser[]> {
   const query = `
-    SELECT u.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(u.latitude, u.longitude))/1000) AS distance
+    SELECT u.*
     FROM users_me_like u
-    WHERE u.me = $3
-      AND NOT EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE (
-          (m.user1_id = $3 AND m.user2_id = u.id)
-          OR
-          (m.user1_id = u.id AND m.user2_id = $3)
-        ) AND m.status = 'block'
-      );
+    WHERE u.me = $1
   `;
-  const result = await executeQuery<PublicUser & { distance: number }>(query, [myLatitude, myLongitude, meId]);
+  const result = await executeQuery<PublicUser>(query, [meId]);
   return result.rows;
 }
