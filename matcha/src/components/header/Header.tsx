@@ -7,11 +7,11 @@ import MenuMobile from "./MenuMobile";
 import Link from "next/link";
 
 export function Header() {
-  const { user, setUser } = useUser();
+  const { me, setMe } = useUser();
 
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST", credentials: "include" });
-    setUser(null);
+    setMe(null);
     window.location.href = "/auth";
   }
 
@@ -21,10 +21,10 @@ export function Header() {
         Matcha 🍵
       </Link>
 
-      {user ? (
+      {me ? (
         <>
-          <MenuDesktop user={user} onLogout={handleLogout} />
-          <MenuMobile user={user} onLogout={handleLogout} />
+          <MenuDesktop user={me} onLogout={handleLogout} />
+          <MenuMobile user={me} onLogout={handleLogout} />
         </>
       ) : (
         <div className="flex gap-4">

@@ -23,16 +23,16 @@ export default function ChatWindow({
   selectedUser: PublicUser | null;
 }) {
   const { socket } = useSocket();
-  const { user } = useUser();
+  const { me } = useUser();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
 
 
 
   function send() {
-    if (user && socket && selectedUser && input.trim()) {
+    if (me && socket && selectedUser && input.trim()) {
       const payload: Payload = {
-        from: user,
+        from: me,
         to: selectedUser,
         msg: input
       }
@@ -46,7 +46,7 @@ useEffect(() => {
 
   function transformMessages(raw: RawMessage[]): Message[] {
     return raw.map((m) => ({
-      from: m.sender_id === user?.id ? "me" : "you",
+      from: m.sender_id === me?.id ? "me" : "you",
       text: m.message,
     }));
   }
@@ -66,7 +66,7 @@ useEffect(() => {
     const fetchedMessages = await fetchMessages();
     setMessages(transformMessages(fetchedMessages));
   })();
-}, [selectedUser, user]);
+}, [selectedUser, me]);
 
   if (!selectedUser)
     return (

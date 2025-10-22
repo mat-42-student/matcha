@@ -12,12 +12,12 @@ export default function ChatSidebar({
   onSelectUser: (user: PublicUser) => void;
 }) {
   const { socket, chatUsers } = useSocket();
-  const { user } = useUser();
+  const { me } = useUser();
   useEffect(() => {
     if (socket)
       socket.emit("get-chat-users", {
-        from: user,
-        to: user,
+        from: me,
+        to: me,
         msg: ""
       }
     );
