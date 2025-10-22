@@ -1,6 +1,7 @@
 // matcha/src/lib/db/likes.ts
 import { executeQuery } from "./db-utils";
 import { PublicUser } from "@/lib/types";
+import { createNotification } from "./notifications";
 
 
 
@@ -53,25 +54,51 @@ export async function getMatchStatus(userA: string, userB: string): Promise<'mat
  * Like a user (creates a match if reciprocated)
  * Handles transactions and fame increment
  */
+/**
+ * Like a user (creates a match if reciprocated)
+ * Handles transactions, fame increment, and notifications
+ */
 export async function likeUser(meId: string, targetId: string) {
   if (meId === targetId) return; // cannot like self
 
-  // Start transaction
-  await executeQuery('BEGIN');
+  await executeQuery("BEGIN");
 
   try {
     // Check if target already liked me
-    const existing = await executeQuery(
+    const existing = await executeQuery<{ status: string }>(
       `SELECT status FROM matches WHERE user1_id = $1 AND user2_id = $2`,
       [targetId, meId]
     );
 
-    if (existing.rows.length > 0 && existing.rows[0].status === 'like') {
+    // Fetch sender info once
+    const senderRes = await executeQuery<{ first_name: string }>(
+      `SELECT first_name FROM users WHERE id = $1`,
+      [meId]
+    );
+    const senderName = senderRes.rows[0]?.first_name || "Someone";
+
+    if (existing.rows.length > 0 && existing.rows[0].status === "like") {
       // Reciprocated like → match
       await executeQuery(
         `UPDATE matches SET status = 'match' WHERE user1_id = $1 AND user2_id = $2`,
         [targetId, meId]
       );
+
+      // Create notifications for both users (since it's a match)
+      await Promise.all([
+        createNotification(
+          targetId,
+          meId,
+          "match",
+          `You matched with ${senderName}!`
+        ),
+        createNotification(
+          meId,
+          targetId,
+          "match",
+          `You matched with ${await getUserName(targetId)}!`
+        ),
+      ]);
     } else {
       // Normal like
       await executeQuery(
@@ -80,39 +107,68 @@ export async function likeUser(meId: string, targetId: string) {
          ON CONFLICT (user1_id, user2_id) DO NOTHING`,
         [meId, targetId]
       );
+
+      // Create like notification
+      await createNotification(targetId, meId, "like", `${senderName} liked you`);
     }
 
     // Increase fame
     await addFame(5, targetId);
 
-    // Commit transaction
-    await executeQuery('COMMIT');
+    await executeQuery("COMMIT");
   } catch (err) {
-    await executeQuery('ROLLBACK');
+    await executeQuery("ROLLBACK");
     throw err;
   }
 }
 
+/**
+ * Helper to fetch a user's first name
+ */
+async function getUserName(userId: string): Promise<string> {
+  const res = await executeQuery<{ first_name: string }>(
+    `SELECT first_name FROM users WHERE id = $1`,
+    [userId]
+  );
+  return res.rows[0]?.first_name || "Someone";
+}
+
+
+/**
+ * fame issue 
+ */
 export async function unlikeUser(meId: string, targetId: string) {
-  // Start transaction
-  await executeQuery('BEGIN');
+  await executeQuery("BEGIN");
 
   try {
     const query = `
       DELETE FROM matches
       WHERE (user1_id = $1 AND user2_id = $2)
          OR (user1_id = $2 AND user2_id = $1)
+      RETURNING status
     `;
-    const result = await executeQuery(query, [meId, targetId]);
+    const result = await executeQuery<{ status: string }>(query, [meId, targetId]);
 
-    // Decrease fame
     await addFame(-5, targetId);
 
-    await executeQuery('COMMIT');
+    const senderRes = await executeQuery<{ first_name: string }>(
+      `SELECT first_name FROM users WHERE id = $1`,
+      [meId]
+    );
+    const senderName = senderRes.rows[0]?.first_name || "Someone";
+
+    let message = `${senderName} unliked you`;
+    if (result.rows.length > 0 && result.rows[0].status === "match") {
+      message = `${senderName} unmatched you`;
+    }
+
+    await createNotification(targetId, meId, "unlike", message);
+
+    await executeQuery("COMMIT");
 
     return result.rowCount ?? 0;
   } catch (err) {
-    await executeQuery('ROLLBACK');
+    await executeQuery("ROLLBACK");
     throw err;
   }
 }
