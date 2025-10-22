@@ -22,6 +22,7 @@ export type PublicUser = {
   sex_pref: string;
   interests: string[];
   fame: number;
+  score: number;
 };
 
 export type Picture = {

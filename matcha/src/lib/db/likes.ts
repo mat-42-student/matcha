@@ -166,4 +166,3 @@ export async function getUsersILike(
   const result = await executeQuery<PublicUser & { distance: number }>(query, [myLatitude, myLongitude, meId]);
   return result.rows;
 }
-

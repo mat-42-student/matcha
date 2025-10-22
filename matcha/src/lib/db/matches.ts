@@ -7,18 +7,26 @@ import { addFame } from "./likes";
 export async function blockUser(currentUserId: string, targetUserId: string): Promise<boolean> {
   try {
     // Insert or update the match status
-    const query = `
-      INSERT INTO matches (user1_id, user2_id, status)
-      VALUES ($1, $2, 'block')
-      ON CONFLICT (user1_id, user2_id)
-      DO UPDATE SET status = 'block';
+    const update = `
+      UPDATE matches
+      SET status = 'block'
+      WHERE (user1_id = $1 AND user2_id = $2)
+        OR (user1_id = $2 AND user2_id = $1)
     `;
-    const result = await executeQuery(query, [currentUserId, targetUserId]);
+    const res = await executeQuery(update, [currentUserId, targetUserId]);
+
+    if ((res.rowCount ?? 0) === 0) {
+      await executeQuery(
+        `INSERT INTO matches (user1_id, user2_id, status)
+        VALUES ($1, $2, 'block')`,
+        [currentUserId, targetUserId]
+      );
+    }
 
     // Decrease fame score
     await addFame(-5, targetUserId);
 
-    return (result.rowCount ?? 0) > 0;
+    return (res.rowCount ?? 0) > 0;
   } catch (error) {
     console.error("Error blocking user:", error);
     throw new Error("Database error while blocking user");

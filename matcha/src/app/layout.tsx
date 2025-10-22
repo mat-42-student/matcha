@@ -7,7 +7,6 @@ import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import type { PublicUser } from "@/lib/types";
 import { UserProvider } from "@/context/UserContext";
-//@ts-ignore
 import { Toaster } from "react-hot-toast";
 import { SocketProvider } from "@/context/SocketContext";
 
