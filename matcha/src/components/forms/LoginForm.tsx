@@ -11,7 +11,7 @@ export default function LoginForm() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
-	const { setUser } = useUser();
+    const { setMe } = useUser();
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -33,7 +33,7 @@ export default function LoginForm() {
 				return;
 			}
 
-			setUser(data.user);
+			setMe(data.user);
 			// Launch socket here
 			router.push("/");
 		} catch (err) {

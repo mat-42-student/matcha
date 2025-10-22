@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { PublicUser } from "@/lib/types";
+import { useSocket } from "@/context/SocketContext";
+import { useUser } from "@/context/UserContext";
+
 
 
 export default function LikeButton({
@@ -14,6 +17,8 @@ export default function LikeButton({
   const [liked, setLiked] = useState(false);
   const [status, setStatus] = useState("");
   const [disabled, setDisabled] = useState(false);
+  const {socket} =  useSocket();
+  const {me} = useUser();
 
   function getButtonText(liked: boolean, status: string) {
     if (disabled) return "Seriously ?";
@@ -40,6 +45,13 @@ export default function LikeButton({
       const data = await res.json();
       if (data.success) {
         setLiked(!liked);
+        // ici socket.emit likenotif
+        socket?.emit("get-chat-users", {
+          from: user,
+          to: user,
+          msg: ""
+          }
+        );
         if (onUserUpdate)
           onUserUpdate();
       }

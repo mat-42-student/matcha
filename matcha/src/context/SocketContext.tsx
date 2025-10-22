@@ -31,7 +31,7 @@ const SocketContext = createContext<SocketContextType>({
 })
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const { user } = useUser();
+  const { me } = useUser();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [chatMsg, setChatMsg] = useState<Payload | null>(null);
   const [like, setLike] = useState<Payload | null>(null);
@@ -44,7 +44,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }  
   
   useEffect(() => {
-    if (!user) {
+    if (!me) {
       if (socket) {
         socket.disconnect();
         toast.success("Bye");
@@ -73,7 +73,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       s.disconnect()
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [me]);
 
   return (
     <SocketContext.Provider value={{ socket, like, unlike, match, chatMsg, chatUsers }}>

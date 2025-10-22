@@ -5,8 +5,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import type { PublicUser } from "@/lib/types";
 
 interface UserContextType {
-  user: PublicUser | null;
-  setUser: (user: PublicUser | null) => void;
+  me: PublicUser | null;
+  setMe: (me: PublicUser | null) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -18,10 +18,10 @@ export function UserProvider({
   children: ReactNode;
   initialUser: PublicUser | null }) {
 
-  const [user, setUser] = useState<PublicUser | null>(initialUser);
+  const [me, setMe] = useState<PublicUser | null>(initialUser);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ me, setMe }}>
       {children}
     </UserContext.Provider>
   );

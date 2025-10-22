@@ -23,16 +23,16 @@ export default function ChatWindow({
   selectedUser: PublicUser | null;
 }) {
   const { socket, chatMsg } = useSocket();
-  const { user } = useUser();
+  const { me } = useUser();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
 
 
 
   function send() {
-    if (user && socket && selectedUser && input.trim()) {
+    if (me && socket && selectedUser && input.trim()) {
       const payload: Payload = {
-        from: user,
+        from: me,
         to: selectedUser,
         msg: input
       }
@@ -45,7 +45,7 @@ export default function ChatWindow({
 useEffect(() => {
   function transformMessages(raw: RawMessage[]): Message[] {
     return raw.map((m) => ({
-      from: m.sender_id === user?.id ? "me" : "you",
+      from: m.sender_id === me?.id ? "me" : "you",
       text: m.message,
     }));
   }
@@ -65,7 +65,7 @@ useEffect(() => {
     const fetchedMessages = await fetchMessages();
     setMessages(transformMessages(fetchedMessages));
   })();
-}, [selectedUser, user]);
+}, [selectedUser, me]);
 
 useEffect(() => {
   if (!chatMsg || !selectedUser) return;
@@ -76,12 +76,12 @@ useEffect(() => {
     setMessages((prev) => [
       ...prev,
       {
-        from: chatMsg.from.id === user?.id ? "me" : "you",
+        from: chatMsg.from.id === me?.id ? "me" : "you",
         text: chatMsg.msg,
       },
     ]);
   }
-}, [chatMsg, selectedUser, user]);
+}, [chatMsg, selectedUser, me]);
 
 
   if (!selectedUser)
