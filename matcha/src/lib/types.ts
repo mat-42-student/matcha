@@ -6,6 +6,16 @@
 //   passwordHash: string;
 // };
 
+export interface Notification {
+  id: number;
+  type: "like" | "match" | "unlike" | "message";
+  message: string;
+  sender_username?: string;
+  sender_picture?: string;
+  created_at: string;
+}
+
+
 // Type exposé au front (pas de passwordHash)
 export type PublicUser = {
   id: string;

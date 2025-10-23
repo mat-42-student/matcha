@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { PublicUser } from "@/lib/types";
+import { useSocket } from "@/context/SocketContext";
+import { useUser } from "@/context/UserContext";
+
 
 const BUTTONTEXT = {
   match: "Unmatch",
@@ -19,6 +22,8 @@ export default function LikeButton({
   onUserUpdate?: () => void
 }) {
   const [disabled, setDisabled] = useState(false);
+  const {socket} =  useSocket();
+  const {me} = useUser();
 
   async function handleLike(e: React.MouseEvent) {
     e.stopPropagation();
@@ -35,7 +40,15 @@ export default function LikeButton({
       }
       const data = await res.json();
       if (data.success) {
-        user.likeStatus= await getMatchStatus(refUser.id, u.id);
+        // user.likeStatus= await getMatchStatus(refUser.id, u.id);
+        // setLiked(!liked);
+        // ici socket.emit likenotif
+        socket?.emit("notif", {
+          from: me,
+          to: user,
+          msg: BUTTONTEXT[user.likeStatus]
+          }
+        );
         if (onUserUpdate)
           onUserUpdate();
       }
