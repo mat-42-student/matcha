@@ -2,7 +2,7 @@
 import { executeQuery } from "./db-utils";
 import { QueryResultRow } from "pg";
 import { PublicUser } from "@/lib/types";
-import { completeDistanceAndScore } from "./db-utils";
+import { completeUserInfos } from "./db-utils";
 
 /**
  * Perform a user search based on filters such as distance, age, fame, and interests.
@@ -57,7 +57,7 @@ export async function searchCompatibleUsers(
   }
 
   const {rows} = await executeQuery<PublicUser>(query, params);
-  const users = completeDistanceAndScore(me, rows)
+  const users = await completeUserInfos(me, rows);
   if (distance)
     return users.filter( u => u.distance < distance)
   return users;

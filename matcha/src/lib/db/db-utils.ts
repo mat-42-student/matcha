@@ -2,6 +2,7 @@
 
 import { Pool, QueryResultRow, QueryResult } from 'pg';
 import { PublicUser } from '../types';
+import { getMatchStatus } from './likes';
 
 declare global {
   var cachedPool: Pool | undefined;
@@ -100,10 +101,11 @@ function calcScore(refUser: PublicUser, user: PublicUser): number {
   return totalScore;
 }
 
-export function completeDistanceAndScore(refUser: PublicUser, users: PublicUser[]): PublicUser[] {
+export async function completeUserInfos(refUser: PublicUser, users: PublicUser[]): Promise<PublicUser[]> {
   for (const u of users) {
     u.distance = calcDistance(refUser, u)
     u.score = calcScore(refUser, u)
+    u.likeStatus = await getMatchStatus(refUser.id, u.id);
   }
   users.sort((a, b) => b.score - a.score)
   return users

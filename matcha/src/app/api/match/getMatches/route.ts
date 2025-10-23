@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { getMatchesForUser } from "@/lib/db/matches";
-import { completeDistanceAndScore } from "@/lib/db/db-utils";
+import { completeUserInfos } from "@/lib/db/db-utils";
 
 export async function GET() {
   try {
@@ -20,7 +20,9 @@ export async function GET() {
     }
 
     const matches = await getMatchesForUser(me.id);
-    return NextResponse.json(completeDistanceAndScore(me, matches));
+    const res = await completeUserInfos(me, matches)
+
+    return NextResponse.json(res);
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

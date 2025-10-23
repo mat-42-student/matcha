@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PublicUser, Picture } from "@/lib/types";
+import { PublicUser, Picture, COLOR } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
@@ -52,8 +52,7 @@ export default function CardUser({
   return (
     <>
       <div
-        className="w-72 bg-white border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer
-                  hover:border-pink-500 flex flex-col"
+        className={`w-72 ${COLOR[user.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
         onClick={() => handleCardClick()}
       >
         <div className="flex justify-between items-center mb-2">
