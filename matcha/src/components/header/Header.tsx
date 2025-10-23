@@ -4,6 +4,7 @@
 import { useUser } from "@/context/UserContext";
 import MenuDesktop from "./MenuDesktop";
 import MenuMobile from "./MenuMobile";
+import NotificationBell from "./NotificationBell";
 import Link from "next/link";
 
 export function Header() {
@@ -23,6 +24,7 @@ export function Header() {
 
       {me ? (
         <>
+          <NotificationBell />
           <MenuDesktop user={me} onLogout={handleLogout} />
           <MenuMobile user={me} onLogout={handleLogout} />
         </>

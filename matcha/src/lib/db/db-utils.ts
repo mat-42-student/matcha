@@ -1,6 +1,6 @@
 // matcha/src/lib/db/db-utils.ts
 
-import { Pool, QueryResultRow, QueryResult } from 'pg';
+import { Pool, QueryResultRow, QueryResult, PoolClient } from 'pg';
 
 declare global {
   var cachedPool: Pool | undefined;
@@ -21,25 +21,29 @@ export const pool =
 }
 
 
-export async function executeQuery<T extends QueryResultRow> (
-    queryString: string,
-    values: any[] = [] 
-    ): Promise<QueryResult<T>> 
-{
-    const client = await pool.connect(); 
-    try {
-        const result = await client.query<T>(queryString, values);
-        return result;
-    } catch (error) {
-        console.error('Database query error:', {
-        query: queryString,
-        values,
-        error: error instanceof Error ? error.message : 'Unknown error'
-        });
-        throw new Error(`Query execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-        client.release();
-    }
+export async function executeQuery<T extends QueryResultRow>(
+  queryString: string,
+  values: any[] = [],
+  client?: PoolClient
+): Promise<QueryResult<T>> {
+  const dbClient = client || (await pool.connect());
+
+  try {
+    const result = await dbClient.query<T>(queryString, values);
+    return result;
+  } catch (error) {
+    console.error("Database query error:", {
+      query: queryString,
+      values,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    throw new Error(
+      `Query execution failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  } finally {
+    // ⚠️ On ne release que si on a créé la connexion ici
+    if (!client) dbClient.release();
+  }
 }
 // Utility function to test the connection
 export async function testConnection(): Promise<boolean> {

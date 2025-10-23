@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/db/session";
 import { Socket } from "socket.io";
 import { Payload, PublicUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo } from "./chat";
+import { handleNotif } from "./notifications";
 
 export const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
 
@@ -78,7 +79,8 @@ export function initSocket(httpServer: HttpServer) {
     socket.emit("notif", welcome)
     socket.on("disconnect", () => handleDisconnect(socket));
     socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload, io));
-    socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload, io))
+    socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload, io));
+    socket.on("notif", (payload: Payload) => handleNotif(payload, io));
   }
 
   io.use(authUser); // middleware

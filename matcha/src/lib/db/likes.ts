@@ -2,6 +2,8 @@
 import { executeQuery } from "./db-utils";
 import { PublicUser } from "@/lib/types";
 import { createNotification } from "./notifications";
+import { pool } from "./db-utils";
+import { PoolClient } from "pg";
 
 
 
@@ -11,13 +13,13 @@ import { createNotification } from "./notifications";
  * @param delta - positive or negative number
  * @param userId - id of the user
  */
-export async function addFame(delta: number, userId: string) {
+export async function addFame(delta: number, userId: string, client?: PoolClient) {
   const query = `
     UPDATE users
-    SET fame = LEAST(GREATEST(fame + $1, 0), 100)
+    SET fame = GREATEST(fame + $1, 0)
     WHERE id = $2
   `;
-  await executeQuery(query, [delta, userId]);
+  await executeQuery(query, [delta, userId], client);
 }
 
 /**
@@ -61,19 +63,23 @@ export async function getMatchStatus(userA: string, userB: string): Promise<'mat
 export async function likeUser(meId: string, targetId: string) {
   if (meId === targetId) return; // cannot like self
 
-  await executeQuery("BEGIN");
+  const client = await pool.connect();
 
   try {
+    await client.query("BEGIN");
+
     // Check if target already liked me
     const existing = await executeQuery<{ status: string }>(
       `SELECT status FROM matches WHERE user1_id = $1 AND user2_id = $2`,
-      [targetId, meId]
+      [targetId, meId],
+      client
     );
 
     // Fetch sender info once
     const senderRes = await executeQuery<{ first_name: string }>(
       `SELECT first_name FROM users WHERE id = $1`,
-      [meId]
+      [meId],
+      client
     );
     const senderName = senderRes.rows[0]?.first_name || "Someone";
 
@@ -81,44 +87,34 @@ export async function likeUser(meId: string, targetId: string) {
       // Reciprocated like → match
       await executeQuery(
         `UPDATE matches SET status = 'match' WHERE user1_id = $1 AND user2_id = $2`,
-        [targetId, meId]
+        [targetId, meId],
+        client
       );
 
-      // Create notifications for both users (since it's a match)
       await Promise.all([
-        createNotification(
-          targetId,
-          meId,
-          "match",
-          `You matched with ${senderName}!`
-        ),
-        createNotification(
-          meId,
-          targetId,
-          "match",
-          `You matched with ${await getUserName(targetId)}!`
-        ),
+        createNotification(targetId, meId, "match", `You matched with ${senderName}!`, client),
+        createNotification(meId, targetId, "match", `You matched with ${await getUserName(targetId)}!`, client),
       ]);
     } else {
-      // Normal like
       await executeQuery(
         `INSERT INTO matches (user1_id, user2_id, status)
          VALUES ($1, $2, 'like')
          ON CONFLICT (user1_id, user2_id) DO NOTHING`,
-        [meId, targetId]
+        [meId, targetId],
+        client
       );
 
-      // Create like notification
-      await createNotification(targetId, meId, "like", `${senderName} liked you`);
+      await createNotification(targetId, meId, "like", `${senderName} liked you`, client);
     }
 
-    // Increase fame
-    await addFame(5, targetId);
+    await addFame(5, targetId, client);
 
-    await executeQuery("COMMIT");
+    await client.query("COMMIT");
   } catch (err) {
-    await executeQuery("ROLLBACK");
+    await client.query("ROLLBACK");
     throw err;
+  } finally {
+    client.release();
   }
 }
 
@@ -138,38 +134,33 @@ async function getUserName(userId: string): Promise<string> {
  * fame issue 
  */
 export async function unlikeUser(meId: string, targetId: string) {
-  await executeQuery("BEGIN");
+  const client = await pool.connect();
 
   try {
+    await client.query("BEGIN");
+
+    // Supprime le match ou le like entre les deux utilisateurs
     const query = `
       DELETE FROM matches
       WHERE (user1_id = $1 AND user2_id = $2)
          OR (user1_id = $2 AND user2_id = $1)
-      RETURNING status
     `;
-    const result = await executeQuery<{ status: string }>(query, [meId, targetId]);
+    const result = await executeQuery(query, [meId, targetId], client);
 
-    await addFame(-5, targetId);
+    // Crée la notification de "unlike"
+    await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
 
-    const senderRes = await executeQuery<{ first_name: string }>(
-      `SELECT first_name FROM users WHERE id = $1`,
-      [meId]
-    );
-    const senderName = senderRes.rows[0]?.first_name || "Someone";
+    // Diminue la "fame" du user qui s’est fait unliker
+    await addFame(-5, targetId, client);
 
-    let message = `${senderName} unliked you`;
-    if (result.rows.length > 0 && result.rows[0].status === "match") {
-      message = `${senderName} unmatched you`;
-    }
-
-    await createNotification(targetId, meId, "unlike", message);
-
-    await executeQuery("COMMIT");
+    await client.query("COMMIT");
 
     return result.rowCount ?? 0;
   } catch (err) {
-    await executeQuery("ROLLBACK");
+    await client.query("ROLLBACK");
     throw err;
+  } finally {
+    client.release();
   }
 }
 

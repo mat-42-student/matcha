@@ -1,5 +1,6 @@
 // matcha/src/lib/db/notifications.ts
 import { executeQuery } from "@/lib/db/db-utils";
+import { PoolClient } from "pg";
 
 type NotificationType = "like" | "match" | "unlike" | "message";
 
@@ -11,7 +12,8 @@ export async function createNotification(
   targetId: string,
   senderId: string,
   type: NotificationType,
-  message: string
+  message: string,
+  client?: PoolClient
 ): Promise<void> {
   // Handle cleanup rules before insertion
   if (type === "like" || type === "match") {
@@ -28,7 +30,7 @@ export async function createNotification(
     VALUES ($1, $2, $3, $4);
   `;
 
-  await executeQuery(query, [targetId, senderId, type, message]);
+  await executeQuery(query, [targetId, senderId, type, message], client);
 }
 
 /**
@@ -36,13 +38,10 @@ export async function createNotification(
  */
 export async function getNotificationsByUser(userId: string) {
   const query = `
-    SELECT n.*, 
-           u.username AS sender_username,
-           u.picture_url AS sender_picture
-    FROM notifications n
-    JOIN users u ON u.id = n.sender_id
-    WHERE n.target_id = $1
-    ORDER BY n.created_at DESC;
+    SELECT *
+    FROM notifications
+    WHERE target_id = $1
+    ORDER BY created_at DESC;
   `;
 
   const result = await executeQuery(query, [userId]);
@@ -61,9 +60,7 @@ export async function deleteAllNotificationsByUser(userId: string): Promise<void
   await executeQuery(query, [userId]);
 }
 
-/**
- * Delete specific notification types exchanged between two users
- */
+
 export async function deleteNotificationsBetweenUsers(
   userA: string,
   userB: string,
@@ -73,7 +70,7 @@ export async function deleteNotificationsBetweenUsers(
     DELETE FROM notifications
     WHERE ((target_id = $1 AND sender_id = $2)
         OR (target_id = $2 AND sender_id = $1))
-      AND type = ANY($3::text[]);
+      AND type = ANY($3::notification_type[]);
   `;
 
   await executeQuery(query, [userA, userB, types]);

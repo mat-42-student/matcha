@@ -46,10 +46,10 @@ export default function LikeButton({
       if (data.success) {
         setLiked(!liked);
         // ici socket.emit likenotif
-        socket?.emit("get-chat-users", {
-          from: user,
+        socket?.emit("notif", {
+          from: me,
           to: user,
-          msg: ""
+          msg: "like"
           }
         );
         if (onUserUpdate)
