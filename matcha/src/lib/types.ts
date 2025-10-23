@@ -47,7 +47,7 @@ export interface Payload {
   msg: string;
 }
 export const COLOR = {
-  match: "bg-gradient-to-tr from-pink-200 via-teal-200 to-pink-200",
+  match: "bg-gradient-to-tr from-pink-200 via-yellow-100 to-teal-200",
   like: "bg-pink-200",
   isLiked: "bg-teal-100",
   block: "bg-gray-700",
