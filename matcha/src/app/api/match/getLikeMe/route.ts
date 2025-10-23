@@ -20,7 +20,6 @@ export async function GET() {
     }
 
     const likedBy = await getUsersWhoLikedMe(me.id);
-    
     return NextResponse.json(completeDistanceAndScore(me, likedBy));
   } catch (err) {
     console.error(err);

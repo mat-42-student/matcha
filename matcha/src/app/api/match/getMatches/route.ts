@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { getMatchesForUser } from "@/lib/db/matches";
+import { completeDistanceAndScore } from "@/lib/db/db-utils";
 
 export async function GET() {
   try {
@@ -18,8 +19,8 @@ export async function GET() {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const matches = await getMatchesForUser(me.id, me.latitude!, me.longitude!);
-    return NextResponse.json(matches);
+    const matches = await getMatchesForUser(me.id);
+    return NextResponse.json(completeDistanceAndScore(me, matches));
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

@@ -7,13 +7,23 @@ import { PublicUser } from "@/lib/types";
 
 export default function Visitors() {
   const [users, setUsers] = useState<PublicUser[]>([]);
-
+  
   async function fetchUsers() {
-    const res = await fetch("/api/match/getViews");
-    const data = await res.json();
-    setUsers(data);
+    try {
+      const res = await fetch("/api/match/getViews");
+      if (!res.ok) {
+        console.log(`API Error: ${res.status}`);
+        return;
+      }
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Could not retrieve users :", err);
+    }
   }
-  useEffect(() => { fetchUsers() }, []);
+
+  useEffect(() => { fetchUsers() }, [])
 
   return (
     <div className="p-4">

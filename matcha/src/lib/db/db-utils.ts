@@ -82,30 +82,29 @@ function calcDistance(refUser: PublicUser, user: PublicUser): number {
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  return distance
 }
 
 function calcScore(refUser: PublicUser, user: PublicUser): number {
-  const maxDistance = 500;
+  const maxDistance = 1000;
   const distanceScore = Math.max(0, (1 - user.distance / maxDistance)) * 40;
 
-  const fameScore = Math.min(user.fame / 100, 1) * 30;
+  const fameScore = Math.min(user.fame / 100, 1) * 20;
 
   const sharedInterests = user.interests.filter(i => refUser.interests.includes(i)).length;
   const maxShared = Math.max(refUser.interests.length, 1);
-  const interestsScore = (sharedInterests / maxShared) * 30;
+  const interestsScore = (sharedInterests / maxShared) * 40;
 
-  const totalScore = distanceScore + fameScore + interestsScore;
-  return Math.round(totalScore);
+  const totalScore = Math.round(distanceScore + fameScore + interestsScore);
+  return totalScore;
 }
 
 export function completeDistanceAndScore(refUser: PublicUser, users: PublicUser[]): PublicUser[] {
-  users.map(u => ({
-    ...u,
-    distance: calcDistance(refUser, u),
-    score: calcScore(refUser, u)
-  }))
+  for (const u of users) {
+    u.distance = calcDistance(refUser, u)
+    u.score = calcScore(refUser, u)
+  }
   users.sort((a, b) => b.score - a.score)
   return users
 }

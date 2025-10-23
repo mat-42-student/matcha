@@ -33,34 +33,16 @@ export async function blockUser(currentUserId: string, targetUserId: string): Pr
   }
 }
 
-/**
- * Get all users matched with me, excluding blocked users
- * Distance is calculated in km based on latitude/longitude
- */
-export async function getMatchesForUser(
-  meId: string,
-  myLatitude: number,
-  myLongitude: number
-): Promise<(PublicUser & { distance: number })[]> {
+export async function getMatchesForUser(meId: string,): Promise<PublicUser[]> {
   const query = `
-    SELECT uwi.*, ceil(earth_distance(ll_to_earth($1, $2), ll_to_earth(uwi.latitude, uwi.longitude))/1000) AS distance
+    SELECT uwi.*
     FROM matches m
     JOIN users_with_interests uwi 
       ON uwi.id IN (m.user1_id, m.user2_id)
     WHERE m.status = 'match'
-      AND $3 IN (m.user1_id, m.user2_id)
-      AND uwi.id <> $3
-      AND NOT EXISTS (
-        SELECT 1
-        FROM matches m2
-        WHERE (
-          (m2.user1_id = $3 AND m2.user2_id = uwi.id)
-          OR
-          (m2.user1_id = uwi.id AND m2.user2_id = $3)
-        )
-        AND m2.status = 'block'
-      );
+      AND $1 IN (m.user1_id, m.user2_id)
+      AND uwi.id <> $1;
   `;
-  const result = await executeQuery<PublicUser & { distance: number }>(query, [myLatitude, myLongitude, meId]);
+  const result = await executeQuery<PublicUser>(query,[meId]);
   return result.rows;
 }
