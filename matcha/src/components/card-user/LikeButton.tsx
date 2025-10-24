@@ -1,3 +1,5 @@
+// src/components/card-user/LikeButton.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -19,37 +21,37 @@ export default function LikeButton({
   onUserUpdate
 }: {
   user: PublicUser,
-  onUserUpdate?: () => void
+  onUserUpdate: (u: PublicUser) => void
 }) {
   const [disabled, setDisabled] = useState(false);
+  const [localUser, setLocalUser] = useState(user);
   const {socket} =  useSocket();
   const {me} = useUser();
 
-  async function handleLike(e: React.MouseEvent) {
+  async function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     let method = '';
-    if (user.likeStatus == 'isLiked' || user.likeStatus == 'none')
+    if (localUser.likeStatus === 'isLiked' || localUser.likeStatus === 'none')
       method = 'POST';
     else
       method = 'DELETE';
     try {
-      const res = await fetch(`/api/match/${user.id}/like`, { method: method });
+      const res = await fetch(`/api/match/${localUser.id}/like`, { method: method });
       if (res.status === 204){ // Easter egg
         setDisabled(true);
         return;
       }
       const data = await res.json();
       if (data.success) {
-        // user.likeStatus= await getMatchStatus(refUser.id, u.id);
-        // setLiked(!liked);
-        // ici socket.emit likenotif
         socket?.emit("notif", {
           from: me,
-          to: user,
-          msg: BUTTONTEXT[user.likeStatus]
+          to: localUser,
+          msg: BUTTONTEXT[localUser.likeStatus]
           }
         );
-        onUserUpdate?.();
+        const updated = { ...localUser, likeStatus: data.newStatus };
+        setLocalUser(updated);
+        onUserUpdate(updated);
       }
     } catch (err) {
       console.error(err);
@@ -59,10 +61,10 @@ export default function LikeButton({
   return (
     <button
         className="bg-pink-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-pink-700 transition"
-        onClick={(e) => { handleLike(e); }}
+        onClick={(e) => { handleClick(e); }}
         disabled = {disabled}
     >
-      {BUTTONTEXT[user.likeStatus]}
+      {BUTTONTEXT[localUser.likeStatus]}
     </button>
   );
 }

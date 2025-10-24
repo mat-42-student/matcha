@@ -27,7 +27,7 @@ export default function Visitors() {
 
   return (
     <div className="p-4">
-      <Browse users={users} refreshList={fetchUsers}/>
+      <Browse users={users} />
     </div>
   );
 }

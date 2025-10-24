@@ -67,8 +67,8 @@ export async function getMatchStatus(userA: string, userB: string): Promise<'mat
  * Like a user (creates a match if reciprocated)
  * Handles transactions, fame increment, and notifications
  */
-export async function likeUser(meId: string, targetId: string) {
-  if (meId === targetId) return; // cannot like self
+export async function likeUser(meId: string, targetId: string): Promise<string> {
+  if (meId === targetId) return ""; // cannot like self
 
   const client = await pool.connect();
 
@@ -122,6 +122,11 @@ export async function likeUser(meId: string, targetId: string) {
   } finally {
     client.release();
   }
+    const final = await executeQuery<{ status: string }>(
+    `SELECT status FROM matches WHERE (user1_id = $1 AND user2_id = $2)
+                                    OR (user1_id = $2 AND user2_id = $1)`,
+    [meId, targetId]);
+    return final.rows[0]?.status || 'none';
 }
 
 /**
@@ -151,7 +156,7 @@ export async function unlikeUser(meId: string, targetId: string) {
       WHERE (user1_id = $1 AND user2_id = $2)
          OR (user1_id = $2 AND user2_id = $1)
     `;
-    const result = await executeQuery(query, [meId, targetId], client);
+    await executeQuery(query, [meId, targetId], client);
 
     // Crée la notification de "unlike"
     await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
@@ -161,7 +166,6 @@ export async function unlikeUser(meId: string, targetId: string) {
 
     await client.query("COMMIT");
 
-    return result.rowCount ?? 0;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

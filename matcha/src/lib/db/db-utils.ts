@@ -95,11 +95,11 @@ function calcScore(refUser: PublicUser, user: PublicUser): number {
   const maxDistance = 1000;
   const distanceScore = Math.max(0, (1 - user.distance / maxDistance)) * 40;
 
-  const fameScore = Math.min(user.fame / 100, 1) * 20;
+  const fameScore = Math.min(1, user.fame / 100) * 30;
 
   const sharedInterests = user.interests.filter(i => refUser.interests.includes(i)).length;
   const maxShared = Math.max(refUser.interests.length, 1);
-  const interestsScore = (sharedInterests / maxShared) * 40;
+  const interestsScore = (sharedInterests / maxShared) * 30;
 
   const totalScore = Math.round(distanceScore + fameScore + interestsScore);
   return totalScore;

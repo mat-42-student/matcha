@@ -8,8 +8,7 @@ import Navigation from "./Navigation";
 import { PublicUser } from "@/lib/types";
 import FilterBar from "./FilterBar";
 
-export default function Browse({ users, refreshList }: { users: PublicUser[]; refreshList?: () => void
- }) {
+export default function Browse({ users }: { users: PublicUser[] }) {
   const [page, setPage] = useState(1);
   const [filteredUsers, setFilteredUsers] = useState(users);
   const perPage = 12;
@@ -22,6 +21,14 @@ export default function Browse({ users, refreshList }: { users: PublicUser[]; re
   const totalPages = Math.ceil(filteredUsers.length / perPage);
   const startIndex = (page - 1) * perPage;
   const currentUsers = filteredUsers.slice(startIndex, startIndex + perPage);
+
+  // function HandleUserUpdate(updatedUser: PublicUser) {
+  //   setFilteredUsers((prev) => {
+  //     const updated = prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
+  //     // updated.sort((a, b) => b.score - a.score);
+  //     return updated;
+  //   });
+  // }
 
   function nextPage() {
     if (page < totalPages) setPage(page + 1);
@@ -40,10 +47,10 @@ export default function Browse({ users, refreshList }: { users: PublicUser[]; re
       <FilterBar users={users} onChange={setFilteredUsers} />
       <div className="flex flex-wrap justify-center">
         {currentUsers.map((u) => (
-          <CardUser key={u.id} user={u} onUserUpdate={refreshList}/>
+          <CardUser key={u.id} user={u} />
         ))}
       </div>
-
+{/* onUserUpdate={(u: PublicUser) => HandleUserUpdate(u)} */}
       {filteredUsers.length > perPage && (
         <Navigation
           page={page}

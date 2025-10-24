@@ -1,3 +1,5 @@
+// src/components/card-user/CardUserModal.tsx
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -14,7 +16,7 @@ export default function CardUserModal({
   user: PublicUser;
   mainPic: Picture;
   onClose: () => void;
-  onUserUpdate?: () => void;
+  onUserUpdate: (u: PublicUser) => void;
 }) {
 
   // State for all pictures (main + others)
@@ -62,7 +64,7 @@ export default function CardUserModal({
 
   // Report / Block actions
   async function reportUser() {
-    if (confirm("Do you really want to report this user?")) {
+    if (confirm("Do you really want to report this user ?")) {
       await fetch(`/api/users/${user.id}/report`, { method: 'POST' });
     }
   }
@@ -70,7 +72,7 @@ export default function CardUserModal({
   async function blockUser() {
     if (!confirm("Do you really want to block this user?")) return;
     await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
-    onUserUpdate?.();
+    onUserUpdate(user);
     onClose();
   }
 

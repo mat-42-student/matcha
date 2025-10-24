@@ -7,8 +7,9 @@ import { addFame } from "./likes";
  * Record a user profile view.
  * - Inserts or updates a record in the "views" table.
  * - If it's a new view (not an update), increases the viewed user's fame by 1.
+ * - Return true if a new line was created
  */
-export async function recordProfileView(viewedUserId: string, viewerUserId: string): Promise<void> {
+export async function recordProfileView(viewedUserId: string, viewerUserId: string): Promise<boolean> {
   // Insert or update the view
   const insertQuery = `
     INSERT INTO views (user_id, seen_by)
@@ -23,7 +24,9 @@ export async function recordProfileView(viewedUserId: string, viewerUserId: stri
   // Increase fame only if this was a new view
   if (result.rows[0]?.inserted) {
     await addFame(1, viewedUserId);
+    return true
   }
+  return false
 }
 
 /**

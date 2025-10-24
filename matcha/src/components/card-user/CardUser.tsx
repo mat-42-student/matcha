@@ -1,5 +1,3 @@
-// matcha/src/components/card-user/CardUser.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,63 +6,67 @@ import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
 
-export default function CardUser({
-  user,
-  onUserUpdate,
- }: { 
-  user: PublicUser;
-  onUserUpdate?: () => void;
-}) {
+type Props = { user: PublicUser };
 
+export default function CardUser({ user }: Props) {
   const [open, setOpen] = useState(false);
-  const [mainPic, setMainPic] = useState<Picture>({mime_type: "", data: ""});
+  const [mainPic, setMainPic] = useState<Picture>({ mime_type: "", data: "" });
+  const [localUser, setLocalUser] = useState(user);
 
-  async function handleCardClick() {
-    setOpen(true);
-    try {
-      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" })
-      if (!res.ok) {
-        console.error("Could not log profile view");
-      }
-      // onUserUpdate?.()
-    } catch (err) {
-      console.error("Could not log profile view:", err);
-    }
-  }
+  // Sync localUser si la prop change
+  useEffect(() => {
+    setLocalUser(user);
+  }, [user]);
 
+  // Fetch la photo principale
   useEffect(() => {
     async function fetchMainPic() {
       try {
         const res = await fetch(`/api/users/${user.id}/pics/`);
         if (!res.ok || res.status === 204) return;
-
         const picJson: Picture = await res.json();
-        // Convert base64 to data URL
-        const imageUrl = `data:${picJson.mime_type};base64,${picJson.data}`;
-        setMainPic({ ...picJson, data: imageUrl });
+        setMainPic({ ...picJson, data: `data:${picJson.mime_type};base64,${picJson.data}` });
       } catch (err) {
         console.error("Could not retrieve main picture:", err);
       }
     }
-
     fetchMainPic();
   }, [user.id]);
+
+  // Log une vue et incrémente fame localement
+  async function handleCardClick() {
+    setOpen(true);
+    try {
+      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
+      if (!res.ok) console.error("Could not log profile view");
+      const data = await res.json();
+      if (data.scored === true) {
+        setLocalUser(prev => ({ ...prev, fame: prev.fame + 1 }));
+      }
+    } catch (err) {
+      console.error("Could not log profile view:", err);
+    }
+  }
+
+  // Handler pour update depuis la modale (ex: like/unlike)
+  function handleUserUpdate(updatedUser: PublicUser) {
+    setLocalUser(updatedUser);
+  }
 
   return (
     <>
       <div
-        className={`w-72 ${COLOR[user.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
-        onClick={() => handleCardClick()}
+        className={`w-72 ${COLOR[localUser.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
+        onClick={handleCardClick}
+        title={localUser.score.toString()}
       >
         <div className="flex justify-between items-center mb-2">
           <div>
-            <span className="text-xl text-pink-700 font-semibold">
-              {user.first_name}
-            </span>
-            <span className="text-sm text-gray-400"> ({user.gender})</span>
-            <span className="text-sm text-gray-600">{user.age} ans</span>
+            <span className="text-xl text-pink-700 font-semibold">{localUser.first_name}</span>
+            <span className="text-sm text-gray-400"> ({localUser.gender})</span>
+            <span className="text-sm text-gray-600">{localUser.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600">⭐{user.fame}</span>
+          <span className="text-sm text-gray-600">⭐{localUser.fame}</span>
         </div>
 
         <div className="flex justify-center">
@@ -86,15 +88,21 @@ export default function CardUser({
         </div>
 
         <div className="text-gray-800 mb-2 mt-auto flex justify-between">
-          <span>{user.city}</span>
-          <span>{user.distance} km</span>
+          <span>{localUser.city}</span>
+          <span>{localUser.distance} km</span>
         </div>
-        <div>
-          <Interests interests={user.interests} />
-        </div>
+
+        <Interests interests={localUser.interests} />
       </div>
 
-      {open && <CardUserModal user={user} mainPic={mainPic} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}
+      {open && (
+        <CardUserModal
+          user={localUser}
+          mainPic={mainPic}
+          onClose={() => setOpen(false)}
+          onUserUpdate={handleUserUpdate}
+        />
+      )}
     </>
   );
 }
