@@ -10,10 +10,13 @@ import FilterBar from "./FilterBar";
 
 export default function Browse({ users }: { users: PublicUser[] }) {
   const [page, setPage] = useState(1);
+  const [usersState, setUsersState] = useState(users);
   const [filteredUsers, setFilteredUsers] = useState(users);
   const perPage = 12;
 
+  // Synchroniser quand `users` (prop serveur) change
   useEffect(() => {
+    setUsersState(users);
     setFilteredUsers(users);
     setPage(1);
   }, [users]);
@@ -22,13 +25,15 @@ export default function Browse({ users }: { users: PublicUser[] }) {
   const startIndex = (page - 1) * perPage;
   const currentUsers = filteredUsers.slice(startIndex, startIndex + perPage);
 
-  // function HandleUserUpdate(updatedUser: PublicUser) {
-  //   setFilteredUsers((prev) => {
-  //     const updated = prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
-  //     // updated.sort((a, b) => b.score - a.score);
-  //     return updated;
-  //   });
-  // }
+  // Update global d’un utilisateur
+  function handleUserUpdate(updatedUser: PublicUser) {
+    setUsersState(prev =>
+      prev.map(u => (u.id === updatedUser.id ? updatedUser : u))
+    );
+    setFilteredUsers(prev =>
+      prev.map(u => (u.id === updatedUser.id ? updatedUser : u))
+    );
+  }
 
   function nextPage() {
     if (page < totalPages) setPage(page + 1);
@@ -38,19 +43,21 @@ export default function Browse({ users }: { users: PublicUser[] }) {
     if (page > 1) setPage(page - 1);
   }
 
-  if (users.length === 0) {
+  if (filteredUsers.length === 0) {
     return <div className="p-4">No results</div>;
   }
 
   return (
     <div className="p-4">
-      <FilterBar users={users} onChange={setFilteredUsers} />
+      {/* ✅ utiliser usersState comme base de filtrage */}
+      <FilterBar users={usersState} onChange={setFilteredUsers} />
+
       <div className="flex flex-wrap justify-center">
         {currentUsers.map((u) => (
-          <CardUser key={u.id} user={u} />
+          <CardUser key={u.id} user={u} onUserUpdate={handleUserUpdate} />
         ))}
       </div>
-{/* onUserUpdate={(u: PublicUser) => HandleUserUpdate(u)} */}
+
       {filteredUsers.length > perPage && (
         <Navigation
           page={page}

@@ -1,3 +1,5 @@
+// matcha/src/components/card-user/CardUser.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,17 +8,14 @@ import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
 
-type Props = { user: PublicUser };
+type Props = {
+  user: PublicUser;
+  onUserUpdate: (u: PublicUser) => void
+};
 
-export default function CardUser({ user }: Props) {
+export default function CardUser({ user, onUserUpdate }: Props) {
   const [open, setOpen] = useState(false);
   const [mainPic, setMainPic] = useState<Picture>({ mime_type: "", data: "" });
-  const [localUser, setLocalUser] = useState(user);
-
-  // Sync localUser si la prop change
-  useEffect(() => {
-    setLocalUser(user);
-  }, [user]);
 
   // Fetch la photo principale
   useEffect(() => {
@@ -41,7 +40,7 @@ export default function CardUser({ user }: Props) {
       if (!res.ok) console.error("Could not log profile view");
       const data = await res.json();
       if (data.scored === true) {
-        setLocalUser(prev => ({ ...prev, fame: prev.fame + 1 }));
+        onUserUpdate({...user, fame: user.fame + 1});
       }
     } catch (err) {
       console.error("Could not log profile view:", err);
@@ -50,23 +49,23 @@ export default function CardUser({ user }: Props) {
 
   // Handler pour update depuis la modale (ex: like/unlike)
   function handleUserUpdate(updatedUser: PublicUser) {
-    setLocalUser(updatedUser);
+    onUserUpdate(updatedUser);
   }
 
   return (
     <>
       <div
-        className={`w-72 ${COLOR[localUser.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
+        className={`w-72 ${COLOR[user.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
         onClick={handleCardClick}
-        title={localUser.score.toString()}
+        title={user.score.toString()}
       >
         <div className="flex justify-between items-center mb-2">
           <div>
-            <span className="text-xl text-pink-700 font-semibold">{localUser.first_name}</span>
-            <span className="text-sm text-gray-400"> ({localUser.gender})</span>
-            <span className="text-sm text-gray-600">{localUser.age} ans</span>
+            <span className="text-xl text-pink-700 font-semibold">{user.first_name}</span>
+            <span className="text-sm text-gray-400"> ({user.gender})</span>
+            <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600">⭐{localUser.fame}</span>
+          <span className="text-sm text-gray-600">⭐{user.fame}</span>
         </div>
 
         <div className="flex justify-center">
@@ -88,16 +87,16 @@ export default function CardUser({ user }: Props) {
         </div>
 
         <div className="text-gray-800 mb-2 mt-auto flex justify-between">
-          <span>{localUser.city}</span>
-          <span>{localUser.distance} km</span>
+          <span>{user.city}</span>
+          <span>{user.distance} km</span>
         </div>
 
-        <Interests interests={localUser.interests} />
+        <Interests interests={user.interests} />
       </div>
 
       {open && (
         <CardUserModal
-          user={localUser}
+          user={user}
           mainPic={mainPic}
           onClose={() => setOpen(false)}
           onUserUpdate={handleUserUpdate}

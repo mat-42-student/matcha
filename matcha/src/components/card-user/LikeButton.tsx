@@ -31,10 +31,15 @@ export default function LikeButton({
   async function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     let method = '';
-    if (localUser.likeStatus === 'isLiked' || localUser.likeStatus === 'none')
+    let deltaFame = 0;
+    if (localUser.likeStatus === 'isLiked' || localUser.likeStatus === 'none') {
       method = 'POST';
-    else
+      deltaFame = 5;
+    }
+    else{
       method = 'DELETE';
+      deltaFame = -5;
+    }
     try {
       const res = await fetch(`/api/match/${localUser.id}/like`, { method: method });
       if (res.status === 204){ // Easter egg
@@ -49,7 +54,7 @@ export default function LikeButton({
           msg: BUTTONTEXT[localUser.likeStatus]
           }
         );
-        const updated = { ...localUser, likeStatus: data.newStatus };
+        const updated = { ...localUser, likeStatus: data.newStatus, fame: localUser.fame + deltaFame };
         setLocalUser(updated);
         onUserUpdate(updated);
       }
