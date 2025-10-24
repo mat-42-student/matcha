@@ -65,10 +65,6 @@ export async function getMatchStatus(userA: string, userB: string): Promise<'mat
 
 /**
  * Like a user (creates a match if reciprocated)
- * Handles transactions and fame increment
- */
-/**
- * Like a user (creates a match if reciprocated)
  * Handles transactions, fame increment, and notifications
  */
 export async function likeUser(meId: string, targetId: string) {
