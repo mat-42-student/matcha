@@ -26,6 +26,7 @@ export default function CardUser({
       if (!res.ok) {
         console.error("Could not log profile view");
       }
+      // onUserUpdate?.()
     } catch (err) {
       console.error("Could not log profile view:", err);
     }

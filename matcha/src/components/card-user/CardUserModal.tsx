@@ -128,7 +128,7 @@ export default function CardUserModal({
         <p className="text-gray-700 mt-2">{user.bio}</p>
         <p className="text-sm text-gray-400">{user.city}</p>
 
-        <div className="flex justify-between border border-pink-300 mt-4">
+        <div className="flex justify-between mt-4">
           <LikeButton user={user} onUserUpdate={onUserUpdate} />
           <span className="flex">
             <button onClick={blockUser} title="Block user" className="px-2 text-xl">⛔</button>

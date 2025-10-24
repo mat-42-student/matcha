@@ -49,8 +49,7 @@ export default function LikeButton({
           msg: BUTTONTEXT[user.likeStatus]
           }
         );
-        if (onUserUpdate)
-          onUserUpdate();
+        onUserUpdate?.();
       }
     } catch (err) {
       console.error(err);
