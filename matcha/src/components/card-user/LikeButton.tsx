@@ -41,7 +41,7 @@ export default function LikeButton({
       deltaFame = -5;
     }
     try {
-      const res = await fetch(`/api/match/${localUser.id}/like`, { method: method });
+      const res = await fetch(`/api/match/${localUser.id}/like`, { method });
       if (res.status === 204){ // Easter egg
         setDisabled(true);
         return;
@@ -54,7 +54,8 @@ export default function LikeButton({
           msg: BUTTONTEXT[localUser.likeStatus]
           }
         );
-        const updated = { ...localUser, likeStatus: data.newStatus, fame: localUser.fame + deltaFame };
+        const fame = Math.min(Math.max(0, localUser.fame + deltaFame), 100)
+        const updated = { ...localUser, likeStatus: data.newStatus, fame };
         setLocalUser(updated);
         onUserUpdate(updated);
       }

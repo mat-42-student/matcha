@@ -18,22 +18,7 @@ export default function CardUser({
   const [open, setOpen] = useState(false);
   const [mainPic, setMainPic] = useState<Picture | null>(null);
 
-  // Fetch la photo principale
-  useEffect(() => {
-    async function fetchMainPic() {
-      try {
-        const res = await fetch(`/api/users/${user.id}/pics/`);
-        if (!res.ok || res.status === 204) return;
-        const picJson: Picture = await res.json();
-        setMainPic({ ...picJson, data: `data:${picJson.mime_type};base64,${picJson.data}` });
-      } catch (err) {
-        console.error("Could not retrieve main picture:", err);
-      }
-    }
-    fetchMainPic();
-  }, [user.id]);
-
-  // Log une vue et incrémente fame localement
+  // Log a view and increments front user's fame 
   async function handleCardClick() {
     setOpen(true);
     try {
@@ -41,13 +26,15 @@ export default function CardUser({
       if (!res.ok) console.error("Could not log profile view");
       const data = await res.json();
       if (data.scored === true) {
-        onUserUpdate({...user, fame: user.fame + 1});
+        const revisedFame = user.fame < 100 ? user.fame + 1 : 100
+        onUserUpdate({...user, fame: revisedFame});
       }
     } catch (err) {
       console.error("Could not log profile view:", err);
     }
   }
 
+  // fetch main pic on load
   useEffect(() => {
     async function fetchMainPic() {
       try {
@@ -62,12 +49,16 @@ export default function CardUser({
         console.error("Could not retrieve main picture:", err);
       }
     }
-
     fetchMainPic();
   }, [user.id]);
+
   // Handler pour update depuis la modale (ex: like/unlike)
   function handleUserUpdate(updatedUser: PublicUser) {
     onUserUpdate(updatedUser);
+  }
+
+  function display_fame(fame: number): string {
+    return Math.min(Math.max(0, fame), 100).toString()
   }
 
   return (
@@ -83,7 +74,7 @@ export default function CardUser({
             <span className="text-sm text-gray-400"> ({user.gender})</span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600">⭐{user.fame}</span>
+          <span className="text-sm text-gray-600">⭐{display_fame(user.fame)}</span>
         </div>
 
         <div className="flex justify-center">
