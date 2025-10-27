@@ -9,7 +9,6 @@ import { completeUserInfos } from "./db-utils";
  */
 export async function searchCompatibleUsers(
   me: PublicUser,
-  userId: string,
   distance?: number,
   ageRange?: [number, number],
   fame?: number,
@@ -21,7 +20,8 @@ export async function searchCompatibleUsers(
     FROM compatible_users_from($1) AS c
     WHERE 1=1
   `;
-  const params: [string | string[] | number] = [userId];
+
+  const params: (string | string[] | number | number[])[] = [me.id];
 
   // Age range filter
   if (ageRange) {
@@ -55,7 +55,6 @@ export async function searchCompatibleUsers(
     ) && $${params.length + 1}`;
     params.push(customInterests);
   }
-
   const {rows} = await executeQuery<PublicUser>(query, params);
   const users = await completeUserInfos(me, rows);
   if (distance)
