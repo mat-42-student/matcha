@@ -2,11 +2,13 @@
 import { executeQuery } from "./db-utils";
 import { QueryResultRow } from "pg";
 import { PublicUser } from "@/lib/types";
+import { completeUserInfos } from "./db-utils";
 
 /**
  * Perform a user search based on filters such as distance, age, fame, and interests.
  */
 export async function searchCompatibleUsers(
+  me: PublicUser,
   userId: string,
   distance?: number,
   ageRange?: [number, number],
@@ -20,12 +22,6 @@ export async function searchCompatibleUsers(
     WHERE 1=1
   `;
   const params: [string | string[] | number] = [userId];
-
-  // Distance filter (ignore values over 500 km)
-  if (distance && distance < 500) {
-    query += ` AND c.distance <= $${params.length + 1}`;
-    params.push(distance);
-  }
 
   // Age range filter
   if (ageRange) {
@@ -60,13 +56,12 @@ export async function searchCompatibleUsers(
     params.push(customInterests);
   }
 
-  const result = await executeQuery<QueryResultRow>(query, params);
-  return result.rows;
+  const {rows} = await executeQuery<PublicUser>(query, params);
+  const users = await completeUserInfos(me, rows);
+  if (distance)
+    return users.filter( u => u.distance < distance)
+  return users;
 }
-
-
-
-
 
 export async function getCompatibleUsers(userId: string): Promise<PublicUser[]> {
   const query = `

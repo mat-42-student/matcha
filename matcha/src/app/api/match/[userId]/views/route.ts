@@ -30,9 +30,9 @@ export async function POST(
       return NextResponse.json({ error: "You cannot view your own profile" }, { status: 400 });
     }
 
-    await recordProfileView(userId, viewer.id);
+    const scored: boolean = await recordProfileView(userId, viewer.id);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ scored });
   } catch (err) {
     console.error("Error in POST /api/match/[userId]/views:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

@@ -113,6 +113,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     return () => {
       s.disconnect();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me, fetchNotifications]);
 
   return (

@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PublicUser, Picture } from "@/lib/types";
+import { PublicUser, Picture, COLOR } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
@@ -13,17 +13,35 @@ export default function CardUser({
   onUserUpdate,
 }: {
   user: PublicUser;
-  onUserUpdate?: () => void;
+  onUserUpdate: (u: PublicUser) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [mainPic, setMainPic] = useState<Picture | null>(null);
 
+  // Fetch la photo principale
+  useEffect(() => {
+    async function fetchMainPic() {
+      try {
+        const res = await fetch(`/api/users/${user.id}/pics/`);
+        if (!res.ok || res.status === 204) return;
+        const picJson: Picture = await res.json();
+        setMainPic({ ...picJson, data: `data:${picJson.mime_type};base64,${picJson.data}` });
+      } catch (err) {
+        console.error("Could not retrieve main picture:", err);
+      }
+    }
+    fetchMainPic();
+  }, [user.id]);
+
+  // Log une vue et incrémente fame localement
   async function handleCardClick() {
     setOpen(true);
     try {
       const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
-      if (!res.ok) {
-        console.error("Could not log profile view");
+      if (!res.ok) console.error("Could not log profile view");
+      const data = await res.json();
+      if (data.scored === true) {
+        onUserUpdate({...user, fame: user.fame + 1});
       }
     } catch (err) {
       console.error("Could not log profile view:", err);
@@ -47,19 +65,21 @@ export default function CardUser({
 
     fetchMainPic();
   }, [user.id]);
+  // Handler pour update depuis la modale (ex: like/unlike)
+  function handleUserUpdate(updatedUser: PublicUser) {
+    onUserUpdate(updatedUser);
+  }
 
   return (
     <>
       <div
-        className="w-72 bg-white border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer
-                  hover:border-pink-500 flex flex-col"
+        className={`w-72 ${COLOR[user.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
         onClick={handleCardClick}
+        title={user.score.toString()}
       >
         <div className="flex justify-between items-center mb-2">
           <div>
-            <span className="text-xl text-pink-700 font-semibold">
-              {user.first_name}
-            </span>
+            <span className="text-xl text-pink-700 font-semibold">{user.first_name}</span>
             <span className="text-sm text-gray-400"> ({user.gender})</span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
@@ -96,7 +116,7 @@ export default function CardUser({
           user={user}
           mainPic={mainPic}
           onClose={() => setOpen(false)}
-          onUserUpdate={onUserUpdate}
+          onUserUpdate={handleUserUpdate}
         />
       )}
     </>

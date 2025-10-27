@@ -54,9 +54,8 @@ export async function POST(
 
     if (me.id === userId) return new NextResponse(null, { status: 204 });
 
-    await likeUser(me.id, userId);
-
-    return NextResponse.json({ success: true });
+    const res = await likeUser(me.id, userId);
+    return NextResponse.json({ success: true, newStatus: res });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -85,8 +84,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const deleted = await unlikeUser(me.id, userId);
-    return NextResponse.json({ success: true, deleted });
+    await unlikeUser(me.id, userId);
+    return NextResponse.json({ success: true, newStatus: 'none' });
   } catch (err) {
     console.error("Error in DELETE /api/match/[userId]/like:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

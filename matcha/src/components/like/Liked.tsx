@@ -7,17 +7,27 @@ import { PublicUser } from "@/lib/types";
 
 export default function Liked() {
   const [users, setUsers] = useState<PublicUser[]>([]);
-
+  
   async function fetchUsers() {
-    const res = await fetch("/api/match/getLikes");
-    const data = await res.json();
-    setUsers(data);
+    try {
+      const res = await fetch("/api/match/getLikes");
+      if (!res.ok) {
+        console.log(`API Error: ${res.status}`);
+        return;
+      }
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Could not retrieve users :", err);
+    }
   }
-  useEffect(() => { fetchUsers() }, []);
+
+  useEffect(() => { fetchUsers() }, [])
 
   return (
     <div className="p-4">
-      <Browse users={users} refreshList={fetchUsers}/>
+      <Browse users={users} />
     </div>
   );
 }

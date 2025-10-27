@@ -32,6 +32,8 @@ export type PublicUser = {
   sex_pref: string;
   interests: string[];
   fame: number;
+  score: number;
+  likeStatus: 'match' | 'like' | 'isLiked' | 'block' | 'none';
 };
 
 export type Picture = {
@@ -54,4 +56,11 @@ export interface Payload {
   from: PublicUser;
   to: PublicUser;
   msg: string;
+}
+export const COLOR = {
+  match: "bg-gradient-to-tr from-pink-200 via-yellow-100 to-teal-200",
+  like: "bg-pink-200",
+  isLiked: "bg-teal-100",
+  block: "bg-gray-700",
+  none: "bg-white",
 }

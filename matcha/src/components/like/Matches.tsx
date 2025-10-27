@@ -1,40 +1,33 @@
 // matcha/src/components/like/Matches.tsx
 "use client";
 
-// import { useRouter } from "next/navigation";
-// import { useEffect } from "react";
-
-// export default function Matches() {
-//   const router = useRouter();
-
-//   function handleClick() {
-//     router.push("/chat");
-//   }
-
-//   useEffect(handleClick);
-// }
-
-
-// copy paste into chat
-
 import { useEffect, useState } from "react";
 import Browse from "@/components/browse/Browse";
 import { PublicUser } from "@/lib/types";
 
-export default function Matches() {
+export default function LikeMe() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   
-  async function fetchMatches() {
-    const res = await fetch("/api/match/getMatches");
-    const data = await res.json();
-    setUsers(data);
+  async function fetchUsers() {
+    try {
+      const res = await fetch('api/match/getMatches')
+      if (!res.ok) {
+        console.log(`API Error: ${res.status}`);
+        return;
+      }
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Could not retrieve users :", err);
+    }
   }
-  
-  useEffect(() => { fetchMatches() }, []);
+
+  useEffect(() => { fetchUsers() }, [])
 
   return (
     <div className="p-4">
-      <Browse users={users} refreshList={fetchMatches}/>
+      <Browse users={users} />
     </div>
   );
 }

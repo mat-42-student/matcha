@@ -25,5 +25,5 @@ export default function MainContent() {
     fetchUsers();
   }, []);
 
-  return <Browse users={users} refreshList={fetchUsers} />;
+  return <Browse users={users} />;
 }

@@ -8,7 +8,7 @@ import { PublicUser } from "@/lib/types";
 export default function LikeMe() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   
-  async function fetchLikeMe() {
+  async function fetchUsers() {
     try {
       const res = await fetch('api/match/getLikeMe')
       if (!res.ok) {
@@ -23,11 +23,11 @@ export default function LikeMe() {
     }
   }
 
-  useEffect(() => { fetchLikeMe() }, [])
+  useEffect(() => { fetchUsers() }, [])
 
   return (
     <div className="p-4">
-      <Browse users={users} refreshList={fetchLikeMe}/>
+      <Browse users={users} />
     </div>
   );
 }

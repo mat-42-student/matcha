@@ -4,8 +4,8 @@ import { send } from "./socket";
 import { storeMessage, getOnlineMatchedUsers } from "../db/chat";
 
 export function handleChatMessage(payload: Payload, io: Server) {
-  send(payload.to.id, "chat-msg", payload.msg, io); // send to recipient
-  send(payload.from.id, "chat-msg", payload.msg, io); // send to all sockets of sender
+  send(payload.to.id, "chat-msg", payload, io); // send to recipient
+  send(payload.from.id, "chat-msg", payload, io); // send to all sockets of sender
   storeMessage(payload.from.id, payload.to.id, payload.msg);
 }
 
