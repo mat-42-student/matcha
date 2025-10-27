@@ -2,21 +2,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PublicUser, Picture } from "@/lib/types";
+import { Picture, PublicUser } from "@/lib/types";
 import Image from "next/image";
 import LikeButton from "./LikeButton";
+import { useUsersStore } from "@/context/UsersStore";
 
 export default function CardUserModal({
-  user,
   mainPic,
+  user,
   onClose,
-  onUserUpdate,
 }: {
-  user: PublicUser;
   mainPic: Picture;
+  user: PublicUser;
   onClose: () => void;
-  onUserUpdate: (u: PublicUser) => void;
 }) {
+  const { updateUser } = useUsersStore();
   const [pics, setPics] = useState<Picture[]>([mainPic]);
   const [current, setCurrent] = useState(0);
 
@@ -63,8 +63,11 @@ export default function CardUserModal({
 
   async function blockUser() {
     if (!confirm("Do you really want to block this user ?")) return;
-    await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
-    onUserUpdate(user);
+    const res = await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
+    if (res.ok) {
+      const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
+      updateUser(updatedUser);
+    }
     onClose();
   }
 
@@ -125,7 +128,7 @@ export default function CardUserModal({
         <p className="text-sm text-gray-400">{user.city}</p>
 
         <div className="flex justify-between mt-4">
-          <LikeButton user={user} onUserUpdate={onUserUpdate} />
+          <LikeButton user={user} />
           <span className="flex">
             <button onClick={blockUser} title="Block user" className="px-2 text-xl">
               ⛔

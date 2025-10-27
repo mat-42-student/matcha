@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { useUser } from "@/context/UserContext";
+import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
 import { Payload } from "@/lib/types";
 import { PublicUser } from "@/lib/types";
@@ -40,7 +40,7 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const { me } = useUser();
+  const { me } = useMe();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [chatMsg, setChatMsg] = useState<Payload | null>(null);
   const [like, setLike] = useState<Payload | null>(null);

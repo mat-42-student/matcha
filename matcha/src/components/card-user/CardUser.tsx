@@ -1,5 +1,4 @@
-// matcha/src/components/card-user/CardUser.tsx
-
+// src/components/card-user/CardUser.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,44 +6,20 @@ import { PublicUser, Picture, COLOR } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
+import { useUsersStore } from "@/context/UsersStore";
 
-export default function CardUser({
-  user,
-  onUserUpdate,
-}: {
-  user: PublicUser;
-  onUserUpdate: (u: PublicUser) => void;
-}) {
+export default function CardUser({ user }: { user: PublicUser }) {
+  const { updateUser } = useUsersStore();
+  const [mainPic, setMainPic] = useState<Picture | null>();
   const [open, setOpen] = useState(false);
-  const [mainPic, setMainPic] = useState<Picture | null>(null);
 
-  // Log a view and increments front user's fame 
-  async function handleCardClick() {
-    setOpen(true);
-    try {
-      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
-      if (!res.ok) console.error("Could not log profile view");
-      const data = await res.json();
-      if (data.scored === true) {
-        const revisedFame = user.fame < 100 ? user.fame + 1 : 100
-        onUserUpdate({...user, fame: revisedFame});
-      }
-    } catch (err) {
-      console.error("Could not log profile view:", err);
-    }
-  }
-
-  // fetch main pic on load
   useEffect(() => {
     async function fetchMainPic() {
       try {
         const res = await fetch(`/api/users/${user.id}/pics/`);
         if (!res.ok || res.status === 204) return;
-
         const picJson: Picture = await res.json();
-        // ✅ Decode only once here
-        const imageUrl = `data:${picJson.mime_type};base64,${picJson.data}`;
-        setMainPic({ ...picJson, data: imageUrl });
+        setMainPic({ ...picJson, data: `data:${picJson.mime_type};base64,${picJson.data}` });
       } catch (err) {
         console.error("Could not retrieve main picture:", err);
       }
@@ -52,13 +27,15 @@ export default function CardUser({
     fetchMainPic();
   }, [user.id]);
 
-  // Handler pour update depuis la modale (ex: like/unlike)
-  function handleUserUpdate(updatedUser: PublicUser) {
-    onUserUpdate(updatedUser);
-  }
-
-  function display_fame(fame: number): string {
-    return Math.min(Math.max(0, fame), 100).toString()
+  async function handleCardClick() {
+    setOpen(true);
+    try {
+      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
+      const data = await res.json();
+      if (data.scored) updateUser({ ...user, fame: user.fame + 1 });
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   return (
@@ -74,11 +51,11 @@ export default function CardUser({
             <span className="text-sm text-gray-400"> ({user.gender})</span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600">⭐{display_fame(user.fame)}</span>
+          <span className="text-sm text-gray-600">⭐{user.fame}</span>
         </div>
 
         <div className="flex justify-center">
-          {mainPic?.data ? (
+          {mainPic ? (
             <Image
               unoptimized
               width={0}
@@ -99,15 +76,15 @@ export default function CardUser({
           <span>{user.city}</span>
           <span>{user.distance} km</span>
         </div>
+
         <Interests interests={user.interests} />
       </div>
 
-      {open && mainPic && (
+      {open && mainPic &&(
         <CardUserModal
           user={user}
           mainPic={mainPic}
           onClose={() => setOpen(false)}
-          onUserUpdate={handleUserUpdate}
         />
       )}
     </>

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { PublicUser, Payload } from "@/lib/types";
 import ChatCardUser from "../card-user/ChatCardUser";
-import { useUser } from "@/context/UserContext";
+import { useMe } from "@/context/UserContext";
 
 type RawMessage = {
   id: number;
@@ -23,7 +23,7 @@ export default function ChatWindow({
   selectedUser: PublicUser | null;
 }) {
   const { socket, chatMsg } = useSocket();
-  const { me } = useUser();
+  const { me } = useMe();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
 

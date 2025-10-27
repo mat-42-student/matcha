@@ -1,8 +1,11 @@
+// matcha/src/components/browse/MainContent.tsx
+
 "use client";
 
 import { PublicUser } from "@/lib/types";
 import Browse from "@/components/browse/Browse";
 import { useState, useEffect } from "react";
+import { UsersStoreProvider } from "@/context/UsersStore";
 
 export default function MainContent() {
   const [users, setUsers] = useState<PublicUser[]>([]);
@@ -25,5 +28,9 @@ export default function MainContent() {
     fetchUsers();
   }, []);
 
-  return <Browse users={users} />;
+  return (
+    <UsersStoreProvider initialUsers={users}>
+      <Browse />
+    </UsersStoreProvider>
+  );
 }

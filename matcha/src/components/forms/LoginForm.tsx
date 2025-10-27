@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 // dans ton composant LoginForm ou page login
-import { useUser } from "@/context/UserContext";
+import { useMe } from "@/context/UserContext";
 
 
 
@@ -11,7 +11,7 @@ export default function LoginForm() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
-    const { setMe } = useUser();
+    const { setMe } = useMe();
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();

@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Browse from "@/components/browse/Browse";
 import { PublicUser } from "@/lib/types";
+import { UsersStoreProvider } from "@/context/UsersStore";
 
 export default function Visitors() {
   const [users, setUsers] = useState<PublicUser[]>([]);
@@ -27,7 +28,9 @@ export default function Visitors() {
 
   return (
     <div className="p-4">
-      <Browse users={users} />
+      <UsersStoreProvider initialUsers={users}>
+        <Browse />
+      </UsersStoreProvider>
     </div>
   );
 }

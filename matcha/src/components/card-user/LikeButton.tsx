@@ -3,10 +3,10 @@
 "use client";
 
 import { useState } from "react";
-import { PublicUser } from "@/lib/types";
 import { useSocket } from "@/context/SocketContext";
-import { useUser } from "@/context/UserContext";
-
+import { useMe } from "@/context/UserContext";
+import { PublicUser } from "@/lib/types";
+import { useUsersStore } from "@/context/UsersStore";
 
 const BUTTONTEXT = {
   match: "Unmatch",
@@ -16,23 +16,17 @@ const BUTTONTEXT = {
   none: "Like",
 }
 
-export default function LikeButton({
-  user,
-  onUserUpdate
-}: {
-  user: PublicUser,
-  onUserUpdate: (u: PublicUser) => void
-}) {
+export default function LikeButton({user}:{user: PublicUser}) {
+  const { updateUser } = useUsersStore();
   const [disabled, setDisabled] = useState(false);
-  const [localUser, setLocalUser] = useState(user);
   const {socket} =  useSocket();
-  const {me} = useUser();
+  const {me} = useMe();
 
   async function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     let method = '';
     let deltaFame = 0;
-    if (localUser.likeStatus === 'isLiked' || localUser.likeStatus === 'none') {
+    if (user.likeStatus === 'isLiked' || user.likeStatus === 'none') {
       method = 'POST';
       deltaFame = 5;
     }
@@ -41,7 +35,7 @@ export default function LikeButton({
       deltaFame = -5;
     }
     try {
-      const res = await fetch(`/api/match/${localUser.id}/like`, { method });
+      const res = await fetch(`/api/match/${user.id}/like`, { method });
       if (res.status === 204){ // Easter egg
         setDisabled(true);
         return;
@@ -50,14 +44,13 @@ export default function LikeButton({
       if (data.success) {
         socket?.emit("notif", {
           from: me,
-          to: localUser,
-          msg: BUTTONTEXT[localUser.likeStatus]
+          to: user,
+          msg: BUTTONTEXT[user.likeStatus]
           }
         );
-        const fame = Math.min(Math.max(0, localUser.fame + deltaFame), 100)
-        const updated = { ...localUser, likeStatus: data.newStatus, fame };
-        setLocalUser(updated);
-        onUserUpdate(updated);
+        const fame = Math.min(Math.max(0, user.fame + deltaFame), 100)
+        const updated: PublicUser = { ...user, likeStatus: data.newStatus, fame };
+        updateUser(updated);
       }
     } catch (err) {
       console.error(err);
@@ -70,7 +63,7 @@ export default function LikeButton({
         onClick={(e) => { handleClick(e); }}
         disabled = {disabled}
     >
-      {BUTTONTEXT[localUser.likeStatus]}
+      {BUTTONTEXT[user.likeStatus]}
     </button>
   );
 }
