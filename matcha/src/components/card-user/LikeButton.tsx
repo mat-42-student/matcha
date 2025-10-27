@@ -51,7 +51,7 @@ export default function LikeButton({
         socket?.emit("notif", {
           from: me,
           to: localUser,
-          msg: BUTTONTEXT[localUser.likeStatus]
+          msg: BUTTONTEXT[localUser.likeStatus].toLowerCase()
           }
         );
         const updated = { ...localUser, likeStatus: data.newStatus, fame: localUser.fame + deltaFame };

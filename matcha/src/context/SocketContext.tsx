@@ -49,7 +49,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [chatUsers, setChatUsers] = useState<PublicUser[] | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // --- 🔁 Fetch notifications from your API ---
   const fetchNotifications = useCallback(async () => {
     if (!me) return;
     try {
@@ -64,6 +63,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [me]);
 
   async function handleNotif(payload: Payload) {
+
     if (payload.msg === "like")
       toast(payload.from.first_name + " liked you !");
     else if (payload.msg === "unlike")
