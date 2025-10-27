@@ -19,8 +19,11 @@ export async function GET(
       return new NextResponse(null, { status: 204 });
     }
 
+    console.log(picture.id);
+
     // Return JSON with base64 data
     return NextResponse.json({
+      id: picture.id,
       mime_type: picture.mime_type ?? "image/jpeg",
       data: picture.data,
     });

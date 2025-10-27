@@ -11,18 +11,17 @@ import Interests from "./Interests";
 export default function CardUser({
   user,
   onUserUpdate,
- }: { 
+}: {
   user: PublicUser;
   onUserUpdate?: () => void;
 }) {
-
   const [open, setOpen] = useState(false);
-  const [mainPic, setMainPic] = useState<Picture>({mime_type: "", data: ""});
+  const [mainPic, setMainPic] = useState<Picture | null>(null);
 
   async function handleCardClick() {
     setOpen(true);
     try {
-      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" })
+      const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
       if (!res.ok) {
         console.error("Could not log profile view");
       }
@@ -38,7 +37,7 @@ export default function CardUser({
         if (!res.ok || res.status === 204) return;
 
         const picJson: Picture = await res.json();
-        // Convert base64 to data URL
+        // ✅ Decode only once here
         const imageUrl = `data:${picJson.mime_type};base64,${picJson.data}`;
         setMainPic({ ...picJson, data: imageUrl });
       } catch (err) {
@@ -54,7 +53,7 @@ export default function CardUser({
       <div
         className="w-72 bg-white border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer
                   hover:border-pink-500 flex flex-col"
-        onClick={() => handleCardClick()}
+        onClick={handleCardClick}
       >
         <div className="flex justify-between items-center mb-2">
           <div>
@@ -68,7 +67,7 @@ export default function CardUser({
         </div>
 
         <div className="flex justify-center">
-          {mainPic.data ? (
+          {mainPic?.data ? (
             <Image
               unoptimized
               width={0}
@@ -89,12 +88,17 @@ export default function CardUser({
           <span>{user.city}</span>
           <span>{user.distance} km</span>
         </div>
-        <div>
-          <Interests interests={user.interests} />
-        </div>
+        <Interests interests={user.interests} />
       </div>
 
-      {open && <CardUserModal user={user} mainPic={mainPic} onClose={() => setOpen(false)} onUserUpdate={onUserUpdate}/>}
+      {open && mainPic && (
+        <CardUserModal
+          user={user}
+          mainPic={mainPic}
+          onClose={() => setOpen(false)}
+          onUserUpdate={onUserUpdate}
+        />
+      )}
     </>
   );
 }

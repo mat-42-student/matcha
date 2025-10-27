@@ -1,4 +1,5 @@
-"use client"
+// matcha/src/components/card-user/CardUserModal.tsx
+"use client";
 
 import { useState, useEffect } from "react";
 import { PublicUser, Picture } from "@/lib/types";
@@ -16,23 +17,20 @@ export default function CardUserModal({
   onClose: () => void;
   onUserUpdate?: () => void;
 }) {
-
-  // State for all pictures (main + others)
   const [pics, setPics] = useState<Picture[]>([mainPic]);
   const [current, setCurrent] = useState(0);
 
-  // Fetch all other pictures
-  useEffect(() => { 
+  useEffect(() => {
     async function fetchAllPics() {
       try {
         const res = await fetch(`/api/users/${user.id}/allpics`);
         if (!res.ok || res.status === 204) return [];
 
         const picsJson: Picture[] = await res.json();
-        // Convert base64 to data URL for each picture
-        return picsJson.map(pic => ({
+
+        return picsJson.map((pic) => ({
           ...pic,
-          data: `data:${pic.mime_type};base64,${pic.data}`
+          data: `data:${pic.mime_type};base64,${pic.data}`,
         }));
       } catch (err) {
         console.error("Could not retrieve all pictures:", err);
@@ -42,34 +40,30 @@ export default function CardUserModal({
 
     async function loadPics() {
       const extraPics = await fetchAllPics();
-      setPics([{
-        ...mainPic,
-        data: `data:${mainPic.mime_type};base64,${mainPic.data}`
-      }, ...extraPics]);
+      setPics([mainPic, ...extraPics]);
+      setCurrent(0);
     }
 
     loadPics();
   }, [user.id, mainPic]);
 
-  // Navigation
   function nextPic() {
-    if (current < pics.length - 1) setCurrent(current + 1);
+    setCurrent((prev) => Math.min(prev + 1, pics.length - 1));
   }
 
   function prevPic() {
-    if (current > 0) setCurrent(current - 1);
+    setCurrent((prev) => Math.max(prev - 1, 0));
   }
 
-  // Report / Block actions
   async function reportUser() {
     if (confirm("Do you really want to report this user?")) {
-      await fetch(`/api/users/${user.id}/report`, { method: 'POST' });
+      await fetch(`/api/users/${user.id}/report`, { method: "POST" });
     }
   }
 
   async function blockUser() {
     if (!confirm("Do you really want to block this user?")) return;
-    await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
+    await fetch(`/api/match/${user.id}/block`, { method: "POST" });
     onUserUpdate?.();
     onClose();
   }
@@ -89,7 +83,9 @@ export default function CardUserModal({
             <span className="text-sm text-gray-400"> ({user.gender}) </span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
           </div>
-          <span className="text-sm text-gray-600" title="Fame">⭐{user.fame}</span>
+          <span className="text-sm text-gray-600" title="Fame">
+            ⭐{user.fame}
+          </span>
         </div>
 
         {pics.length > 0 && (
@@ -131,8 +127,12 @@ export default function CardUserModal({
         <div className="flex justify-between border border-pink-300 mt-4">
           <LikeButton user={user} onUserUpdate={onUserUpdate} />
           <span className="flex">
-            <button onClick={blockUser} title="Block user" className="px-2 text-xl">⛔</button>
-            <button onClick={reportUser} title="Report user" className="px-2 text-xl">🚨</button>
+            <button onClick={blockUser} title="Block user" className="px-2 text-xl">
+              ⛔
+            </button>
+            <button onClick={reportUser} title="Report user" className="px-2 text-xl">
+              🚨
+            </button>
           </span>
         </div>
       </div>

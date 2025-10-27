@@ -35,6 +35,7 @@ export type PublicUser = {
 };
 
 export type Picture = {
+  id: string;
   mime_type: string;
   data: string;
 }

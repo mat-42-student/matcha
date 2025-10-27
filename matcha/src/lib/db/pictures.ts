@@ -1,3 +1,5 @@
+// matcha/src/lib/db/pictures.ts
+
 import { executeQuery } from "./db-utils";
 import { QueryResultRow } from "pg";
 
@@ -112,9 +114,10 @@ export async function deleteUserPicture(userId: string, pictureId: string): Prom
  */
 export async function getMainPicture(userId: string) {
   const query = `
-    SELECT mime_type, encode(data, 'base64') AS data
+    SELECT id, mime_type, encode(data, 'base64') AS data
     FROM pictures
-    WHERE user_id = $1 AND is_main = TRUE;
+    WHERE user_id = $1 AND is_main = TRUE
+    LIMIT 1;
   `;
   const result = await executeQuery(query, [userId]);
   return result.rows[0] || null;
