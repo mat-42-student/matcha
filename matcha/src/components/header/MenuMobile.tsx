@@ -28,7 +28,7 @@ export default function MenuMobile({
     { href: "/search", label: "Search", icon: <Search size={18} /> },
     { href: "/likes", label: "Likes", icon: <Heart size={18} /> },
     { href: "/chat", label: "Chat", icon: <MessageCircle size={18} /> },
-    { href: "/profile", label: "Profile", icon: <User size={18} /> },
+    { href: "/profile", label: user.first_name, icon: <User size={18} /> },
   ];
 
   return (

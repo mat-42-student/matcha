@@ -27,8 +27,6 @@ export default function ChatWindow({
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
 
-
-
   function send() {
     if (me && socket && selectedUser && input.trim()) {
       const payload: Payload = {
@@ -41,47 +39,48 @@ export default function ChatWindow({
     }
   }
 
+  useEffect(() => {
+    if (!chatMsg || !selectedUser) return;
+    const isForCurrentChat =
+      chatMsg.from.id === selectedUser.id || chatMsg.to.id === selectedUser.id;
 
-useEffect(() => {
-  function transformMessages(raw: RawMessage[]): Message[] {
-    return raw.map((m) => ({
-      from: m.sender_id === me?.id ? "me" : "you",
-      text: m.message,
-    }));
-  }
-
-  async function fetchMessages(): Promise<RawMessage[]> {
-    if (!selectedUser) return [];
-    try {
-      const res = await fetch(`/api/chat/${selectedUser?.id}`, { method: "GET", credentials: "include" });
-      console.log("fetchMsg", res)
-      return await res.json();
-    } catch {
-      return [];
+    if (isForCurrentChat) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: chatMsg.from.id === me?.id ? "me" : "you",
+          text: chatMsg.msg,
+        },
+      ]);
     }
-  }
+  }, [chatMsg, selectedUser, me]);
 
-  (async () => {
-    const fetchedMessages = await fetchMessages();
-    setMessages(transformMessages(fetchedMessages));
-  })();
-}, [selectedUser, me]);
+  useEffect(() => {
+    function transformMessages(raw: RawMessage[]): Message[] {
+      return raw.map((m) => ({
+        from: m.sender_id === me?.id ? "me" : "you",
+        text: m.message,
+      }));
+    }
 
-useEffect(() => {
-  if (!chatMsg || !selectedUser) return;
-  const isForCurrentChat =
-    chatMsg.from.id === selectedUser.id || chatMsg.to.id === selectedUser.id;
+    async function fetchMessages(): Promise<RawMessage[]> {
+      if (!selectedUser) return [];
+      try {
+        const res = await fetch(`/api/chat/${selectedUser?.id}`, {
+          method: "GET",
+          credentials: "include" });
+        console.log("fetchMsg", res)
+        return await res.json();
+      } catch {
+        return [];
+      }
+    }
 
-  if (isForCurrentChat) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: chatMsg.from.id === me?.id ? "me" : "you",
-        text: chatMsg.msg,
-      },
-    ]);
-  }
-}, [chatMsg, selectedUser, me]);
+    (async () => {
+      const fetchedMessages = await fetchMessages();
+      setMessages(transformMessages(fetchedMessages));
+      })();
+  }, [selectedUser, me]);
 
 
   if (!selectedUser)

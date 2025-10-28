@@ -8,6 +8,7 @@ import { PublicUser } from "@/lib/types";
 
 export default function MainChat() {
   const [selectedUser, setSelectedUser] = useState<PublicUser | null>(null);
+  
   return (
     <div className="flex h-full">
       <ChatSidebar onSelectUser={setSelectedUser} />
