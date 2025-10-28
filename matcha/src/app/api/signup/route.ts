@@ -4,7 +4,7 @@ import { validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, isEmailUsed } from '@/lib/db/users';
-import { createEmailVerification } from '@/lib/db/emails';
+import { createEmailToken } from '@/lib/db/emails';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24h
 
-    await createEmailVerification(newUser.id, token, expiresAt);
+    await createEmailToken(newUser.id, "verify", token, expiresAt);
 
     const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/e-mail/verify?token=${token}`;
 

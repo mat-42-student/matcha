@@ -1,7 +1,7 @@
 // matcha/src/app/api/e-mail/change-confirm/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getEmailChangeRequestByToken, deleteEmailChangeRequest } from "@/lib/db/emails";
+import { getEmailTokenByToken, deleteEmailTokenByToken } from "@/lib/db/emails";
 import { updateUser } from "@/lib/db/users";
 
 export async function GET(req: NextRequest) {
@@ -13,22 +13,27 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const request = await getEmailChangeRequestByToken(token);
-    if (!request) {
+    const record = await getEmailTokenByToken(token);
+    if (!record || record.type !== "change") {
       return NextResponse.redirect(
         new URL("/verify-email/error?reason=invalid", process.env.NEXT_PUBLIC_BASE_URL)
       );
     }
 
-    if (new Date() > new Date(request.expires_at)) {
+    if (new Date() > new Date(record.expires_at)) {
       return NextResponse.redirect(
         new URL("/verify-email/error?reason=expired", process.env.NEXT_PUBLIC_BASE_URL)
       );
     }
 
-    await updateUser(request.user_id, { email: request.new_email });
+    if (!record.new_email) {
+      return NextResponse.redirect(
+        new URL("/verify-email/error?reason=missing_email", process.env.NEXT_PUBLIC_BASE_URL)
+      );
+    }
 
-    await deleteEmailChangeRequest(token);
+    await updateUser(record.user_id, { email: record.new_email });
+    await deleteEmailTokenByToken(token);
 
     return NextResponse.redirect(
       new URL("/verify-email/success", process.env.NEXT_PUBLIC_BASE_URL)

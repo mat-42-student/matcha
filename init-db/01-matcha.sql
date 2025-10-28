@@ -121,21 +121,14 @@ CREATE TABLE "sessions" (
 );
 
 
-CREATE TABLE "email_verifications" (
-  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "user_id" uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  "token" varchar(255) UNIQUE NOT NULL,
-  "expires_at" timestamp DEFAULT (current_timestamp + interval '1 days'),
-  "created_at" timestamp DEFAULT (current_timestamp)
-);
-
-CREATE TABLE email_change_requests (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  new_email VARCHAR(255) NOT NULL,
-  token VARCHAR(255) NOT NULL UNIQUE,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE email_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  new_email VARCHAR(255),
+  type VARCHAR(50) NOT NULL CHECK (type IN ('verify', 'change')),
+  expires_at TIMESTAMP DEFAULT (current_timestamp + interval '1 days'),
+  created_at TIMESTAMP DEFAULT current_timestamp
 );
 
 
