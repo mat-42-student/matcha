@@ -1,8 +1,10 @@
+// matcha/src/app/api/signup/route.ts
+
 import { validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, isEmailUsed } from '@/lib/db/users';
-import { createEmailVerification } from '@/lib/db/emailVerifications';
+import { createEmailVerification } from '@/lib/db/emails';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     await createEmailVerification(newUser.id, token, expiresAt);
 
-    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/e-mail/verify?token=${token}`;
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,

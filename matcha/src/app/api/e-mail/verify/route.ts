@@ -1,5 +1,7 @@
+// matcha/src/app/api/e-mail/verify/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { getEmailVerificationByToken, deleteEmailVerificationByToken } from "@/lib/db/emailVerifications";
+import { getEmailVerificationByToken, deleteEmailVerificationByToken } from "@/lib/db/emails";
 import { markUserAsVerified } from "@/lib/db/users";
 
 export async function GET(req: NextRequest) {

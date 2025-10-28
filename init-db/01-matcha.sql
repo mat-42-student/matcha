@@ -129,6 +129,17 @@ CREATE TABLE "email_verifications" (
   "created_at" timestamp DEFAULT (current_timestamp)
 );
 
+CREATE TABLE email_change_requests (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  new_email VARCHAR(255) NOT NULL,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+
+
 CREATE VIEW "users_with_interests" AS
 SELECT
   u.id,

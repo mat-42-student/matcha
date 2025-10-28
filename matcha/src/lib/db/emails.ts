@@ -43,3 +43,21 @@ export async function deleteEmailVerificationsForUser(userId: string): Promise<b
   const result = await executeQuery(query, [userId]);
   return (result.rowCount ?? 0) > 0;
 }
+
+export async function createEmailChangeRequest(userId: string, newEmail: string, token: string, expiresAt: Date) {
+  const query = `
+    INSERT INTO email_change_requests (user_id, new_email, token, expires_at)
+    VALUES ($1, $2, $3, $4)
+  `;
+  await executeQuery(query, [userId, newEmail, token, expiresAt]);
+}
+
+export async function getEmailChangeRequestByToken(token: string) {
+  const query = `SELECT * FROM email_change_requests WHERE token = $1`;
+  const res = await executeQuery(query, [token]);
+  return res.rows[0] || null;
+}
+
+export async function deleteEmailChangeRequest(token: string) {
+  await executeQuery(`DELETE FROM email_change_requests WHERE token = $1`, [token]);
+}
