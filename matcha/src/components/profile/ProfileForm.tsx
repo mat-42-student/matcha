@@ -201,13 +201,24 @@ export default function ProfileForm({
   };
 
   return (
-    <div className="w-full">
-      {renderRow("First Name", "first_name")}
-      {renderRow("Last Name", "last_name")}
-      {renderRow("Email", "email")}
-      {renderRow("Gender", "gender", "select")}
-      {renderRow("Sexual Preference", "sex_pref", "select")}
-      {renderRow("Bio", "bio", "textarea")}
+    <div>    
+      <div className="w-full">
+        {renderRow("First Name", "first_name")}
+        {renderRow("Last Name", "last_name")}
+        {renderRow("Email", "email")}
+        {renderRow("Gender", "gender", "select")}
+        {renderRow("Sexual Preference", "sex_pref", "select")}
+        {renderRow("Bio", "bio", "textarea")}
+        </div>
+      <div className="mt-6 text-center">
+        <a
+          href="/profile/password"
+          className="text-pink-600 hover:text-pink-800 underline font-medium"
+        >
+          Change your password
+        </a>
+      </div>
     </div>
+
   );
 }

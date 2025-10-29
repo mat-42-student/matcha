@@ -187,3 +187,28 @@ export async function updateUserPassword(id: string, hashedPassword: string): Pr
 	const result = await executeQuery<User>(query, [hashedPassword, id]);
 	return result.rows[0] ?? null;
 }
+
+export async function changeUserPassword (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<boolean> {
+  const result = await executeQuery<User>(
+    "SELECT passwd FROM users WHERE id = $1",
+    [userId]
+  );
+
+  const user = result.rows[0];
+  if (!user) return false;
+
+  const isValid = await bcrypt.compare(currentPassword, user.passwd);
+  if (!isValid) return false;
+
+  const newHashed = await bcrypt.hash(newPassword, 10);
+  await executeQuery("UPDATE users SET passwd = $1 WHERE id = $2", [
+    newHashed,
+    userId,
+  ]);
+
+  return true;
+}
