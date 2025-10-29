@@ -126,7 +126,7 @@ CREATE TABLE email_tokens (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token VARCHAR(255) UNIQUE NOT NULL,
   new_email VARCHAR(255),
-  type VARCHAR(50) NOT NULL CHECK (type IN ('verify', 'change')),
+  type VARCHAR(50) NOT NULL CHECK (type IN ('verify', 'change', 'password_reset')),
   expires_at TIMESTAMP DEFAULT (current_timestamp + interval '1 days'),
   created_at TIMESTAMP DEFAULT current_timestamp
 );

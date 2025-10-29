@@ -1,7 +1,7 @@
 // matcha/src/lib/db/emails.ts
 import { executeQuery } from "./db-utils";
 
-export type EmailTokenType = "verify" | "change";
+export type EmailTokenType = "verify" | "change" | "password_reset";
 
 export interface EmailToken {
   id: string;
