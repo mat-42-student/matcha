@@ -1,7 +1,7 @@
 // src/context/UserContext.tsx
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState } from "react";
 import type { PublicUser } from "@/lib/types";
 
 interface UserContextType {
@@ -15,7 +15,7 @@ export function UserProvider({
   children,
   initialUser
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   initialUser: PublicUser | null }) {
 
   const [me, setMe] = useState<PublicUser | null>(initialUser);
@@ -27,8 +27,8 @@ export function UserProvider({
   );
 }
 
-export function useUser() {
+export function useMe() {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser must be used within a UserProvider");
+  if (!context) throw new Error("useMe must be used within a UserProvider");
   return context;
 }

@@ -1,5 +1,4 @@
-// matcha/src/components/card-user/CardUser.tsx
-
+// src/components/card-user/CardUser.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,18 +6,13 @@ import { PublicUser, Picture, COLOR } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
+import { useUsersStore } from "@/context/UsersStore";
 
-export default function CardUser({
-  user,
-  onUserUpdate,
-}: {
-  user: PublicUser;
-  onUserUpdate: (u: PublicUser) => void;
-}) {
+export default function CardUser({ user }: { user: PublicUser }) {
+  const { updateUser } = useUsersStore();
+  const [mainPic, setMainPic] = useState<Picture | null>();
   const [open, setOpen] = useState(false);
-  const [mainPic, setMainPic] = useState<Picture | null>(null);
 
-  // Fetch la photo principale
   useEffect(() => {
     async function fetchMainPic() {
       try {
@@ -33,41 +27,15 @@ export default function CardUser({
     fetchMainPic();
   }, [user.id]);
 
-  // Log une vue et incrémente fame localement
   async function handleCardClick() {
     setOpen(true);
     try {
       const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
-      if (!res.ok) console.error("Could not log profile view");
       const data = await res.json();
-      if (data.scored === true) {
-        onUserUpdate({...user, fame: user.fame + 1});
-      }
+      if (data.scored) updateUser({ ...user, fame: user.fame + 1 });
     } catch (err) {
-      console.error("Could not log profile view:", err);
+      console.error(err);
     }
-  }
-
-  useEffect(() => {
-    async function fetchMainPic() {
-      try {
-        const res = await fetch(`/api/users/${user.id}/pics/`);
-        if (!res.ok || res.status === 204) return;
-
-        const picJson: Picture = await res.json();
-        // ✅ Decode only once here
-        const imageUrl = `data:${picJson.mime_type};base64,${picJson.data}`;
-        setMainPic({ ...picJson, data: imageUrl });
-      } catch (err) {
-        console.error("Could not retrieve main picture:", err);
-      }
-    }
-
-    fetchMainPic();
-  }, [user.id]);
-  // Handler pour update depuis la modale (ex: like/unlike)
-  function handleUserUpdate(updatedUser: PublicUser) {
-    onUserUpdate(updatedUser);
   }
 
   return (
@@ -87,7 +55,7 @@ export default function CardUser({
         </div>
 
         <div className="flex justify-center">
-          {mainPic?.data ? (
+          {mainPic ? (
             <Image
               unoptimized
               width={0}
@@ -108,15 +76,15 @@ export default function CardUser({
           <span>{user.city}</span>
           <span>{user.distance} km</span>
         </div>
+
         <Interests interests={user.interests} />
       </div>
 
-      {open && mainPic && (
+      {open && mainPic &&(
         <CardUserModal
           user={user}
           mainPic={mainPic}
           onClose={() => setOpen(false)}
-          onUserUpdate={handleUserUpdate}
         />
       )}
     </>

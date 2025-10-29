@@ -17,10 +17,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
     const body = await req.json();
+    console.log("body: ", body)
     const { distance, ageRange, fame, interests, customInterests } = body;
 
     const users = await searchCompatibleUsers(
-      me.id,
+      me,
       distance,
       ageRange,
       fame,

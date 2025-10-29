@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useUser } from "@/context/UserContext";
+import { useMe } from "@/context/UserContext";
 import { useSocket } from "@/context/SocketContext";
 import { PublicUser } from "@/lib/types";
 
@@ -12,7 +12,7 @@ export default function ChatSidebar({
   onSelectUser: (user: PublicUser) => void;
 }) {
   const { socket, chatUsers } = useSocket();
-  const { me } = useUser();
+  const { me } = useMe();
   useEffect(() => {
     if (socket)
       socket.emit("get-chat-users", {

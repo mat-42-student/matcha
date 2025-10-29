@@ -1,7 +1,7 @@
 // matcha/src/lib/db/match.ts
 import { executeQuery } from "@/lib/db/db-utils";
 import { PublicUser } from "@/lib/types";
-import { addFame } from "./likes";
+import { addFame } from "@/lib/db/db-utils";
 
 
 export async function blockUser(currentUserId: string, targetUserId: string): Promise<boolean> {

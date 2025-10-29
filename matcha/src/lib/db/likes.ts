@@ -2,25 +2,7 @@
 import { executeQuery } from "./db-utils";
 import { PublicUser } from "@/lib/types";
 import { createNotification } from "./notifications";
-import { pool } from "./db-utils";
-import { PoolClient } from "pg";
-
-
-
-/**
- * Add or subtract fame for a user
- * Fame will always be between 0 and 100
- * @param delta - positive or negative number
- * @param userId - id of the user
- */
-export async function addFame(delta: number, userId: string, client?: PoolClient) {
-  const query = `
-    UPDATE users
-    SET fame = GREATEST(fame + $1, 0)
-    WHERE id = $2
-  `;
-  await executeQuery(query, [delta, userId], client);
-}
+import { pool, addFame } from "./db-utils";
 
 /**
  * Get the like/match status between two users
@@ -113,7 +95,6 @@ export async function likeUser(meId: string, targetId: string): Promise<string> 
       await createNotification(targetId, meId, "like", `${senderName} liked you`, client);
     }
 
-    await addFame(5, targetId, client);
 
     await client.query("COMMIT");
   } catch (err) {
@@ -122,6 +103,7 @@ export async function likeUser(meId: string, targetId: string): Promise<string> 
   } finally {
     client.release();
   }
+    await addFame(5, targetId);
     const final = await executeQuery<{ status: string }>(
     `SELECT status FROM matches WHERE (user1_id = $1 AND user2_id = $2)
                                     OR (user1_id = $2 AND user2_id = $1)`,
@@ -162,16 +144,16 @@ export async function unlikeUser(meId: string, targetId: string) {
     await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
 
     // Diminue la "fame" du user qui s’est fait unliker
-    await addFame(-5, targetId, client);
-
+    
     await client.query("COMMIT");
-
+    
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
   }
+  await addFame(-5, targetId);
 }
 
 export async function getUsersWhoLikedMe(meId: string): Promise<PublicUser[]> {

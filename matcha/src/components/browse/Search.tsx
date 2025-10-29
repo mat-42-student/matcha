@@ -6,6 +6,7 @@ import { useState } from "react";
 import { PublicUser, SearchCriteria } from "@/lib/types";
 import SearchForm from "@/components/forms/SearchForm";
 import Browse from "@/components/browse/Browse";
+import { UsersStoreProvider } from "@/context/UsersStore";
 
 export default function Search() {
   const [results, setResults] = useState<PublicUser[]>([]);
@@ -21,13 +22,18 @@ export default function Search() {
       body: JSON.stringify(criteria),
     });
     const data = await res.json();
-    setResults(data.users); // par ex. { users: [...] }
+    console.log("users: ", data.users)
+    setResults(data.users);
   }
 
   return (
     <div className="space-y-6">
       <SearchForm onSubmit={handleSearch} />
-      {results && <Browse users={results} /> }
+      {results && 
+          <UsersStoreProvider initialUsers={results}>
+            <Browse />
+          </UsersStoreProvider>
+       }
     </div>
   );
 }

@@ -1,14 +1,14 @@
 // components/Header.tsx
 "use client";
 
-import { useUser } from "@/context/UserContext";
+import { useMe } from "@/context/UserContext";
 import MenuDesktop from "./MenuDesktop";
 import MenuMobile from "./MenuMobile";
 import NotificationBell from "./NotificationBell";
 import Link from "next/link";
 
 export function Header() {
-  const { me, setMe } = useUser();
+  const { me, setMe } = useMe();
 
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST", credentials: "include" });

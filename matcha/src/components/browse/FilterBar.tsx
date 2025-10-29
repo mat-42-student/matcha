@@ -30,6 +30,7 @@ export default function FilterBar({ users, onChange }: FilterBarProps) {
       result = [...result].sort((a, b) => {
         let diff = 0;
 
+        if (key === "score") diff = a.score - b.score;
         if (key === "age") diff = a.age - b.age;
         if (key === "dist") diff = a.distance - b.distance;
         if (key === "fame") diff = a.fame - b.fame;
@@ -49,14 +50,6 @@ export default function FilterBar({ users, onChange }: FilterBarProps) {
 
 return (
   <div className="flex flex-col md:flex-row items-center gap-2 w-full">
-    {/* Bouton menu
-    <button
-      className="p-2 text-2xl md:hidden"
-      onClick={() => setFilersVisisble(!filtersVisible)}
-    >
-      ☰
-    </button>
- */}
     {/* Filtres */}
       <div
         className="
@@ -95,13 +88,14 @@ return (
           className="border-pink-800 border-2 p-2 rounded w-full md:w-24
            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
           >
-          <option value="">Sort By</option>
+          <option value="score-desc">Score ▼</option>
+          <option value="score-asc">Score ▲</option>
           <option value="age-asc">Age ▲</option>
           <option value="age-desc">Age ▼</option>
           <option value="dist-asc">Km ▲</option>
           <option value="dist-desc">Km ▼</option>
-          <option value="fame-asc">Fame ▲</option>
           <option value="fame-desc">Fame ▼</option>
+          <option value="fame-asc">Fame ▲</option>
         </select>
         <div className="flex gap-2">
           <button
@@ -119,53 +113,7 @@ return (
             Reset
           </button>
         </div>
-
       </div>
-  </div>
-);
-
-  // return (<>
-  //   <button 
-  //     className="inline"
-  //     onClick={() => setFilersVisisble(!filtersVisible)}>☰</button>
-  //     { filtersVisible &&
-  //     <div className="flex space-x-2 w-full justify-center">
-  //       <input
-  //         type="number"
-  //         placeholder="Min age"
-  //         value={ageMin}
-  //         onChange={(e) => setAgeMin(e.target.value)}
-  //         className="border-pink-800 border-2 p-2 rounded w-24"
-  //       />
-  //       <input
-  //         type="number"
-  //         placeholder="Max age"
-  //         max={100}
-  //         value={ageMax}
-  //         onChange={(e) => setAgeMax(e.target.value)}
-  //         className="border-pink-800 border-2 p-2 rounded w-24"
-  //       />
-  //       <input
-  //         type="text"
-  //         placeholder="Distance"
-  //         value={distance}
-  //         onChange={(e) => setDistance(e.target.value)}
-  //         className="border-pink-800 border-2 p-2 rounded"
-  //       />
-
-  //       <button
-  //         onClick={applyFilters}
-  //         className="bg-pink-800 text-white px-4 py-2 rounded"
-  //       >
-  //         Apply
-  //       </button>
-  //       <button
-  //         onClick={resetFilters}
-  //         className="bg-gray-400 text-white px-4 py-2 rounded"
-  //       >
-  //         Reset
-  //       </button>
-  //     </div>}
-  // </>
-  // );
+    </div>
+  );
 }
