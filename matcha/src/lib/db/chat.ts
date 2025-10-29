@@ -1,4 +1,4 @@
-import { PublicUser } from '@/lib/types';
+import { PublicUser, UnreadMessages } from '@/lib/types';
 import { executeQuery } from './db-utils';
 
 export interface ChatMessage {
@@ -23,25 +23,43 @@ export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]>
   return result.rows;
 }
 
-export async function storeMessage(sender_id: string, recipient_id: string, message: string): Promise<ChatMessage> {
+export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessages[]> {
   const query = `
-    INSERT INTO chat (sender_id, recipient_id, message)
-    VALUES ('${sender_id}', '${recipient_id}', '${message}')
-    RETURNING *;
+    SELECT sender_id, COUNT(*) AS unread_count
+    FROM chat
+    WHERE recipient_id = '${userId}'
+      AND is_read = false
+    GROUP BY sender_id;
   `;
-  const result = await executeQuery<ChatMessage>(query);
-  return result.rows[0];
+  const result = await executeQuery(query);
+  return result.rows;
 }
 
+export async function storeMessage(sender_id: string, recipient_id: string, message: string) {
+  const query = `
+    INSERT INTO chat (sender_id, recipient_id, message)
+    VALUES ('${sender_id}', '${recipient_id}', '${message}');
+  `;
+  await executeQuery<ChatMessage>(query);
+}
 
-export async function getConversation(user1: string, user2: string): Promise<ChatMessage[]> {
+// Fetch conversation between two users
+// Mark messages as read when fetched
+export async function getConversation(me: string, user: string): Promise<ChatMessage[]> {
   const query = `
     SELECT * FROM chat
-    WHERE (sender_id = '${user1}' AND recipient_id = '${user2}')
-       OR (sender_id = '${user2}' AND recipient_id = '${user1}')
+    WHERE (sender_id = '${me}' AND recipient_id = '${user}')
+       OR (sender_id = '${user}' AND recipient_id = '${me}')
     ORDER BY created_at ASC;
   `; // Todo: Send only 10 last messages
   const result = await executeQuery<ChatMessage>(query);
+
+  const markReadQuery = `
+    UPDATE chat
+    SET read_status = true
+    WHERE sender_id = '${user}' AND recipient_id = '${me}' AND is_read = false;
+  `;
+  await executeQuery(markReadQuery);
   return result.rows;
 }
 

@@ -5,8 +5,8 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
-import { Payload } from "@/lib/types";
-import { PublicUser } from "@/lib/types";
+import { Payload, PublicUser, UnreadMessages } from "@/lib/types";
+import { ne } from "@faker-js/faker";
 
 interface Notification {
   id: number;
@@ -23,7 +23,8 @@ interface SocketContextType {
   like: Payload | null;
   unlike: Payload | null;
   match: Payload | null;
-  chatUsers: PublicUser[] | null;
+  chatUsers: PublicUser[];
+  unreadMessages: Map<string, number>;
   notifications: Notification[];
   refreshNotifications: () => Promise<void>;
 }
@@ -34,20 +35,22 @@ const SocketContext = createContext<SocketContextType>({
   like: null,
   unlike: null,
   match: null,
-  chatUsers: null,
+  chatUsers: [],
+  unreadMessages: new Map(),
   notifications: [],
   refreshNotifications: async () => {},
 });
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { me } = useMe();
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null); // on veut vraiment tous ces null ?
   const [chatMsg, setChatMsg] = useState<Payload | null>(null);
   const [like, setLike] = useState<Payload | null>(null);
   const [unlike, setUnlike] = useState<Payload | null>(null);
   const [match, setMatch] = useState<Payload | null>(null);
-  const [chatUsers, setChatUsers] = useState<PublicUser[] | null>(null);
+  const [chatUsers, setChatUsers] = useState<PublicUser[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
 
   // --- 🔁 Fetch notifications from your API ---
   const fetchNotifications = useCallback(async () => {
@@ -79,6 +82,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     await fetchNotifications();
   }
 
+  function handleChatUnreadMessages(payload: UnreadMessages[]) {
+    setUnreadMessages(prevUnreadMap => {
+      const newMap = new Map(prevUnreadMap);
+      for (const p of payload) {
+        newMap.set(p.sender_id, p.unread_count);
+      }
+      return newMap;
+    });
+  }
+
   useEffect(() => {
     if (!me) {
       if (socket) {
@@ -105,6 +118,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("match", (payload: Payload) => setMatch(payload));
     s.on("unlike", (payload: Payload) => setUnlike(payload));
     s.on("chat-msg", (payload: Payload) => setChatMsg(payload));
+    s.on("chat-unread-count", (payload: UnreadMessages[]) => handleChatUnreadMessages(payload));
     s.on("chat-users", setChatUsers);
 
     // Initial notifications fetch
@@ -125,6 +139,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         match,
         chatMsg,
         chatUsers,
+        unreadMessages,
         notifications,
         refreshNotifications: fetchNotifications,
       }}

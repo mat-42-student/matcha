@@ -1,15 +1,15 @@
 // matcha/src/server/socket.ts
 
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import type { Server as HttpServer } from "http";
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
-import { Socket } from "socket.io";
 import { Payload, PublicUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo } from "./chat";
 import { handleNotif } from "./notifications";
 
-export const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
+const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
+let io: Server;
 
 const system: PublicUser = {
   id: "System",
@@ -26,9 +26,17 @@ const system: PublicUser = {
   sex_pref: "System",
   interests: ["System"],
   fame: 0,
+  score: 0,
+  likeStatus: "none",
 }
 
-export function send<T>(userId: string, action: string, data: T, io: Server) {
+/***
+ * Send data to all sockets of a user
+ * @param userId - ID of the user
+ * @param action - Action name
+ * @param data - Data to send
+ */
+export function send<T>(userId: string, action: string, data: T) {
   const targetSockets = connectedUsers.get(userId);
   if (!targetSockets || targetSockets.size === 0) return;
 
@@ -38,7 +46,7 @@ export function send<T>(userId: string, action: string, data: T, io: Server) {
 }
 
 export function initSocket(httpServer: HttpServer) {
-  const io = new Server(httpServer, {
+  io = new Server(httpServer, {
     cors: {
       origin: true,
       methods: ["GET", "POST"],
@@ -68,7 +76,7 @@ export function initSocket(httpServer: HttpServer) {
     connectedUsers.get(s.data.user.id)!.add(s.id)
   }
 
-  function handleConnection(socket: Socket, io: Server) {
+  function handleConnection(socket: Socket) {
     console.log(`\x1b[32mUser ${socket.data.user.first_name} connected\x1b[0m`, socket.id);
     addSocket(socket);
     const welcome: Payload = {
@@ -77,14 +85,15 @@ export function initSocket(httpServer: HttpServer) {
       to: socket.data.user
     }
     socket.emit("notif", welcome)
+
     socket.on("disconnect", () => handleDisconnect(socket));
-    socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload, io));
-    socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload, io));
-    socket.on("notif", (payload: Payload) => handleNotif(payload, io));
+    socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload));
+    socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload));
+    socket.on("notif", (payload: Payload) => handleNotif(payload));
   }
 
   io.use(authUser); // middleware
-  io.on("connection", (socket: Socket) => handleConnection(socket, io));
+  io.on("connection", (socket: Socket) => handleConnection(socket));
 
   return io;
 }

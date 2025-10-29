@@ -31,6 +31,7 @@ export default function ChatSidebar({
       <div className="p-3 font-semibold text-lg border-b border-gray-700">
         Users
       </div>
+      
       {chatUsers.map((u) => {
         return (
           <div
@@ -40,7 +41,7 @@ export default function ChatSidebar({
               "cursor-pointer p-3 flex items-center justify-between hover:bg-gray-800"
           >
             <span>{u.first_name} {u.last_name}</span>
-            <span className="w-2 h-2 rounded-full"/>
+            <span className="w-4 h-4 rounded-full">1</span>
           </div>
         );
       })}

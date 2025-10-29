@@ -4,6 +4,7 @@ import { PublicUser } from "@/lib/types";
 import Link from "next/link";
 import { Users, Search, Heart, MessageCircle, User, LogOut } from "lucide-react";
 import { useSocket } from "@/context/SocketContext";
+import { useEffect, useState } from "react";
 
 export default function MenuDesktop({
   user,
@@ -12,9 +13,11 @@ export default function MenuDesktop({
   user: PublicUser;
   onLogout: () => void;
 }) {
-  const { chatMsg } = useSocket();
-  const notifCount = 5;
-  const links = [
+  const { unreadMessages } = useSocket();
+  const [unreadCount, setUnreadCount] = useState([...unreadMessages.values()].reduce(
+    (sum, count) => sum + count, 0))
+
+    const links = [
     { href: "/", label: "Browse", icon: <Users size={18} /> },
     { href: "/search", label: "Search", icon: <Search size={18} /> },
     { href: "/likes", label: "Likes", icon: <Heart size={18} /> },
@@ -22,6 +25,11 @@ export default function MenuDesktop({
     { href: "/profile", label: user.first_name, icon: <User size={18} /> },
   ];
   const classname = "flex items-center gap-2 px-4 py-2 text-fuchsia-100 hover:text-white hover:bg-pink-600/30 rounded-xl transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
+
+  useEffect(() => {
+    setUnreadCount([...unreadMessages.values()].reduce(
+      (sum, count) => sum + count, 0))
+  }, [unreadMessages]);
 
   return (
     <nav className="hidden md:flex items-center gap-3">
@@ -41,17 +49,17 @@ export default function MenuDesktop({
           className={classname}
           // onClick={() => setNotifCount(0)}
         >
-          <span className="text-base font-medium">Chat</span>
           <span className="relative">
             <MessageCircle size={18} />
-            {notifCount > 0 && <span 
+            {unreadCount > 0 && <span 
               className="absolute inline-flex items-center justify-center 
-                          w-4 h-4 text-xs font-bold text-white bg-red-500 border-2 border-pink-700 
+                          w-4 h-4 text-xs font-bold text-white bg-pink-700 border-2 border-white 
                           rounded-full -top-2 -right-2 z-10" // Ajustement de la taille (w-4 h-4) et du positionnement (-top-2 -right-2)
             >
-              {notifCount > 99 ? '99+' : notifCount}
+              {unreadCount > 99 ? '99+' : unreadCount}
             </span>}
           </span>
+          <span className="text-base font-medium">Chat</span>
         </Link>
       <button
         onClick={onLogout}

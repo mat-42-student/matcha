@@ -15,8 +15,6 @@ export interface Notification {
   created_at: string;
 }
 
-
-// Type exposé au front (pas de passwordHash)
 export type PublicUser = {
   id: string;
   first_name: string;
@@ -57,6 +55,12 @@ export interface Payload {
   to: PublicUser;
   msg: string;
 }
+
+export interface UnreadMessages {
+  sender_id: string;
+  unread_count: number;
+}
+
 export const COLOR = {
   match: "bg-gradient-to-tr from-pink-200 via-yellow-100 to-teal-200",
   like: "bg-pink-200",
