@@ -16,13 +16,13 @@ const UsersStoreContext = createContext<UsersStoreType>({
   setUsers: () => {},
 });
 
-export const UsersStoreProvider = ({
+export function UsersStoreProvider({
   children,
   initialUsers,
 }: {
   children: React.ReactNode;
   initialUsers: PublicUser[];
-}) => {
+}) {
 
   const [users, setUsers] = useState(initialUsers);
 

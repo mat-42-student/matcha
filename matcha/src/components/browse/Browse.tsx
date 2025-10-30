@@ -15,7 +15,6 @@ export default function Browse() {
 
   useEffect(() => {
     setFilteredUsers(users);
-    setPage(1);
   }, [users]);
 
   const totalPages = Math.ceil(filteredUsers.length / perPage);

@@ -1,7 +1,7 @@
 // matcha/src/components/chat/ChatWindow.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { PublicUser, Payload } from "@/lib/types";
 import ChatCardUser from "../card-user/ChatCardUser";
@@ -26,8 +26,10 @@ export default function ChatWindow({
   const { me } = useMe();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  function send() {
+  function send(e: React.FormEvent | React.KeyboardEvent) {
+    e.preventDefault();
     if (me && socket && selectedUser && input.trim()) {
       const payload: Payload = {
         from: me,
@@ -39,6 +41,9 @@ export default function ChatWindow({
     }
   }
 
+  // Watches for: new incoming socket messages (chatMsg) or user changes.
+  // Does: If the new message (chatMsg) belongs to the currently 
+  // selected chat, it appends it to the 'messages' state array.
   useEffect(() => {
     if (!chatMsg || !selectedUser) return;
     const isForCurrentChat =
@@ -55,6 +60,9 @@ export default function ChatWindow({
     }
   }, [chatMsg, selectedUser, me]);
 
+  // Watches for: changes in 'selectedUser' or 'me' context.
+  // Does: Fetches the entire message history for the newly selected user
+  // from the API, transforms the data, and overwrites the 'messages' state.
   useEffect(() => {
     function transformMessages(raw: RawMessage[]): Message[] {
       return raw.map((m) => ({
@@ -82,6 +90,12 @@ export default function ChatWindow({
       })();
   }, [selectedUser, me]);
 
+  // Watches for: any change to the 'messages' array.
+  // Does: Calls the 'scrollToBottom' function to scroll the
+  // chat window to the end.
+    useEffect(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
   if (!selectedUser)
     return (
@@ -89,6 +103,7 @@ export default function ChatWindow({
         Select a user
       </div>
     );
+
 
   return (
     <div className="flex-1 flex flex-col bg-gray-950 text-gray-100">
@@ -109,6 +124,7 @@ export default function ChatWindow({
             </div>
           </div>
         ))}
+          <div ref={messagesEndRef} />
       </div>
       <div className="p-3 border-t border-gray-700 flex gap-2">
         <div>
@@ -117,7 +133,7 @@ export default function ChatWindow({
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => (e.key === "Enter" && !e.shiftKey) && send()}
+          onKeyDown={(e) => (e.key === "Enter" && !e.shiftKey) && send(e)}
           className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none resize-none"
           autoFocus
           placeholder="Your message"

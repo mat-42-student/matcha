@@ -11,7 +11,7 @@ export default function ChatSidebar({
 }: {
   onSelectUser: (user: PublicUser) => void;
 }) {
-  const { socket, chatUsers } = useSocket();
+  const { socket, chatUsers, unreadMessages, setUnreadMessages } = useSocket();
   const { me } = useMe();
   useEffect(() => {
     if (socket)
@@ -24,6 +24,15 @@ export default function ChatSidebar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
+  function handleSelectUser(user: PublicUser) {
+    setUnreadMessages((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(user.id, 0);
+      return newMap;
+    });
+    onSelectUser(user);
+  }
+
   if (!chatUsers) return <div>No match</div>;
 
   return (
@@ -33,15 +42,16 @@ export default function ChatSidebar({
       </div>
       
       {chatUsers.map((u) => {
+        const unread = unreadMessages.get(u.id) || 0;
         return (
           <div
             key={u.id}
-            onClick={() => onSelectUser(u)}
+            onClick={() => handleSelectUser(u)}
             className=
               "cursor-pointer p-3 flex items-center justify-between hover:bg-gray-800"
           >
             <span>{u.first_name} {u.last_name}</span>
-            <span className="w-4 h-4 rounded-full">1</span>
+            {unread > 0 && <span className="w-4 h-4 text-xs rounded-full bg-pink-500">{unread}</span>}
           </div>
         );
       })}

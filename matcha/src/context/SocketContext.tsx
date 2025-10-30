@@ -25,6 +25,7 @@ interface SocketContextType {
   match: Payload | null;
   chatUsers: PublicUser[];
   unreadMessages: Map<string, number>;
+  setUnreadMessages: React.Dispatch<React.SetStateAction<Map<string, number>>>;
   notifications: Notification[];
   refreshNotifications: () => Promise<void>;
 }
@@ -37,6 +38,7 @@ const SocketContext = createContext<SocketContextType>({
   match: null,
   chatUsers: [],
   unreadMessages: new Map(),
+  setUnreadMessages: () => {},
   notifications: [],
   refreshNotifications: async () => {},
 });
@@ -85,9 +87,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   function handleChatUnreadMessages(payload: UnreadMessages[]) {
     setUnreadMessages(prevUnreadMap => {
       const newMap = new Map(prevUnreadMap);
-      for (const p of payload) {
-        newMap.set(p.sender_id, p.unread_count);
-      }
+      for (const p of payload)
+        newMap.set(p.sender_id, Number(p.unread_count));
+        // newMap.set(p.sender_id, p.unread_count);
       return newMap;
     });
   }
@@ -113,12 +115,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     setSocket(s);
 
     // Setup listeners
-    s.on("notif", (payload: Payload) => handleNotif(payload));
-    s.on("like", (payload: Payload) => setLike(payload));
-    s.on("match", (payload: Payload) => setMatch(payload));
-    s.on("unlike", (payload: Payload) => setUnlike(payload));
-    s.on("chat-msg", (payload: Payload) => setChatMsg(payload));
-    s.on("chat-unread-count", (payload: UnreadMessages[]) => handleChatUnreadMessages(payload));
+    s.on("notif", handleNotif);
+    s.on("like", setLike);
+    s.on("match", setMatch);
+    s.on("unlike", setUnlike);
+    s.on("chat-msg", setChatMsg);
+    s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", setChatUsers);
 
     // Initial notifications fetch
@@ -140,6 +142,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         chatMsg,
         chatUsers,
         unreadMessages,
+        setUnreadMessages,
         notifications,
         refreshNotifications: fetchNotifications,
       }}

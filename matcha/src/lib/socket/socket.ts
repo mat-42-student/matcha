@@ -2,10 +2,11 @@
 
 import { Server, Socket } from "socket.io";
 import type { Server as HttpServer } from "http";
+// @ts-expect-error
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
 import { Payload, PublicUser } from "@/lib/types";
-import { handleChatMessage, handleUsersInfo } from "./chat";
+import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { handleNotif } from "./notifications";
 
 const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
@@ -45,7 +46,7 @@ export function send<T>(userId: string, action: string, data: T) {
   }
 }
 
-export function initSocket(httpServer: HttpServer) {
+export async function initSocket(httpServer: HttpServer) {
   io = new Server(httpServer, {
     cors: {
       origin: true,
@@ -76,7 +77,7 @@ export function initSocket(httpServer: HttpServer) {
     connectedUsers.get(s.data.user.id)!.add(s.id)
   }
 
-  function handleConnection(socket: Socket) {
+  async function handleConnection(socket: Socket) {
     console.log(`\x1b[32mUser ${socket.data.user.first_name} connected\x1b[0m`, socket.id);
     addSocket(socket);
     const welcome: Payload = {
@@ -85,6 +86,7 @@ export function initSocket(httpServer: HttpServer) {
       to: socket.data.user
     }
     socket.emit("notif", welcome)
+    await sendUnreadMessagesCount(socket.data.user.id);
 
     socket.on("disconnect", () => handleDisconnect(socket));
     socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload));

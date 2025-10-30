@@ -27,8 +27,12 @@ export default function MenuDesktop({
   const classname = "flex items-center gap-2 px-4 py-2 text-fuchsia-100 hover:text-white hover:bg-pink-600/30 rounded-xl transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
 
   useEffect(() => {
-    setUnreadCount([...unreadMessages.values()].reduce(
-      (sum, count) => sum + count, 0))
+    let total = 0;
+    for(const u of unreadMessages) {
+      total += u[1];
+    }
+    console.log("total non lu: ", total);
+    setUnreadCount(total);
   }, [unreadMessages]);
 
   return (

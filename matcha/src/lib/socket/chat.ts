@@ -11,12 +11,13 @@ export function handleChatMessage(payload: Payload) {
 
 export async function handleUsersInfo(payload: Payload) {
   const users = await getOnlineMatchedUsers(payload.from.id);
-  console.log(`Sending ${users.length} chat users to ${payload.from.first_name}`);
+  // console.log(`Sending ${users.length} chat users to ${payload.from.first_name}`);
   send(payload.from.id, "chat-users", users);
   sendUnreadMessagesCount(payload.from.id);
 }
 
-async function sendUnreadMessagesCount(userId: string ) {
+export async function sendUnreadMessagesCount(userId: string ) {
   const unreadMessages: UnreadMessages[] = await getUnreadCountByUsers(userId);
-  send(userId, "chat-unread-count", unreadMessages);
+  // console.log(`Sending unread messages count to user ${userId}:`, unreadMessages);
+  send<UnreadMessages[]>(userId, "chat-unread-count", unreadMessages);
 }

@@ -95,7 +95,7 @@ CREATE TABLE "chat" (
   "sender_id" uuid NOT NULL,
   "recipient_id" uuid NOT NULL,
   "message" text NOT NULL,
-  "is_read" boolean DEFAULT false,
+  "is_read" boolean NOT NULL DEFAULT false,
   "created_at" timestamp DEFAULT (current_timestamp)
 );
 

@@ -25,7 +25,7 @@ export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]>
 
 export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessages[]> {
   const query = `
-    SELECT sender_id, COUNT(*) AS unread_count
+    SELECT sender_id, COUNT(*)::int AS unread_count
     FROM chat
     WHERE recipient_id = '${userId}'
       AND is_read = false
@@ -56,7 +56,7 @@ export async function getConversation(me: string, user: string): Promise<ChatMes
 
   const markReadQuery = `
     UPDATE chat
-    SET read_status = true
+    SET is_read = true
     WHERE sender_id = '${user}' AND recipient_id = '${me}' AND is_read = false;
   `;
   await executeQuery(markReadQuery);
