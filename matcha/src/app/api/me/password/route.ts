@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { changeUserPassword } from "@/lib/db/users";
+import { validatePassword } from "@/lib/validators/serverValidator";
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +22,12 @@ export async function POST(req: Request) {
     const { current_password, new_password } = await req.json();
     if (!current_password || !new_password) {
       return NextResponse.json({ error: "missing field" }, { status: 400 });
+    }
+
+
+    const passwordErrors = validatePassword(new_password);
+    if (passwordErrors.length > 0) {
+      return NextResponse.json({ field: "new_password", errors: passwordErrors }, { status: 400 });
     }
 
     const success = await changeUserPassword(user.id, current_password, new_password);

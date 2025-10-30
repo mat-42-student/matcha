@@ -4,83 +4,112 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+type Errors = {
+  password?: string[];
+  general?: string;
+};
+
 export default function ResetPasswordPage() {
-	const router = useRouter();
-	const { token } = useParams();
-	const [password, setPassword] = useState("");
-	const [confirm, setConfirm] = useState("");
-	const [message, setMessage] = useState<string | null>(null);
-	const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { token } = useParams();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (password !== confirm) {
-			setMessage("Passwords doesn't match.");
-			return;
-		}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    setSuccessMsg(null);
 
-		setLoading(true);
-		setMessage(null);
+    if (password !== confirm) {
+      setErrors({ password: ["Passwords do not match"] });
+      return;
+    }
 
-		const res = await fetch("/api/e-mail/password-confirm", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ token, password }),
-		});
+    setLoading(true);
+    try {
+      const res = await fetch("/api/e-mail/password-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
 
-		if (res.ok) {
-			setMessage("Password successfully updated !");
-			setTimeout(() => router.push("/auth"), 2000);
-		} else {
-			const data = await res.json();
-			setMessage(data.error || "Error during reset.");
-		}
+      const data = await res.json();
 
-		setLoading(false);
-	};
+      if (!res.ok) {
+        if (data.field && data.errors) {
+          setErrors({ [data.field]: data.errors });
+        } else if (data.error) {
+          setErrors({ general: data.error });
+        } else {
+          setErrors({ general: "Unexpected error" });
+        }
+        return;
+      }
 
+      setSuccessMsg("Password successfully updated!");
+      setTimeout(() => router.push("/auth"), 2000);
+    } catch {
+      setErrors({ general: "Network or server error" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	// TODO add password safety
-	return (
-		<div className="flex items-center justify-center h-full">
-			<div className="w-full max-w-sm bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
-				<h1 className="text-xl font-semibold mb-4 text-center">
-					New Password
-				</h1>
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="w-full max-w-sm bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+        <h1 className="text-xl font-semibold mb-4 text-center">New Password</h1>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<input
-						type="password"
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						placeholder="new password"
-						className="w-full border rounded-md px-3 py-2"
-						required
-					/>
-					<input
-						type="password"
-						value={confirm}
-						onChange={(e) => setConfirm(e.target.value)}
-						placeholder="confirm new password"
-						className="w-full border rounded-md px-3 py-2"
-						required
-					/>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Password input */}
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="New password"
+              className="w-full border rounded-md px-3 py-2"
+              required
+            />
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password.join(", ")}</p>
+            )}
+          </div>
 
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-					>
-						{loading ? "updating..." : "Validate"}
-					</button>
-				</form>
+          {/* Confirm input */}
+          <div>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Confirm new password"
+              className="w-full border rounded-md px-3 py-2"
+              required
+            />
+          </div>
 
-				{message && (
-					<p className="mt-4 text-sm text-center text-gray-600 dark:text-gray-300">
-						{message}
-					</p>
-				)}
-			</div>
-		</div>
-	);
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {loading ? "Updating..." : "Validate"}
+          </button>
+        </form>
+
+        {/* Error or success messages */}
+        {errors.general && (
+          <p className="mt-4 text-sm text-center text-red-500">{errors.general}</p>
+        )}
+        {successMsg && (
+          <p className="mt-4 text-sm text-center text-green-600">{successMsg}</p>
+        )}
+      </div>
+    </div>
+  );
 }

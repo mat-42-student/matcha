@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEmailTokenByToken, deleteEmailTokenByToken } from "@/lib/db/emails";
 import { updateUserPassword } from "@/lib/db/users";
+import { validatePassword } from "@/lib/validators/serverValidator";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
@@ -17,6 +18,15 @@ export async function POST(req: NextRequest) {
 		if (new Date() > new Date(tokenData.expires_at)) {
 			return NextResponse.json({ error: "Token expired" }, { status: 400 });
 		}
+
+
+   const errors = validatePassword(password);
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { field: "password", errors },
+        { status: 400 }
+      );
+    }
 
 		const hashed = await bcrypt.hash(password, 10);
 		await updateUserPassword(tokenData.user_id, hashed);
