@@ -1,4 +1,5 @@
 // matcha/src/lib/validators/serverValidator.ts
+// TODO mutualize password check for all forms
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
