@@ -1,3 +1,4 @@
+// matcha/src/components/profile/ProfileForm.tsx
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { Edit2, Check } from "lucide-react";
@@ -26,40 +27,70 @@ export default function ProfileForm({
   const [formData, setFormData] = useState(initialData);
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  // 🔄 update local form if user prop changes
+  // 🔄 Update local form if user prop changes
   useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
 
-const saveField = async (field: string) => {
-  const value = (formData as any)[field];
+  const saveField = async (field: string) => {
+    const value = (formData as any)[field];
 
-  const { valid, error } = validateProfileField(field, value);
-  if (!valid) {
-    toast.error(error || "Invalid value");
-    setEditingField(field);
-    return false;
-  }
+    const { valid, error } = validateProfileField(field, value);
+    if (!valid) {
+      toast.error(error || "Invalid value");
+      setEditingField(field);
+      return false;
+    }
 
-  try {
-    const res = await fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [field]: value }),
-    });
+    try {
+      // ⚡️ Special case: handle email change through verification flow
+      if (field === "email") {
+        if (value === user.email) {
+          toast("You entered the same email.");
+          return true;
+        }
 
-    if (!res.ok) throw new Error("Update error");
+        const confirm = window.confirm(
+          "A confirmation email will be sent to your new address.\n\n" +
+          "Your email will only change once you click the confirmation link. Continue?"
+        );
+        if (!confirm) return false;
 
-    onUserUpdate?.({ [field]: value });
-    toast.success(`${field.replace("_", " ")} updated successfully`);
-    return true; // success
-  } catch (err) {
-    console.error(err);
-    toast.error(`Failed to update ${field}`);
-    setEditingField(field); // keep editing mode
-    return false;
-  }
-};
+        const res = await fetch("/api/e-mail/change-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ new_email: value }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Email change request failed");
+        }
+
+        toast.success("A confirmation link has been sent to your new email address.");
+        // Don’t update UI yet; only after confirmation
+        return true;
+      }
+
+      // ✏️ Default profile update
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+
+      if (!res.ok) throw new Error("Update error");
+
+      onUserUpdate?.({ [field]: value });
+      toast.success(`${field.replace("_", " ")} updated successfully`);
+      return true;
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to update ${field}`);
+      setEditingField(field);
+      return false;
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -151,7 +182,7 @@ const saveField = async (field: string) => {
 
             if (isEditing) {
               const success = await saveField(name);
-              if (success) setEditingField(null); // only exit editing mode if valid
+              if (success) setEditingField(null);
             } else {
               setEditingField(name);
             }
@@ -170,13 +201,24 @@ const saveField = async (field: string) => {
   };
 
   return (
-    <div className="w-full">
-      {renderRow("First Name", "first_name")}
-      {renderRow("Last Name", "last_name")}
-      {renderRow("Email", "email")}
-      {renderRow("Gender", "gender", "select")}
-      {renderRow("Sexual Preference", "sex_pref", "select")}
-      {renderRow("Bio", "bio", "textarea")}
+    <div>    
+      <div className="w-full">
+        {renderRow("First Name", "first_name")}
+        {renderRow("Last Name", "last_name")}
+        {renderRow("Email", "email")}
+        {renderRow("Gender", "gender", "select")}
+        {renderRow("Sexual Preference", "sex_pref", "select")}
+        {renderRow("Bio", "bio", "textarea")}
+        </div>
+      <div className="mt-6 text-center">
+        <a
+          href="/profile/password"
+          className="text-pink-600 hover:text-pink-800 underline font-medium"
+        >
+          Change your password
+        </a>
+      </div>
     </div>
+
   );
 }

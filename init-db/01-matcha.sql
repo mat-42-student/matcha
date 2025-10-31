@@ -122,13 +122,17 @@ CREATE TABLE "sessions" (
 );
 
 
-CREATE TABLE "email_verifications" (
-  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "user_id" uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  "token" varchar(255) UNIQUE NOT NULL,
-  "expires_at" timestamp DEFAULT (current_timestamp + interval '1 days'),
-  "created_at" timestamp DEFAULT (current_timestamp)
+CREATE TABLE email_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  new_email VARCHAR(255),
+  type VARCHAR(50) NOT NULL CHECK (type IN ('verify', 'change', 'password_reset')),
+  expires_at TIMESTAMP DEFAULT (current_timestamp + interval '1 days'),
+  created_at TIMESTAMP DEFAULT current_timestamp
 );
+
+
 
 CREATE VIEW "users_with_interests" AS
 SELECT

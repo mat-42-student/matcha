@@ -45,7 +45,7 @@ export default function LikeButton({user}:{user: PublicUser}) {
         socket?.emit("notif", {
           from: me,
           to: user,
-          msg: BUTTONTEXT[user.likeStatus]
+          msg: BUTTONTEXT[user.likeStatus].toLocaleLowerCase()
           }
         );
         const fame = Math.min(Math.max(0, user.fame + deltaFame), 100)

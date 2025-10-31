@@ -1,6 +1,7 @@
 // matcha/src/lib/db/users.ts
 import bcrypt from 'bcryptjs';
 import { executeQuery } from "./db-utils";
+import { PublicUser } from '../types';
 
 export interface User {
   id: string;
@@ -165,4 +166,49 @@ export async function updateUserLocationBySession(
     )
   `;
   await executeQuery(query, [country, city, latitude, longitude, sessionId]);
+}
+
+export async function getUserByEmail(email: string): Promise<PublicUser | null> {
+	const result = await executeQuery<PublicUser>(
+		'SELECT * FROM users WHERE email = $1',
+		[email]
+	);
+	return result.rows[0] ?? null;
+}
+
+
+export async function updateUserPassword(id: string, hashedPassword: string): Promise<User | null> {
+	const query = `
+    UPDATE users
+    SET passwd = $1
+    WHERE id = $2
+    RETURNING *;
+  `;
+	const result = await executeQuery<User>(query, [hashedPassword, id]);
+	return result.rows[0] ?? null;
+}
+
+export async function changeUserPassword (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<boolean> {
+  const result = await executeQuery<User>(
+    "SELECT passwd FROM users WHERE id = $1",
+    [userId]
+  );
+
+  const user = result.rows[0];
+  if (!user) return false;
+
+  const isValid = await bcrypt.compare(currentPassword, user.passwd);
+  if (!isValid) return false;
+
+  const newHashed = await bcrypt.hash(newPassword, 10);
+  await executeQuery("UPDATE users SET passwd = $1 WHERE id = $2", [
+    newHashed,
+    userId,
+  ]);
+
+  return true;
 }

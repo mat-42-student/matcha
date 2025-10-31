@@ -54,7 +54,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
 
-  // --- 🔁 Fetch notifications from your API ---
   const fetchNotifications = useCallback(async () => {
     if (!me) return;
     try {
@@ -69,6 +68,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, [me]);
 
   async function handleNotif(payload: Payload) {
+
     if (payload.msg === "like")
       toast(payload.from.first_name + " liked you !");
     else if (payload.msg === "unlike")

@@ -10,12 +10,12 @@ export async function GET() {
     const sessionId = cookieStore.get("session_id")?.value;
 
     if (!sessionId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return NextResponse.json({ error: "Not authentificated" }, { status: 401 });
     }
 
     const user = await getSessionUser(sessionId);
     if (!user) {
-      return NextResponse.json({ error: "Session invalide" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
     return NextResponse.json(user);
