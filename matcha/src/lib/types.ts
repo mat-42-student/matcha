@@ -32,6 +32,7 @@ export type PublicUser = {
   fame: number;
   score: number;
   likeStatus: 'match' | 'like' | 'isLiked' | 'block' | 'none';
+  last_login: string | Date;
 };
 
 export type Picture = {

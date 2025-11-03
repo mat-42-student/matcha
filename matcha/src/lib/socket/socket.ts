@@ -8,9 +8,16 @@ import { getSessionUser } from "@/lib/db/session";
 import { Payload, PublicUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { handleNotif } from "./notifications";
+import { updateLastLogin } from "../db/users";
 
 const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
 let io: Server;
+
+function broadcastOnlineUsers() {
+  const onlineUserIds = Array.from(connectedUsers.keys());
+  io.emit("online-users", onlineUserIds);
+}
+
 
 const system: PublicUser = {
   id: "System",
@@ -64,12 +71,24 @@ export async function initSocket(httpServer: HttpServer) {
     const user = await getSessionUser(sessionId);
     if (!user) return next(new Error("unauthorized"));
 
+
+    //TODO user unsafe containing password maybe
     socket.data.user = user;
     next();
   }
 
   function handleDisconnect(socket: Socket) {
+    const userId = socket.data.user.id;
+    const sockets = connectedUsers.get(userId);
+    if (sockets) {
+      sockets.delete(socket.id);
+      if (sockets.size === 0){
+        connectedUsers.delete(userId);
+        updateLastLogin(userId);
+      } 
+    }
     console.log(`\x1b[31mUser ${socket.data.user.first_name} disconnected\x1b[0m`);
+    broadcastOnlineUsers();
   }
 
   function addSocket(s: Socket) {
@@ -80,11 +99,14 @@ export async function initSocket(httpServer: HttpServer) {
   async function handleConnection(socket: Socket) {
     console.log(`\x1b[32mUser ${socket.data.user.first_name} connected\x1b[0m`, socket.id);
     addSocket(socket);
+    broadcastOnlineUsers();
+
     const welcome: Payload = {
       msg: `Hi ${socket.data.user.first_name}`,
       from: system,
       to: socket.data.user
     }
+
     socket.emit("notif", welcome)
     await sendUnreadMessagesCount(socket.data.user.id);
 

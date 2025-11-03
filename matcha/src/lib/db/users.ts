@@ -212,3 +212,13 @@ export async function changeUserPassword (
 
   return true;
 }
+
+export async function updateLastLogin(userId: string): Promise<boolean> {
+  const query = `
+    UPDATE users
+    SET last_login = NOW()
+    WHERE id = $1
+  `;
+  const result = await executeQuery(query, [userId]);
+  return (result.rowCount ?? 0) > 0;
+}

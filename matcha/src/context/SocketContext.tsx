@@ -1,4 +1,3 @@
-// src/context/SocketProvider.tsx
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
@@ -6,7 +5,6 @@ import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
 import { Payload, PublicUser, UnreadMessages } from "@/lib/types";
-import { ne } from "@faker-js/faker";
 
 interface Notification {
   id: number;
@@ -28,6 +26,7 @@ interface SocketContextType {
   setUnreadMessages: React.Dispatch<React.SetStateAction<Map<string, number>>>;
   notifications: Notification[];
   refreshNotifications: () => Promise<void>;
+  onlineUsers: string[];
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -41,11 +40,12 @@ const SocketContext = createContext<SocketContextType>({
   setUnreadMessages: () => {},
   notifications: [],
   refreshNotifications: async () => {},
+  onlineUsers: [],
 });
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { me } = useMe();
-  const [socket, setSocket] = useState<Socket | null>(null); // on veut vraiment tous ces null ?
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [chatMsg, setChatMsg] = useState<Payload | null>(null);
   const [like, setLike] = useState<Payload | null>(null);
   const [unlike, setUnlike] = useState<Payload | null>(null);
@@ -53,6 +53,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [chatUsers, setChatUsers] = useState<PublicUser[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   const fetchNotifications = useCallback(async () => {
     if (!me) return;
@@ -60,61 +61,70 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`/api/me/notifications`);
       if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
-      console.log("fetche notifications called for" + me.first_name);
       setNotifications(data);
     } catch (err) {
       console.error("Error fetching notifications:", err);
     }
   }, [me]);
 
-  async function handleNotif(payload: Payload) {
-
-    if (payload.msg === "like")
-      toast(payload.from.first_name + " liked you !");
-    else if (payload.msg === "unlike")
-      toast(payload.from.first_name + " unliked you !");
-    else if (payload.msg === "match")
-      toast(payload.from.first_name + " matched you !");
-    else if (payload.msg === "message")
-      toast(payload.from.first_name + " messaged you !");   
-    else {
-      toast.success(payload.msg);
-      return;
+  const handleNotif = useCallback(async (payload: Payload) => {
+    switch (payload.msg) {
+      case "like":
+        toast(payload.from.first_name + " liked you !");
+        break;
+      case "unlike":
+        toast(payload.from.first_name + " unliked you !");
+        break;
+      case "match":
+        toast(payload.from.first_name + " matched you !");
+        break;
+      case "message":
+        toast(payload.from.first_name + " messaged you !");
+        break;
+      default:
+        toast.success(payload.msg);
+        return;
     }
     await fetchNotifications();
-  }
+  }, [fetchNotifications]);
 
-  function handleChatUnreadMessages(payload: UnreadMessages[]) {
-    setUnreadMessages(prevUnreadMap => {
-      const newMap = new Map(prevUnreadMap);
-      for (const p of payload)
-        newMap.set(p.sender_id, Number(p.unread_count));
-        // newMap.set(p.sender_id, p.unread_count);
-      return newMap;
+  const handleChatUnreadMessages = useCallback((payload: UnreadMessages[]) => {
+    setUnreadMessages(prev => {
+      const map = new Map(prev);
+      for (const p of payload) map.set(p.sender_id, Number(p.unread_count));
+      return map;
     });
-  }
+  }, []);
 
   useEffect(() => {
     if (!me) {
       if (socket) {
         socket.disconnect();
-        toast.success("Bye");
         setSocket(null);
         setNotifications([]);
+        setOnlineUsers([]);
+        toast.success("Bye 👋");
       }
       return;
     }
 
     const s = io(window.location.origin, {
       path: "/socket.io",
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
       withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     });
 
-    console.log("🔌 Socket connected");
     setSocket(s);
 
-    // Setup listeners
+    // --- Events ---
+    s.on("connect", () => console.log("🟢 Socket connected", s.id));
+    s.on("disconnect", (reason) => console.log("🔴 Socket disconnected:", reason));
+    s.on("reconnect_attempt", (n) => console.log(`♻️ Reconnect attempt ${n}`));
+    s.on("connect_error", (err) => console.warn("⚠️ Socket error:", err.message));
+
     s.on("notif", handleNotif);
     s.on("like", setLike);
     s.on("match", setMatch);
@@ -123,14 +133,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", setChatUsers);
 
-    // Initial notifications fetch
+    // ✅ nouvel event online-users
+    s.on("online-users", (ids: string[]) => {
+      setOnlineUsers(ids);
+      console.log("👥 Online users updated:", ids);
+    });
+
     fetchNotifications();
 
     return () => {
+      s.removeAllListeners();
       s.disconnect();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me, fetchNotifications]);
+  }, [me, fetchNotifications, handleNotif, handleChatUnreadMessages]);
 
   return (
     <SocketContext.Provider
@@ -145,6 +160,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         setUnreadMessages,
         notifications,
         refreshNotifications: fetchNotifications,
+        onlineUsers,
       }}
     >
       {children}
