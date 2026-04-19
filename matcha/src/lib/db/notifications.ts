@@ -60,6 +60,25 @@ export async function deleteAllNotificationsByUser(userId: string): Promise<void
   await executeQuery(query, [userId]);
 }
 
+/**
+ * Delete one notification if it belongs to the given user.
+ * Returns true when a row was deleted.
+ */
+export async function deleteNotificationByIdForUser(
+  notificationId: number,
+  userId: string
+): Promise<boolean> {
+  const query = `
+    DELETE FROM notifications
+    WHERE id = $1
+      AND target_id = $2
+    RETURNING id;
+  `;
+
+  const result = await executeQuery(query, [notificationId, userId]);
+  return (result.rowCount ?? 0) > 0;
+}
+
 
 export async function deleteNotificationsBetweenUsers(
   userA: string,

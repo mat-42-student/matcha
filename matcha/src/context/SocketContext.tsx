@@ -26,6 +26,7 @@ interface SocketContextType {
   setUnreadMessages: React.Dispatch<React.SetStateAction<Map<string, number>>>;
   notifications: Notification[];
   refreshNotifications: () => Promise<void>;
+  removeNotification: (notificationId: number) => Promise<void>;
   onlineUsers: string[];
 }
 
@@ -40,6 +41,7 @@ const SocketContext = createContext<SocketContextType>({
   setUnreadMessages: () => {},
   notifications: [],
   refreshNotifications: async () => {},
+  removeNotification: async () => {},
   onlineUsers: [],
 });
 
@@ -66,6 +68,23 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       console.error("Error fetching notifications:", err);
     }
   }, [me]);
+
+  const removeNotification = useCallback(async (notificationId: number) => {
+    try {
+      const res = await fetch(`/api/me/notifications/${notificationId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete notification");
+      }
+
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (err) {
+      console.error("Error deleting notification:", err);
+      throw err;
+    }
+  }, []);
 
   const handleNotif = useCallback(async (payload: Payload) => {
     switch (payload.msg) {
@@ -160,6 +179,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         setUnreadMessages,
         notifications,
         refreshNotifications: fetchNotifications,
+        removeNotification,
         onlineUsers,
       }}
     >

@@ -2,15 +2,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useSocket } from "@/context/SocketContext";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import toast from "react-hot-toast";
 
 export default function NotificationBell() {
-  const { notifications } = useSocket();
+  const { notifications, removeNotification } = useSocket();
   const [open, setOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [exitingIds, setExitingIds] = useState<Set<number>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -34,6 +37,25 @@ export default function NotificationBell() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleDelete = async (notificationId: number) => {
+    try {
+      setExitingIds((prev) => new Set(prev).add(notificationId));
+      setDeletingId(notificationId);
+      // Let the exit animation play before removing from server/state.
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      await removeNotification(notificationId);
+    } catch {
+      setExitingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(notificationId);
+        return next;
+      });
+      toast.error("Impossible de supprimer cette notification");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
   <div className="relative inline-block">
@@ -60,7 +82,9 @@ export default function NotificationBell() {
             notifications.map((notif) => (
               <div
                 key={notif.id}
-                className="flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-colors"
+                className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out ${
+                  exitingIds.has(notif.id) ? "opacity-0 -translate-x-2 scale-[0.98]" : "opacity-100 translate-x-0 scale-100"
+                }`}
               >
                 {notif.sender_picture ? (
                   <Image
@@ -75,7 +99,7 @@ export default function NotificationBell() {
                     {notif.sender_username?.[0]?.toUpperCase() ?? "?"}
                   </div>
                 )}
-                <div className="flex flex-col">
+                <div className="flex-1 flex flex-col">
                   <p className="text-sm text-gray-800">{notif.message}</p>
                   <span className="text-xs text-gray-400">
                     {formatDistanceToNow(new Date(notif.created_at), {
@@ -84,6 +108,19 @@ export default function NotificationBell() {
                     })}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(notif.id);
+                  }}
+                  disabled={deletingId === notif.id}
+                  className="p-1.5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Supprimer la notification"
+                  title="Supprimer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             ))
           )}
