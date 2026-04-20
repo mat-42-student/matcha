@@ -36,6 +36,7 @@ const system: PublicUser = {
   fame: 0,
   score: 0,
   likeStatus: "none",
+  last_login: new Date(),
 }
 
 /***
@@ -113,7 +114,7 @@ export async function initSocket(httpServer: HttpServer) {
     socket.on("disconnect", () => handleDisconnect(socket));
     socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload));
     socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload));
-    socket.on("notif", (payload: Payload) => handleNotif(payload));
+    socket.on("notif", (payload: Payload) => handleNotif(socket.data.user, payload));
   }
 
   io.use(authUser); // middleware

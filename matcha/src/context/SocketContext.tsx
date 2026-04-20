@@ -60,7 +60,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const fetchNotifications = useCallback(async () => {
     if (!me) return;
     try {
-      const res = await fetch(`/api/me/notifications`);
+      const res = await fetch(`/api/me/notifications`, {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("Failed to fetch notifications");
       const data = await res.json();
       setNotifications(data);
@@ -102,7 +104,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         break;
       default:
         toast.success(payload.msg);
-        return;
+        break;
     }
     await fetchNotifications();
   }, [fetchNotifications]);

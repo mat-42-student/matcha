@@ -19,7 +19,7 @@ const BUTTONTEXT = {
 export default function LikeButton({user}:{user: PublicUser}) {
   const { updateUser } = useUsersStore();
   const [disabled, setDisabled] = useState(false);
-  const {socket} =  useSocket();
+  const { socket, refreshNotifications } =  useSocket();
   const {me} = useMe();
 
   async function handleClick(e: React.MouseEvent) {
@@ -42,15 +42,20 @@ export default function LikeButton({user}:{user: PublicUser}) {
       }
       const data = await res.json();
       if (data.success) {
+        const notifMsg = method === "POST"
+          ? (data.newStatus === "match" ? "match" : "like")
+          : "unlike";
+
         socket?.emit("notif", {
           from: me,
           to: user,
-          msg: BUTTONTEXT[user.likeStatus].toLocaleLowerCase()
+          msg: notifMsg
           }
         );
         const fame = Math.min(Math.max(0, user.fame + deltaFame), 100)
         const updated: PublicUser = { ...user, likeStatus: data.newStatus, fame };
         updateUser(updated);
+        await refreshNotifications();
       }
     } catch (err) {
       console.error(err);

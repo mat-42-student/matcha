@@ -61,6 +61,7 @@ export default function NotificationBell() {
   <div className="relative inline-block">
     {/* 🔔 Icon button */}
     <button
+      ref={buttonRef}
       onClick={() => setOpen(!open)}
       className="relative p-2 rounded-full hover:bg-pink-700 transition-colors"
     >
@@ -74,7 +75,7 @@ export default function NotificationBell() {
 
     {/* 🧩 Dropdown */}
     {open && (
-      <div className="absolute right-0 md:right-auto md:left-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+      <div ref={dropdownRef} className="absolute right-0 md:right-auto md:left-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-4 text-gray-500 text-center">Aucune notification</div>
