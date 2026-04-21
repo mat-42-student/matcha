@@ -26,6 +26,10 @@ export default function ChatSidebar({
   }, [socket, me]);
 
   function handleSelectUser(user: PublicUser) {
+    socket?.emit("chat-mark-read", {
+      senderId: user.id,
+    });
+
     setUnreadMessages((prev) => {
       const newMap = new Map(prev);
       newMap.set(user.id, 0);

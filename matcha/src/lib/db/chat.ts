@@ -27,20 +27,29 @@ export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessa
   const query = `
     SELECT sender_id, COUNT(*)::int AS unread_count
     FROM chat
-    WHERE recipient_id = '${userId}'
+    WHERE recipient_id = $1
       AND is_read = false
     GROUP BY sender_id;
   `;
-  const result = await executeQuery(query);
+  const result = await executeQuery(query, [userId]);
   return result.rows;
 }
 
 export async function storeMessage(sender_id: string, recipient_id: string, message: string) {
   const query = `
     INSERT INTO chat (sender_id, recipient_id, message)
-    VALUES ('${sender_id}', '${recipient_id}', '${message}');
+    VALUES ($1, $2, $3);
   `;
-  await executeQuery<ChatMessage>(query);
+  await executeQuery<ChatMessage>(query, [sender_id, recipient_id, message]);
+}
+
+export async function markConversationAsRead(senderId: string, recipientId: string) {
+  const query = `
+    UPDATE chat
+    SET is_read = true
+    WHERE sender_id = $1 AND recipient_id = $2 AND is_read = false;
+  `;
+  await executeQuery(query, [senderId, recipientId]);
 }
 
 // Fetch conversation between two users
@@ -48,18 +57,18 @@ export async function storeMessage(sender_id: string, recipient_id: string, mess
 export async function getConversation(me: string, user: string): Promise<ChatMessage[]> {
   const query = `
     SELECT * FROM chat
-    WHERE (sender_id = '${me}' AND recipient_id = '${user}')
-       OR (sender_id = '${user}' AND recipient_id = '${me}')
+    WHERE (sender_id = $1 AND recipient_id = $2)
+       OR (sender_id = $2 AND recipient_id = $1)
     ORDER BY created_at ASC;
-  `; // Todo: Send only 10 last messages
-  const result = await executeQuery<ChatMessage>(query);
+  `;
+  const result = await executeQuery<ChatMessage>(query, [me, user]);
 
   const markReadQuery = `
     UPDATE chat
     SET is_read = true
-    WHERE sender_id = '${user}' AND recipient_id = '${me}' AND is_read = false;
+    WHERE sender_id = $1 AND recipient_id = $2 AND is_read = false;
   `;
-  await executeQuery(markReadQuery);
+  await executeQuery(markReadQuery, [user, me]);
   return result.rows;
 }
 
@@ -67,15 +76,15 @@ export async function getConversation(me: string, user: string): Promise<ChatMes
 export async function getMessagesForUser(userId: string): Promise<ChatMessage[]> {
   const query = `
     SELECT * FROM chat
-    WHERE recipient_id = '${userId}'
+    WHERE recipient_id = $1
     ORDER BY created_at DESC;
   `;
-  const result = await executeQuery<ChatMessage>(query);
+  const result = await executeQuery<ChatMessage>(query, [userId]);
   return result.rows;
 }
 
 export async function deleteMessage(id: number): Promise<boolean> {
-  const query = `DELETE FROM chat WHERE id = ${id}`;
-  const result = await executeQuery(query);
+  const query = `DELETE FROM chat WHERE id = $1`;
+  const result = await executeQuery(query, [id]);
   return (result.rowCount ?? 0) > 0;
 }

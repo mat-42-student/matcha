@@ -28,7 +28,7 @@ export async function GET(
     if (conversation.length === 0) {
       return new NextResponse(null, { status: 204 });
     }
-    send(me.id, "chat-unread-count", [{ 'sender-id': userId, 'unread-count': 0 }]);
+    send(me.id, "chat-unread-count", [{ sender_id: userId, unread_count: 0 }]);
     return NextResponse.json(conversation);
   } catch (err) {
     console.error("Error fetching conversation:", err);

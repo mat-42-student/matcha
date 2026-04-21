@@ -26,24 +26,43 @@ export default function ChatWindow({
   const { me } = useMe();
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const isSendingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  function send(e: React.FormEvent | React.KeyboardEvent) {
-    e.preventDefault();
-    if (me && socket && selectedUser && input.trim()) {
-      const payload: Payload = {
-        from: me,
-        to: selectedUser,
-        msg: input
-      }
+  function send(e?: React.FormEvent | React.KeyboardEvent) {
+    e?.preventDefault();
+
+    if (isSendingRef.current || !me || !socket || !selectedUser) return;
+
+    const trimmedMessage = input.trim();
+    if (!trimmedMessage) return;
+
+    isSendingRef.current = true;
+    setIsSending(true);
+    const payload: Payload = {
+      from: me,
+      to: selectedUser,
+      msg: trimmedMessage,
+    };
+
+    try {
       socket.emit("chat-msg", payload);
       setInput("");
+    } finally {
+      isSendingRef.current = false;
+      setIsSending(false);
     }
   }
 
-  // Watches for: new incoming socket messages (chatMsg) or user changes.
-  // Does: If the new message (chatMsg) belongs to the currently 
-  // selected chat, it appends it to the 'messages' state array.
+  useEffect(() => {
+    if (!socket || !selectedUser?.id) return;
+
+    socket.emit("chat-mark-read", {
+      senderId: selectedUser.id,
+    });
+  }, [socket, selectedUser?.id]);
+
   useEffect(() => {
     if (!chatMsg || !selectedUser) return;
     const isForCurrentChat =
@@ -60,9 +79,6 @@ export default function ChatWindow({
     }
   }, [chatMsg, selectedUser, me]);
 
-  // Watches for: changes in 'selectedUser' or 'me' context.
-  // Does: Fetches the entire message history for the newly selected user
-  // from the API, transforms the data, and overwrites the 'messages' state.
   useEffect(() => {
     function transformMessages(raw: RawMessage[]): Message[] {
       return raw.map((m) => ({
@@ -77,25 +93,23 @@ export default function ChatWindow({
         const res = await fetch(`/api/chat/${selectedUser?.id}`, {
           method: "GET",
           credentials: "include" });
-        console.log("fetchMsg", res)
         return await res.json();
       } catch {
         return [];
       }
     }
 
+    setMessages([]);
+
     (async () => {
       const fetchedMessages = await fetchMessages();
       setMessages(transformMessages(fetchedMessages));
-      })();
+    })();
   }, [selectedUser, me]);
 
-  // Watches for: any change to the 'messages' array.
-  // Does: Calls the 'scrollToBottom' function to scroll the
-  // chat window to the end.
-    useEffect(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   if (!selectedUser)
     return (
@@ -137,13 +151,15 @@ export default function ChatWindow({
           className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none resize-none"
           autoFocus
           placeholder="Your message"
+          disabled={isSending}
         >
         </textarea>
         <button
           onClick={send}
           className="bg-pink-700 px-4 rounded hover:bg-pink-800"
+          disabled={isSending}
         >
-          Send
+          {isSending ? "Sending..." : "Send"}
         </button>
       </div>
     </div>

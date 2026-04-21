@@ -9,8 +9,9 @@ import { Payload, PublicUser, RelationChangedSocketEvent } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { handleNotif, handleRelationChanged } from "./notifications";
 import { updateLastLogin } from "../db/users";
+import { markConversationAsRead } from "../db/chat";
 
-const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
+const connectedUsers = new Map<string, Set<Socket>>() // Map<userId, Set<Socket>>
 let io: Server;
 
 function broadcastOnlineUsers() {
@@ -49,9 +50,22 @@ export function send<T>(userId: string, action: string, data: T) {
   const targetSockets = connectedUsers.get(userId);
   if (!targetSockets || targetSockets.size === 0) return;
 
-  for (const socketId of targetSockets) {
-    io.to(socketId).emit(action, data);
+  for (const socket of targetSockets) {
+    socket.emit(action, data);
   }
+}
+
+export function isUserActivelyChattingWith(userId: string, otherUserId: string) {
+  const targetSockets = connectedUsers.get(userId);
+  if (!targetSockets || targetSockets.size === 0) return false;
+
+  for (const socket of targetSockets) {
+    if (socket.data.activeChatUserId === otherUserId) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export async function initSocket(httpServer: HttpServer) {
@@ -82,7 +96,7 @@ export async function initSocket(httpServer: HttpServer) {
     const userId = socket.data.user.id;
     const sockets = connectedUsers.get(userId);
     if (sockets) {
-      sockets.delete(socket.id);
+      sockets.delete(socket);
       if (sockets.size === 0){
         connectedUsers.delete(userId);
         updateLastLogin(userId);
@@ -94,7 +108,7 @@ export async function initSocket(httpServer: HttpServer) {
 
   function addSocket(s: Socket) {
     if (!connectedUsers.has(s.data.user.id)) connectedUsers.set(s.data.user.id, new Set())
-    connectedUsers.get(s.data.user.id)!.add(s.id)
+    connectedUsers.get(s.data.user.id)!.add(s)
   }
 
   async function handleConnection(socket: Socket) {
@@ -113,6 +127,13 @@ export async function initSocket(httpServer: HttpServer) {
 
     socket.on("disconnect", () => handleDisconnect(socket));
     socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload));
+    socket.on("chat-mark-read", async (payload: { senderId: string }) => {
+      await markConversationAsRead(payload.senderId, socket.data.user.id);
+      await sendUnreadMessagesCount(socket.data.user.id);
+    });
+    socket.on("chat-active-user", (payload: { userId: string | null }) => {
+      socket.data.activeChatUserId = payload.userId;
+    });
     socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload));
     socket.on("notif", (payload: Payload) => handleNotif(socket.data.user, payload));
     socket.on("relation-changed", (payload: RelationChangedSocketEvent) => handleRelationChanged(socket.data.user.id, payload));

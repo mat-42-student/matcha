@@ -143,12 +143,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     setSocket(s);
 
-    // --- Events ---
-    s.on("connect", () => console.log("🟢 Socket connected", s.id));
-    s.on("disconnect", (reason) => console.log("🔴 Socket disconnected:", reason));
-    s.on("reconnect_attempt", (n) => console.log(`♻️ Reconnect attempt ${n}`));
-    s.on("connect_error", (err) => console.warn("⚠️ Socket error:", err.message));
-
     s.on("notif", handleNotif);
     s.on("like", setLike);
     s.on("match", setMatch);
@@ -158,10 +152,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", setChatUsers);
 
-    // ✅ nouvel event online-users
     s.on("online-users", (ids: string[]) => {
       setOnlineUsers(ids);
-      console.log("👥 Online users updated:", ids);
     });
 
     fetchNotifications();
