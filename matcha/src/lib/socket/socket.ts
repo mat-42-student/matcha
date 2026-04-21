@@ -5,9 +5,9 @@ import type { Server as HttpServer } from "http";
 // @ts-expect-error
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
-import { Payload, PublicUser } from "@/lib/types";
+import { Payload, PublicUser, RelationChangedSocketEvent } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
-import { handleNotif } from "./notifications";
+import { handleNotif, handleRelationChanged } from "./notifications";
 import { updateLastLogin } from "../db/users";
 
 const connectedUsers = new Map<string, Set<string>>() // Map<userId, Set<socket.id>>
@@ -115,6 +115,7 @@ export async function initSocket(httpServer: HttpServer) {
     socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload));
     socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload));
     socket.on("notif", (payload: Payload) => handleNotif(socket.data.user, payload));
+    socket.on("relation-changed", (payload: RelationChangedSocketEvent) => handleRelationChanged(socket.data.user.id, payload));
   }
 
   io.use(authUser); // middleware

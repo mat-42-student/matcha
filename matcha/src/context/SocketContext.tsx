@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
-import { Payload, PublicUser, UnreadMessages } from "@/lib/types";
+import { Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
 
 interface Notification {
   id: number;
@@ -21,6 +21,7 @@ interface SocketContextType {
   like: Payload | null;
   unlike: Payload | null;
   match: Payload | null;
+  relationChanged: RelationChangedPayload | null;
   chatUsers: PublicUser[];
   unreadMessages: Map<string, number>;
   setUnreadMessages: React.Dispatch<React.SetStateAction<Map<string, number>>>;
@@ -36,6 +37,7 @@ const SocketContext = createContext<SocketContextType>({
   like: null,
   unlike: null,
   match: null,
+  relationChanged: null,
   chatUsers: [],
   unreadMessages: new Map(),
   setUnreadMessages: () => {},
@@ -52,6 +54,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [like, setLike] = useState<Payload | null>(null);
   const [unlike, setUnlike] = useState<Payload | null>(null);
   const [match, setMatch] = useState<Payload | null>(null);
+  const [relationChanged, setRelationChanged] = useState<RelationChangedPayload | null>(null);
   const [chatUsers, setChatUsers] = useState<PublicUser[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
@@ -150,6 +153,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("like", setLike);
     s.on("match", setMatch);
     s.on("unlike", setUnlike);
+    s.on("relation-changed", setRelationChanged);
     s.on("chat-msg", setChatMsg);
     s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", setChatUsers);
@@ -175,6 +179,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         like,
         unlike,
         match,
+        relationChanged,
         chatMsg,
         chatUsers,
         unreadMessages,

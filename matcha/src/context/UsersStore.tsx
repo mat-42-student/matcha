@@ -1,18 +1,20 @@
 // src/context/UsersStore.tsx
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
-import { PublicUser } from "@/lib/types";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { LikeStatus, PublicUser } from "@/lib/types";
 
 type UsersStoreType = {
   users: PublicUser[];
   updateUser: (u: PublicUser) => void;
+  updateUserLikeStatus: (userId: string, likeStatus: LikeStatus) => void;
   setUsers: (users: PublicUser[]) => void;
 };
 
 const UsersStoreContext = createContext<UsersStoreType>({
   users: [],
   updateUser: () => {},
+  updateUserLikeStatus: () => {},
   setUsers: () => {},
 });
 
@@ -30,12 +32,18 @@ export function UsersStoreProvider({
     setUsers(initialUsers);
   }, [initialUsers]);
 
-  const updateUser = (u: PublicUser) => {
+  const updateUser = useCallback((u: PublicUser) => {
     setUsers(prev => prev.map(user => (user.id === u.id ? u : user)));
-  };
+  }, []);
+
+  const updateUserLikeStatus = useCallback((userId: string, likeStatus: LikeStatus) => {
+    setUsers((prev) =>
+      prev.map((user) => (user.id === userId ? { ...user, likeStatus } : user))
+    );
+  }, []);
 
   return (
-    <UsersStoreContext.Provider value={{ users, updateUser, setUsers }}>
+    <UsersStoreContext.Provider value={{ users, updateUser, updateUserLikeStatus, setUsers }}>
       {children}
     </UsersStoreContext.Provider>
   );

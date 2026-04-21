@@ -6,9 +6,11 @@ import CardUser from "@/components/card-user/CardUser";
 import Navigation from "./Navigation";
 import FilterBar from "./FilterBar";
 import { useUsersStore } from "@/context/UsersStore";
+import { useSocket } from "@/context/SocketContext";
 
 export default function Browse() {
-  const { users } = useUsersStore();
+  const { users, updateUserLikeStatus } = useUsersStore();
+  const { relationChanged } = useSocket();
   const [page, setPage] = useState(1);
   const [filteredUsers, setFilteredUsers] = useState(users);
   const perPage = 12;
@@ -16,6 +18,11 @@ export default function Browse() {
   useEffect(() => {
     setFilteredUsers(users);
   }, [users]);
+
+  useEffect(() => {
+    if (!relationChanged) return;
+    updateUserLikeStatus(relationChanged.userId, relationChanged.likeStatus);
+  }, [relationChanged, updateUserLikeStatus]);
 
   const totalPages = Math.ceil(filteredUsers.length / perPage);
   const startIndex = (page - 1) * perPage;

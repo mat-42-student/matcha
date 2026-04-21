@@ -55,6 +55,7 @@ export async function POST(
     if (me.id === userId) return new NextResponse(null, { status: 204 });
 
     const res = await likeUser(me.id, userId);
+
     return NextResponse.json({ success: true, newStatus: res });
   } catch (err) {
     console.error(err);
@@ -85,6 +86,7 @@ export async function DELETE(
     }
 
     await unlikeUser(me.id, userId);
+
     return NextResponse.json({ success: true, newStatus: 'none' });
   } catch (err) {
     console.error("Error in DELETE /api/match/[userId]/like:", err);

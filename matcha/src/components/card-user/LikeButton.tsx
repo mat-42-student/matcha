@@ -17,16 +17,21 @@ const BUTTONTEXT = {
 }
 
 export default function LikeButton({user}:{user: PublicUser}) {
-  const { updateUser } = useUsersStore();
+  const { users, updateUser } = useUsersStore();
   const [disabled, setDisabled] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { socket, refreshNotifications } =  useSocket();
   const {me} = useMe();
+  const currentUser = users.find((u) => u.id === user.id) ?? user;
 
   async function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
+    if (isSubmitting || disabled) return;
+
+    setIsSubmitting(true);
     let method = '';
     let deltaFame = 0;
-    if (user.likeStatus === 'isLiked' || user.likeStatus === 'none') {
+    if (currentUser.likeStatus === 'isLiked' || currentUser.likeStatus === 'none') {
       method = 'POST';
       deltaFame = 5;
     }
@@ -45,6 +50,9 @@ export default function LikeButton({user}:{user: PublicUser}) {
         const notifMsg = method === "POST"
           ? (data.newStatus === "match" ? "match" : "like")
           : "unlike";
+        const recipientLikeStatus = method === "POST"
+          ? (data.newStatus === "match" ? "match" : "isLiked")
+          : "none";
 
         socket?.emit("notif", {
           from: me,
@@ -52,13 +60,19 @@ export default function LikeButton({user}:{user: PublicUser}) {
           msg: notifMsg
           }
         );
-        const fame = Math.min(Math.max(0, user.fame + deltaFame), 100)
-        const updated: PublicUser = { ...user, likeStatus: data.newStatus, fame };
+        socket?.emit("relation-changed", {
+          toUserId: currentUser.id,
+          likeStatus: recipientLikeStatus,
+        });
+        const fame = Math.min(Math.max(0, currentUser.fame + deltaFame), 100)
+        const updated: PublicUser = { ...currentUser, likeStatus: data.newStatus, fame };
         updateUser(updated);
         await refreshNotifications();
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -66,9 +80,9 @@ export default function LikeButton({user}:{user: PublicUser}) {
     <button
         className="bg-pink-500 text-white px-4 py-2 rounded-md disabled:opacity-50 hover:bg-pink-700 transition"
         onClick={(e) => { handleClick(e); }}
-        disabled = {disabled}
+        disabled = {disabled || isSubmitting}
     >
-      {BUTTONTEXT[user.likeStatus]}
+      {BUTTONTEXT[currentUser.likeStatus]}
     </button>
   );
 }

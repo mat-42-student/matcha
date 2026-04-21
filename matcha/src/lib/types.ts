@@ -15,6 +15,18 @@ export interface Notification {
   created_at: string;
 }
 
+export type LikeStatus = 'match' | 'like' | 'isLiked' | 'block' | 'none';
+
+export interface RelationChangedPayload {
+  userId: string;
+  likeStatus: LikeStatus;
+}
+
+export interface RelationChangedSocketEvent {
+  toUserId: string;
+  likeStatus: LikeStatus;
+}
+
 export type PublicUser = {
   id: string;
   first_name: string;
@@ -31,7 +43,7 @@ export type PublicUser = {
   interests: string[];
   fame: number;
   score: number;
-  likeStatus: 'match' | 'like' | 'isLiked' | 'block' | 'none';
+  likeStatus: LikeStatus;
   last_login: string | Date;
 };
 
