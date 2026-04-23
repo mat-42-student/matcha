@@ -1,12 +1,18 @@
 // matcha/src/lib/validators/serverValidator.ts
 // TODO mutualize password check for all forms
 
+import { isCommonPassword } from "./commonPasswords";
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function isStrongPassword(password: string): boolean {
   return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+}
+
+function isAcceptablePassword(password: string): boolean {
+  return isStrongPassword(password) && !isCommonPassword(password);
 }
 
 function calculateAgeISO(dateStr: string): number | null {
@@ -36,9 +42,10 @@ export function validateSignupData(data: {
   else if (!isValidEmail(email)) errors.email = "Invalid email address";
 
   if (!password) errors.password = "Password is required";
-  else if (!isStrongPassword(password))
-    errors.password =
-      "Password must be at least 8 characters long and include both letters and numbers";
+  else if (!isAcceptablePassword(password))
+    errors.password = isCommonPassword(password)
+      ? "Password is too common"
+      : "Password must be at least 8 characters long and include both letters and numbers";
 
   if (!first) errors.first_name = "First name is required";
   else if (!nameRegex.test(first))
@@ -126,6 +133,7 @@ export function validatePassword(password: string) {
   if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter");
   if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
   if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number");
+  if (isCommonPassword(password)) errors.push("Password is too common");
   //if (!/[^A-Za-z0-9]/.test(password)) errors.push("Password must contain at least one special character");
 
   return errors;
