@@ -8,7 +8,7 @@
 
 export interface Notification {
   id: number;
-  type: "like" | "match" | "unlike" | "message";
+  type: "like" | "match" | "unlike" | "message" | "view";
   message: string;
   sender_username?: string;
   sender_picture?: string;

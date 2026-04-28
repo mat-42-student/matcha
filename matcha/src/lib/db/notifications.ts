@@ -2,7 +2,7 @@
 import { executeQuery } from "@/lib/db/db-utils";
 import { PoolClient } from "pg";
 
-type NotificationType = "like" | "match" | "unlike" | "message";
+type NotificationType = "like" | "match" | "unlike" | "message" | "view";
 
 /**
  * Create a notification for a specific user
@@ -17,8 +17,8 @@ export async function createNotification(
 ): Promise<void> {
   // Handle cleanup rules before insertion
   if (type === "like" || type === "match") {
-    // Remove any unlike notifications between the two users
-    await deleteNotificationsBetweenUsers(targetId, senderId, ["unlike"]);
+    // Like/match should replace prior view or unlike notifications between the same users.
+    await deleteNotificationsBetweenUsers(targetId, senderId, ["unlike", "view"]);
   } else if (type === "unlike") {
     // Remove all notifications between both users
     await deleteAllNotificationsBetweenUsers(targetId, senderId);

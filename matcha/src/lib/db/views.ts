@@ -2,6 +2,7 @@
 import { executeQuery } from "@/lib/db/db-utils";
 import { PublicUser } from "@/lib/types";
 import { addFame } from "@/lib/db/db-utils";
+import { createNotification } from "@/lib/db/notifications";
 
 /**
  * Record a user profile view.
@@ -24,6 +25,12 @@ export async function recordProfileView(viewedUserId: string, viewerUserId: stri
   // Increase fame only if this was a new view
   if (result.rows[0]?.inserted) {
     await addFame(1, viewedUserId);
+    const viewerNameResult = await executeQuery<{ first_name: string }>(
+      `SELECT first_name FROM users WHERE id = $1`,
+      [viewerUserId]
+    );
+    const viewerName = viewerNameResult.rows[0]?.first_name || "Someone";
+    await createNotification(viewedUserId, viewerUserId, "view", `${viewerName} viewed your profile`);
     return true
   }
   return false

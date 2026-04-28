@@ -8,7 +8,7 @@ import { Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/l
 
 interface Notification {
   id: number;
-  type: "like" | "match" | "unlike" | "message";
+  type: "like" | "match" | "unlike" | "message" | "view";
   message: string;
   sender_username?: string;
   sender_picture?: string;
@@ -95,6 +95,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     switch (payload.msg) {
       case "like":
         toast(payload.from.first_name + " liked you !");
+        break;
+      case "view":
+        toast(payload.from.first_name + " viewed your profile !");
         break;
       case "unlike":
         toast(payload.from.first_name + " unliked you !");

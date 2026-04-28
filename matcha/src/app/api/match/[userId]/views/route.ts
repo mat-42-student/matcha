@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
 import { recordProfileView } from "@/lib/db/views";
 import { cookies } from "next/headers";
+import { send } from "@/lib/socket/socket";
 
 /**
  * POST /api/match/[userId]/views
@@ -31,6 +32,13 @@ export async function POST(
     }
 
     const scored: boolean = await recordProfileView(userId, viewer.id);
+    if (scored) {
+      send(userId, "notif", {
+        from: viewer,
+        to: viewer,
+        msg: "view",
+      });
+    }
 
     return NextResponse.json({ scored });
   } catch (err) {

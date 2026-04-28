@@ -11,11 +11,23 @@ import { handleNotif, handleRelationChanged } from "./notifications";
 import { updateLastLogin } from "../db/users";
 import { markConversationAsRead } from "../db/chat";
 
-const connectedUsers = new Map<string, Set<Socket>>() // Map<userId, Set<Socket>>
-let io: Server;
+type SocketRegistry = Map<string, Set<Socket>>;
+
+declare global {
+  // eslint-disable-next-line no-var
+  var matchaSocketRegistry: SocketRegistry | undefined;
+  // eslint-disable-next-line no-var
+  var matchaSocketServer: Server | undefined;
+}
+
+const connectedUsers: SocketRegistry = globalThis.matchaSocketRegistry ?? new Map<string, Set<Socket>>();
+globalThis.matchaSocketRegistry = connectedUsers;
+
+let io: Server | undefined = globalThis.matchaSocketServer;
 
 function broadcastOnlineUsers() {
   const onlineUserIds = Array.from(connectedUsers.keys());
+  if (!io) return;
   io.emit("online-users", onlineUserIds);
 }
 
@@ -76,6 +88,8 @@ export async function initSocket(httpServer: HttpServer) {
       credentials: true,
     },
   });
+
+  globalThis.matchaSocketServer = io;
 
   async function authUser(socket: Socket, next: (err?:Error)=> void) {
     const raw = socket.handshake.headers.cookie || "";

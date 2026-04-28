@@ -68,7 +68,7 @@ export default function ChatSidebar({
             </div>
 
             {unread > 0 && (
-              <span className="w-4 h-4 text-xs rounded-full bg-pink-500 flex items-center justify-center">
+              <span className="w-5 h-5 text-xs font-bold rounded-full bg-red-500 text-white flex items-center justify-center shrink-0">
                 {unread}
               </span>
             )}
