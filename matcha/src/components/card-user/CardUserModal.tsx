@@ -130,10 +130,18 @@ export default function CardUserModal({
         <div className="flex justify-between mt-4">
           <LikeButton user={user} />
           <span className="flex">
-            <button onClick={blockUser} title="Block user" className="px-2 text-xl">
+            <button
+              onClick={blockUser}
+              title="Block user"
+              className="px-2.5 py-1 text-xl rounded-md border border-transparent text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors duration-150 cursor-pointer"
+            >
               ⛔
             </button>
-            <button onClick={reportUser} title="Report user" className="px-2 text-xl">
+            <button
+              onClick={reportUser}
+              title="Report user"
+              className="px-2.5 py-1 text-xl rounded-md border border-transparent text-gray-500 hover:text-amber-700 hover:bg-amber-50 hover:border-amber-200 transition-colors duration-150 cursor-pointer"
+            >
               🚨
             </button>
           </span>
