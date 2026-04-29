@@ -20,7 +20,7 @@ export default function LikeButton({user}:{user: PublicUser}) {
   const { users, updateUser } = useUsersStore();
   const [disabled, setDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { socket, refreshNotifications } =  useSocket();
+  const { socket, refreshNotifications, clearUnreadForUser } =  useSocket();
   const {me} = useMe();
   const currentUser = users.find((u) => u.id === user.id) ?? user;
 
@@ -64,6 +64,14 @@ export default function LikeButton({user}:{user: PublicUser}) {
           toUserId: currentUser.id,
           likeStatus: recipientLikeStatus,
         });
+        socket?.emit("get-chat-users", {
+          from: me,
+          to: me,
+          msg: "",
+        });
+        if (method === "DELETE") {
+          clearUnreadForUser(currentUser.id);
+        }
         const fame = Math.min(Math.max(0, currentUser.fame + deltaFame), 100)
         const updated: PublicUser = { ...currentUser, likeStatus: data.newStatus, fame };
         updateUser(updated);

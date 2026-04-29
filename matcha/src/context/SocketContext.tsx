@@ -28,6 +28,7 @@ interface SocketContextType {
   notifications: Notification[];
   refreshNotifications: () => Promise<void>;
   removeNotification: (notificationId: number) => Promise<void>;
+  clearUnreadForUser: (userId: string) => void;
   onlineUsers: string[];
 }
 
@@ -44,6 +45,7 @@ const SocketContext = createContext<SocketContextType>({
   notifications: [],
   refreshNotifications: async () => {},
   removeNotification: async () => {},
+  clearUnreadForUser: () => {},
   onlineUsers: [],
 });
 
@@ -58,6 +60,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [chatUsers, setChatUsers] = useState<PublicUser[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
+  const [chatUsersLoaded, setChatUsersLoaded] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   const fetchNotifications = useCallback(async () => {
@@ -123,6 +126,49 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const clearUnreadForUser = useCallback((userId: string) => {
+    setUnreadMessages((prev) => {
+      if (!prev.has(userId)) return prev;
+
+      const next = new Map(prev);
+      next.delete(userId);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!chatUsersLoaded) return;
+
+    const activeChatIds = new Set(chatUsers.map((user) => user.id));
+
+    setUnreadMessages((prev) => {
+      const next = new Map<string, number>();
+      for (const [userId, count] of prev.entries()) {
+        if (activeChatIds.has(userId) && count > 0) {
+          next.set(userId, count);
+        }
+      }
+      return next;
+    });
+  }, [chatUsers, chatUsersLoaded]);
+
+  useEffect(() => {
+    if (!socket || !me || !relationChanged) return;
+
+    if (
+      relationChanged.likeStatus === "match" ||
+      relationChanged.likeStatus === "none" ||
+      relationChanged.likeStatus === "block"
+    ) {
+      socket.emit("get-chat-users", {
+        from: me,
+        to: me,
+        msg: "",
+      });
+      fetchNotifications();
+    }
+  }, [socket, me, relationChanged, fetchNotifications]);
+
   useEffect(() => {
     if (!me) {
       if (socket) {
@@ -153,7 +199,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("relation-changed", setRelationChanged);
     s.on("chat-msg", setChatMsg);
     s.on("chat-unread-count", handleChatUnreadMessages);
-    s.on("chat-users", setChatUsers);
+    s.on("chat-users", (users: PublicUser[]) => {
+      setChatUsers(users);
+      setChatUsersLoaded(true);
+    });
 
     s.on("online-users", (ids: string[]) => {
       setOnlineUsers(ids);
@@ -179,6 +228,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         chatUsers,
         unreadMessages,
         setUnreadMessages,
+        clearUnreadForUser,
         notifications,
         refreshNotifications: fetchNotifications,
         removeNotification,
