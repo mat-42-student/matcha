@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell, X } from "lucide-react";
+import Link from "next/link";
 import { useSocket } from "@/context/SocketContext";
+import { notificationTypeToTab } from "@/lib/types";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -81,9 +83,11 @@ export default function NotificationBell() {
             <div className="p-4 text-gray-500 text-center">Aucune notification</div>
           ) : (
             notifications.map((notif) => (
-              <div
+              <Link
                 key={notif.id}
-                className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out ${
+                href={`/likes?tab=${notificationTypeToTab(notif.type)}`}
+                onClick={() => setOpen(false)}
+                className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out cursor-pointer ${
                   exitingIds.has(notif.id) ? "opacity-0 -translate-x-2 scale-[0.98]" : "opacity-100 translate-x-0 scale-100"
                 }`}
               >
@@ -122,7 +126,7 @@ export default function NotificationBell() {
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </div>
+              </Link>
             ))
           )}
         </div>

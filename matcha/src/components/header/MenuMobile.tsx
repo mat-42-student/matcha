@@ -26,7 +26,7 @@ export default function MenuMobile({
   const links = [
     { href: "/", label: "Browse", icon: <Users size={18} /> },
     { href: "/search", label: "Search", icon: <Search size={18} /> },
-    { href: "/likes", label: "Likes", icon: <Heart size={18} /> },
+    { href: "/likes", label: "My links", icon: <Heart size={18} /> },
     { href: "/chat", label: "Chat", icon: <MessageCircle size={18} /> },
     { href: "/profile", label: user.first_name, icon: <User size={18} /> },
   ];

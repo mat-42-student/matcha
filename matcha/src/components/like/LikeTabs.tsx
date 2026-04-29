@@ -1,7 +1,8 @@
 // matcha/src/app/likes/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Liked from "@/components/like/Liked";
 import LikeMe from "@/components/like/LikeMe";
 import Matches from "@/components/like/Matches";
@@ -10,9 +11,15 @@ import LButton from "./LButton";
 import { LikeTabsTypes } from "@/lib/types";
 
 export default function LikeTabs() {
-  const [activeTab, setActiveTab] = useState<LikeTabsTypes>(
-    "visitors"
-  );
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<LikeTabsTypes>("visitors");
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["visitors", "liked", "likeMe", "matches"].includes(tabParam)) {
+      setActiveTab(tabParam as LikeTabsTypes);
+    }
+  }, [searchParams]);
 
   return (
     <div className="max-w-3xl mx-auto mt-8">

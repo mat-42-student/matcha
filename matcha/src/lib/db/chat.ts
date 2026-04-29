@@ -25,11 +25,17 @@ export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]>
 
 export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessages[]> {
   const query = `
-    SELECT sender_id, COUNT(*)::int AS unread_count
-    FROM chat
-    WHERE recipient_id = $1
-      AND is_read = false
-    GROUP BY sender_id;
+    SELECT c.sender_id, COUNT(*)::int AS unread_count
+    FROM chat c
+    JOIN matches m
+      ON (
+        (m.user1_id = c.sender_id AND m.user2_id = c.recipient_id)
+        OR (m.user1_id = c.recipient_id AND m.user2_id = c.sender_id)
+      )
+    WHERE c.recipient_id = $1
+      AND c.is_read = false
+      AND m.status = 'match'
+    GROUP BY c.sender_id;
   `;
   const result = await executeQuery(query, [userId]);
   return result.rows;

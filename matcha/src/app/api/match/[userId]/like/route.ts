@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
 import { getMatchStatus, likeUser, unlikeUser } from "@/lib/db/likes";
+import { sendUnreadMessagesCount } from "@/lib/socket/chat";
 
 /**
  * GET /api/match/[userId]/like
@@ -86,6 +87,10 @@ export async function DELETE(
     }
 
     await unlikeUser(me.id, userId);
+    await Promise.all([
+      sendUnreadMessagesCount(me.id),
+      sendUnreadMessagesCount(userId),
+    ]);
 
     return NextResponse.json({ success: true, newStatus: 'none' });
   } catch (err) {

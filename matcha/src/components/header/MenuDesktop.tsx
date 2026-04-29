@@ -17,7 +17,7 @@ export default function MenuDesktop({
   const links = [
     { href: "/", label: "Browse", icon: <Users size={18} /> },
     { href: "/search", label: "Search", icon: <Search size={18} /> },
-    { href: "/likes", label: "Likes", icon: <Heart size={18} /> },
+    { href: "/likes", label: "My links", icon: <Heart size={18} /> },
     { href: "/profile", label: user.first_name, icon: <User size={18} /> },
   ];
   const classname = "flex items-center gap-2 px-4 py-2 text-fuchsia-100 hover:text-white hover:bg-pink-600/30 rounded-xl transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150";

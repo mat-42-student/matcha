@@ -63,6 +63,19 @@ export type SearchCriteria = {
 
 export type LikeTabsTypes = "visitors" | "liked" | "likeMe" | "matches"
 
+export function notificationTypeToTab(notificationType: string): LikeTabsTypes {
+  switch (notificationType) {
+    case "like":
+      return "likeMe";
+    case "match":
+      return "matches";
+    case "view":
+      return "visitors";
+    default:
+      return "visitors";
+  }
+}
+
 export interface Payload {
   from: PublicUser;
   to: PublicUser;
