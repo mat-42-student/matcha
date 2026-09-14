@@ -19,8 +19,11 @@ export default function CardUser({ user }: { user: PublicUser }) {
         const res = await fetch(`/api/users/${user.id}/pics/`);
         if (!res.ok || res.status === 204) return;
         const picJson: Picture = await res.json();
-        setMainPic({ ...picJson, data: `data:${picJson.mime_type};base64,${picJson.data}` });
-      } catch (err) {
+        const cleanBase64 = picJson.data ? picJson.data.trim() : "";
+setMainPic({
+  ...picJson,
+  data: `data:${picJson.mime_type};base64,${cleanBase64}`,
+});      } catch (err) {
         console.error("Could not retrieve main picture:", err);
       }
     }
