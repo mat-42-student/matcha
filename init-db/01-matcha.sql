@@ -34,7 +34,7 @@ CREATE TABLE "users" (
   "sex_pref" char(1) CHECK (sex_pref IN ('M', 'F', 'B')),
 
   "bio" text,
-  "fame" float CHECK (fame >= 0),
+  "fame" float CHECK (fame >= 0) DEFAULT 0,
 
   "is_verified" boolean DEFAULT false,
   
