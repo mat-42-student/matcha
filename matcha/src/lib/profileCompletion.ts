@@ -26,7 +26,7 @@ export async function analyzeProfileCompletion(user: any): Promise<Completion> {
   if (!user.latitude || !user.longitude)
     missingRequired.push("Location missing");
   if (!Array.isArray(pictures) || pictureCount < 1)
-    missingRequired.push("You need at lest 1 picture");
+    missingRequired.push("You need at least 1 picture");
   if (!Array.isArray(user.interests) || user.interests.length < 3)
     missingRequired.push("Fewer than 3 interests");
 
