@@ -14,12 +14,12 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.45.0",
-    "next": "^15.5.6",
+    "next": "16.3.5",
     "nodemailer": "^10.0.9",
     "pg": "^8.23.0",
     "postcss": "^8.5.6",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-hot-toast": "^2.6.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
@@ -29,9 +29,11 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.1.0",
+    "@types/node": "^26.5.1",
     "@types/nodemailer": "^7.0.3",
     "@types/pg": "^8.15.5",
-    "@types/react": "19.2.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "typescript": "^5.9.3"
   }
 }

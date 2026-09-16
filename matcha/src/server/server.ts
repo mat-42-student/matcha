@@ -1,25 +1,31 @@
 // matcha/src/server/server.ts
-
 import { createServer } from "http";
-// @ts-expect-error vscode cant handle extension in include path
-import { app, handler } from "./nextHandler.ts";
-// @ts-expect-error vscode cant handle extension in include path
-import { initSocket } from "../lib/socket/socket.ts";
-// @ts-expect-error vscode cant handle extension in include path
-import { seed } from "../lib/seed-users.ts";
+import { app, handler } from "./nextHandler";
+import { initSocket } from "../lib/socket/socket";
+import { seed } from "../lib/seed-users";
 
-await seed();
+async function bootstrap() {
+  try {
+    await seed();
+    await app.prepare();
 
-app.prepare().then(() => {
-  const httpServer = createServer(handler);
-  initSocket(httpServer);
+    const httpServer = createServer(handler);
+    initSocket(httpServer);
 
-  httpServer
-    .once("error", (err) => {
-      console.error(err);
+    const port = Number(process.env.PORT) || 3000;
+
+    httpServer.once("error", (err) => {
+      console.error("Server error:", err);
       process.exit(1);
-    })
-    .listen(3000, () => {
-      console.log("> Ready on http://localhost:3000");
     });
-});
+
+    httpServer.listen(port, () => {
+      console.log(`> Ready on http://localhost:${port}`);
+    });
+  } catch (err) {
+    console.error("Error during startup:", err);
+    process.exit(1);
+  }
+}
+
+bootstrap();
