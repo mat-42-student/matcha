@@ -24,28 +24,44 @@ export default function Browse() {
     updateUserLikeStatus(relationChanged.userId, relationChanged.likeStatus);
   }, [relationChanged, updateUserLikeStatus]);
 
+  // Réinitialisation de la page courante quand la liste filtrée change
+  function handleFilterChange(newList: typeof users) {
+    setFilteredUsers(newList);
+    setPage(1);
+  }
+
   const totalPages = Math.ceil(filteredUsers.length / perPage);
   const startIndex = (page - 1) * perPage;
   const currentUsers = filteredUsers.slice(startIndex, startIndex + perPage);
 
   return (
-    <div className="p-4">
-      <FilterBar users={users} onChange={setFilteredUsers} />
-
-      <div className="flex flex-wrap justify-center">
-        {currentUsers.map(u => (
-          <CardUser key={u.id} user={u} />
-        ))}
+    <div className="flex min-h-[calc(100vh-4rem)] w-full items-start">
+      <div className="sticky top-0 self-start">
+        <FilterBar users={users} onChange={handleFilterChange} />
       </div>
-
-      {filteredUsers.length > perPage && (
-        <Navigation
-          page={page}
-          totalPages={totalPages}
-          prev={() => setPage(p => Math.max(p - 1, 1))}
-          next={() => setPage(p => Math.min(p + 1, totalPages))}
-        />
-      )}
+      <main className="flex-1 flex flex-col items-center p-4 md:p-6 overflow-hidden">
+        {currentUsers.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-4 w-[800px] max-w-full">
+            {currentUsers.map((u) => (
+              <CardUser key={u.id} user={u} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center text-zinc-800 text-sm">
+            Aucun profil ne correspond aux critères sélectionnés.
+          </div>
+        )}
+        {filteredUsers.length > perPage && (
+          <div className="mt-8">
+            <Navigation
+              page={page}
+              totalPages={totalPages}
+              prev={() => setPage((p) => Math.max(p - 1, 1))}
+              next={() => setPage((p) => Math.min(p + 1, totalPages))}
+            />
+          </div>
+        )}
+      </main>
     </div>
   );
 }
