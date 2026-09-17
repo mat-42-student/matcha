@@ -1,10 +1,14 @@
 // src/components/browse/Browse.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CardUser from "@/components/card-user/CardUser";
 import Navigation from "./Navigation";
-import FilterBar from "./FilterBar";
+import FilterBar, {
+  DEFAULT_FILTERS,
+  filterUsers,
+  FilterValues,
+} from "./FilterBar";
 import { useUsersStore } from "@/context/UsersStore";
 import { useSocket } from "@/context/SocketContext";
 
@@ -12,21 +16,21 @@ export default function Browse() {
   const { users, updateUserLikeStatus } = useUsersStore();
   const { relationChanged } = useSocket();
   const [page, setPage] = useState(1);
-  const [filteredUsers, setFilteredUsers] = useState(users);
+  const [filters, setFilters] = useState<FilterValues>(DEFAULT_FILTERS);
   const perPage = 12;
-
-  useEffect(() => {
-    setFilteredUsers(users);
-  }, [users]);
 
   useEffect(() => {
     if (!relationChanged) return;
     updateUserLikeStatus(relationChanged.userId, relationChanged.likeStatus);
   }, [relationChanged, updateUserLikeStatus]);
 
-  // Réinitialisation de la page courante quand la liste filtrée change
-  function handleFilterChange(newList: typeof users) {
-    setFilteredUsers(newList);
+  const filteredUsers = useMemo(
+    () => filterUsers(users, filters),
+    [users, filters],
+  );
+
+  function handleFilterChange(newFilters: FilterValues) {
+    setFilters(newFilters);
     setPage(1);
   }
 
@@ -37,7 +41,7 @@ export default function Browse() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] w-full items-start">
       <div className="sticky top-0 self-start">
-        <FilterBar users={users} onChange={handleFilterChange} />
+        <FilterBar values={filters} onChange={handleFilterChange} />
       </div>
       <main className="flex-1 flex flex-col items-center p-4 md:p-6 overflow-hidden">
         {currentUsers.length > 0 ? (

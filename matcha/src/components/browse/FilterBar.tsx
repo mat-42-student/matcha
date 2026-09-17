@@ -1,60 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PublicUser } from "@/lib/types";
 
-type FilterBarProps = {
-  users: PublicUser[];
-  onChange: (filtered: PublicUser[]) => void;
+export type FilterValues = {
+  sortBy: string;
+  ageMin: string;
+  ageMax: string;
+  distance: string;
 };
 
-export default function FilterSidebar({ users, onChange }: FilterBarProps) {
-  const [isOpen, setIsOpen] = useState(true);
+type FilterBarProps = {
+  values: FilterValues;
+  onChange: (values: FilterValues) => void;
+};
 
-  const [sortBy, setSortBy] = useState("score-desc");
-  const [ageMin, setAgeMin] = useState("");
-  const [ageMax, setAgeMax] = useState("");
-  const [distance, setDistance] = useState("");
+export const DEFAULT_FILTERS: FilterValues = {
+  sortBy: "score-desc",
+  ageMin: "",
+  ageMax: "",
+  distance: "",
+};
 
-  function applyFilters() {
-    let result = users;
+export function filterUsers(users: PublicUser[], filters: FilterValues) {
+  let result = users;
 
-    if (ageMin) {
-      const min = parseInt(ageMin, 10);
-      if (!isNaN(min)) result = result.filter((u) => u.age >= min);
-    }
-    if (ageMax) {
-      const max = parseInt(ageMax, 10);
-      if (!isNaN(max)) result = result.filter((u) => u.age <= max);
-    }
-    if (distance) {
-      const dist = parseInt(distance, 10);
-      if (!isNaN(dist)) result = result.filter((u) => u.distance <= dist);
-    }
+  const min = Number.parseInt(filters.ageMin, 10);
+  if (!Number.isNaN(min)) result = result.filter((u) => u.age >= min);
 
-    if (sortBy) {
-      const [key, order] = sortBy.split("-");
+  const max = Number.parseInt(filters.ageMax, 10);
+  if (!Number.isNaN(max)) result = result.filter((u) => u.age <= max);
 
-      result = [...result].sort((a, b) => {
-        let diff = 0;
-        if (key === "score") diff = a.score - b.score;
-        if (key === "age") diff = a.age - b.age;
-        if (key === "dist") diff = a.distance - b.distance;
-        if (key === "fame") diff = a.fame - b.fame;
-
-        return order === "desc" ? -diff : diff;
-      });
-    }
-
-    onChange(result);
+  const maxDistance = Number.parseInt(filters.distance, 10);
+  if (!Number.isNaN(maxDistance)) {
+    result = result.filter((u) => u.distance <= maxDistance);
   }
 
-  function resetFilters() {
-    setAgeMin("");
-    setAgeMax("");
-    setDistance("");
-    setSortBy("score-desc");
-    onChange(users);
+  const [key, order] = filters.sortBy.split("-");
+  result = [...result].sort((a, b) => {
+    let diff = 0;
+    if (key === "score") diff = a.score - b.score;
+    if (key === "age") diff = a.age - b.age;
+    if (key === "dist") diff = a.distance - b.distance;
+    if (key === "fame") diff = a.fame - b.fame;
+
+    return order === "desc" ? -diff : diff;
+  });
+
+  return result;
+}
+
+export default function FilterSidebar({ values, onChange }: FilterBarProps) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [draftValues, setDraftValues] = useState(values);
+
+  useEffect(() => {
+    setDraftValues(values);
+  }, [values]);
+
+  function updateValue<K extends keyof FilterValues>(
+    key: K,
+    value: FilterValues[K],
+  ) {
+    setDraftValues((current) => ({ ...current, [key]: value }));
   }
 
   return (
@@ -119,8 +127,8 @@ export default function FilterSidebar({ users, onChange }: FilterBarProps) {
                 Trier par
               </label>
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                value={draftValues.sortBy}
+                onChange={(e) => updateValue("sortBy", e.target.value)}
                 className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
               >
                 <option value="score-desc">Score (Décroissant)</option>
@@ -143,15 +151,15 @@ export default function FilterSidebar({ users, onChange }: FilterBarProps) {
                 <input
                   type="number"
                   placeholder="Min"
-                  value={ageMin}
-                  onChange={(e) => setAgeMin(e.target.value)}
+                  value={draftValues.ageMin}
+                  onChange={(e) => updateValue("ageMin", e.target.value)}
                   className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
                 />
                 <input
                   type="number"
                   placeholder="Max"
-                  value={ageMax}
-                  onChange={(e) => setAgeMax(e.target.value)}
+                  value={draftValues.ageMax}
+                  onChange={(e) => updateValue("ageMax", e.target.value)}
                   className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
                 />
               </div>
@@ -166,8 +174,8 @@ export default function FilterSidebar({ users, onChange }: FilterBarProps) {
                 <input
                   type="number"
                   placeholder="Ex: 50"
-                  value={distance}
-                  onChange={(e) => setDistance(e.target.value)}
+                  value={draftValues.distance}
+                  onChange={(e) => updateValue("distance", e.target.value)}
                   className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 pr-10 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-zinc-400 pointer-events-none">
@@ -180,13 +188,16 @@ export default function FilterSidebar({ users, onChange }: FilterBarProps) {
           {/* Boutons d'action */}
           <div className="space-y-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
             <button
-              onClick={applyFilters}
+              onClick={() => onChange(draftValues)}
               className="w-full py-2.5 px-4 bg-pink-600 hover:bg-pink-700 text-white font-medium text-sm rounded-lg shadow-sm hover:shadow transition-all duration-150 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-pink-500/50"
             >
               Appliquer les filtres
             </button>
             <button
-              onClick={resetFilters}
+              onClick={() => {
+                setDraftValues(DEFAULT_FILTERS);
+                onChange(DEFAULT_FILTERS);
+              }}
               className="w-full py-2 px-4 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-medium rounded-lg transition-colors"
             >
               Réinitialiser
