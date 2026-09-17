@@ -45,7 +45,7 @@ export default function Browse() {
       </div>
       <main className="flex-1 flex flex-col items-center p-4 md:p-6 overflow-hidden">
         {currentUsers.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-4 w-[800px] max-w-full">
+          <div className=" border-2 flex flex-wrap justify-center gap-4 w-full max-w-[90%]">
             {currentUsers.map((u) => (
               <CardUser key={u.id} user={u} />
             ))}
