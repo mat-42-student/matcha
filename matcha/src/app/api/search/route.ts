@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { searchCompatibleUsers } from "@/lib/db/search";
+import { validateFameRange } from "@/lib/validators/serverValidator";
 
 export async function POST(req: Request) {
   try {
@@ -18,13 +19,17 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     console.log("body: ", body)
-    const { distance, ageRange, fame, interests, customInterests } = body;
+    const { distance, ageRange, fameRange, interests, customInterests } = body;
+
+    const fameCheck = validateFameRange(fameRange);
+    if (!fameCheck.valid)
+      return NextResponse.json({ error: fameCheck.error }, { status: 400 });
 
     const users = await searchCompatibleUsers(
       me,
       distance,
       ageRange,
-      fame,
+      fameRange,
       interests,
       customInterests
     );

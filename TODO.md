@@ -34,7 +34,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - `params` synchrone dans les routes photos (voir §2)
   - [matcha/src/components/card-user/ChatCardUser.tsx](matcha/src/components/card-user/ChatCardUser.tsx) (l. 10) : `Picture` sans `id`
   - [matcha/src/lib/db/chat.ts](matcha/src/lib/db/chat.ts) (l. 41) : `getUnreadCountByUsers` non typé
-- [ ] 🟢 À vérifier : la recherche ne filtre le fame que par un minimum (le sujet demande une **tranche**).
+- [x] 🟢 À vérifier : la recherche ne filtre le fame que par un minimum (le sujet demande une **tranche**).
+  - Corrigé : tranche min/max (bornes optionnelles) sur le score brut affiché sur les cartes, validée côté client et serveur (`validateFameRange`).
 - [ ] 🟢 Orientation non renseignée (`sex_pref` / `gender` NULL) exclue des suggestions au lieu d'être traitée comme bisexuelle (`COALESCE` dans `compatible_users_from`).
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 220)
 - [x] 🟢 **Empêcher l'affichage des comptes incomplets** dans les suggestions et la recherche. Ex. `b@mail.com` sans photo : la carte s'affiche mais la modale ne s'ouvre pas (`open && mainPic` dans [CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) l. 86), alors que la visite est enregistrée et notifiée.
@@ -65,7 +66,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟡 **Logique métier dans `db-utils.ts`** (score, Haversine) → la sortir dans un module dédié. `completeUserInfos` fait **une requête par user** (`getMatchStatus`) → 500 requêtes par recherche. Filtre de distance fait en JS après chargement complet alors que `earthdistance` est installé.
 - [ ] 🟡 (optionnel) Images en `bytea` renvoyées en base64 dans du JSON, un fetch par carte : servir en binaire avec `Content-Type` et cache.
 - [ ] 🟢 **Doublons** : transport nodemailer recréé 3 fois (→ `lib/mail.ts`) ; deux politiques de mot de passe (`validateSignupData` vs `validatePassword`, cf. `TODO` dans `serverValidator.ts`) ; deux `Pool` Postgres (le seed a le sien) ; interface `Notification` dupliquée (`types.ts` / `SocketContext.tsx`) ; `postcss.config.mjs` + `postcss.config.ts`.
-- [ ] 🟢 **Schéma SQL** : pas de `ON DELETE CASCADE` sur la plupart des FK (`pictures`, `matches`, `views`, `chat`, `user_interests`) ; aucun index sur `matches`, `chat`, `notifications` ; `timestamp` sans timezone ; `fame` en `float` dans la table mais `INT` dans la fonction (commentaire « DB uses 0–2000 » obsolète dans `search.ts`).
+- [ ] 🟢 **Schéma SQL** : pas de `ON DELETE CASCADE` sur la plupart des FK (`pictures`, `matches`, `views`, `chat`, `user_interests`) ; aucun index sur `matches`, `chat`, `notifications` ; `timestamp` sans timezone ; `fame` en `float` dans la table mais `INT` dans la fonction.
 - [ ] 🟢 Sessions expirées jamais purgées ; cookie sans `maxAge` alors que la session DB dure 7 jours.
 
 ## 4. Hygiène

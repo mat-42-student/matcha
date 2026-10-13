@@ -1,7 +1,7 @@
 // matcha/src/lib/db/search.ts
 import { executeQuery } from "./db-utils";
 import { QueryResultRow } from "pg";
-import { PublicUser } from "@/lib/types";
+import { FameRange, PublicUser } from "@/lib/types";
 import { completeUserInfos } from "./db-utils";
 
 /**
@@ -11,7 +11,7 @@ export async function searchCompatibleUsers(
   me: PublicUser,
   distance?: number,
   ageRange?: [number, number],
-  fame?: number,
+  fameRange?: FameRange,
   interests?: string,
   customInterests: string[] = []
 ) {
@@ -31,10 +31,14 @@ export async function searchCompatibleUsers(
     params.push(ageRange[1]);
   }
 
-  // Fame score filter (fame ranges 0–100, DB uses 0–2000)
-  if (fame) {
+  // Fame range filter (raw fame score)
+  if (fameRange?.min !== undefined) {
     query += ` AND c.fame >= $${params.length + 1}`;
-    params.push((fame - 1) * 20);
+    params.push(fameRange.min);
+  }
+  if (fameRange?.max !== undefined) {
+    query += ` AND c.fame <= $${params.length + 1}`;
+    params.push(fameRange.max);
   }
 
   // Shared interests filter

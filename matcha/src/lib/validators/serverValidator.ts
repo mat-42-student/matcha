@@ -161,3 +161,22 @@ export function validatePassword(password: string) {
 
   return errors;
 }
+function isFameBound(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+export function validateFameRange(range: unknown): ValidationResult {
+  if (range === undefined) return { valid: true };
+  if (typeof range !== "object" || range === null)
+    return { valid: false, error: "Invalid fame range" };
+
+  const { min, max } = range as { min?: unknown; max?: unknown };
+  if (min !== undefined && !isFameBound(min))
+    return { valid: false, error: "Invalid minimum fame" };
+  if (max !== undefined && !isFameBound(max))
+    return { valid: false, error: "Invalid maximum fame" };
+  if (isFameBound(min) && isFameBound(max) && min > max)
+    return { valid: false, error: "Minimum fame is greater than maximum" };
+
+  return { valid: true };
+}

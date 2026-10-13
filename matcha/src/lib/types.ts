@@ -53,7 +53,13 @@ export type SearchCriteria = {
   ageRange?: [number, number];
   interests?: "similar" | "custom";
   customInterests?: string[];
-  fame?: number;
+  fameRange?: FameRange;
+};
+
+// raw fame score, same unit as the ⭐ shown on cards ; undefined bound = no limit
+export type FameRange = {
+  min?: number;
+  max?: number;
 };
 
 export type LikeTabsTypes = "visitors" | "liked" | "likeMe" | "matches"

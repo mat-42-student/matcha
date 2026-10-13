@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { SearchCriteria } from "@/lib/types";
+import { FameRange, SearchCriteria } from "@/lib/types";
 
 export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCriteria) => void }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -17,7 +17,9 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 99]);
   const [interestsMode, setInterestsMode] = useState<"similar" | "custom">("similar");
   const [customInterests, setCustomInterests] = useState<string[]>([]);
-  const [fame, setFame] = useState(0);
+  // kept as strings so a bound can be left empty (= no limit)
+  const [fameMin, setFameMin] = useState("");
+  const [fameMax, setFameMax] = useState("");
 
   const [allInterests, setAllInterests] = useState<string[]>([]);
 
@@ -37,8 +39,31 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
     fetchInterests();
   }, []);
 
+  const fameRange: FameRange = {
+    min: fameMin === "" ? undefined : Number(fameMin),
+    max: fameMax === "" ? undefined : Number(fameMax),
+  };
+  const isBadBound = (n?: number) => n !== undefined && !(Number.isInteger(n) && n >= 0);
+  const fameError = !useFame
+    ? null
+    : isBadBound(fameRange.min) || isBadBound(fameRange.max)
+      ? "Fame bounds must be positive whole numbers"
+      : fameRange.min !== undefined && fameRange.max !== undefined && fameRange.min > fameRange.max
+        ? "Minimum fame must be lower than maximum"
+        : null;
+  const fameInvalid = fameError !== null;
+
+  function fameLabel() {
+    const { min, max } = fameRange;
+    if (!useFame || (min === undefined && max === undefined)) return "All";
+    if (max === undefined) return `${min}+`;
+    if (min === undefined) return `≤ ${max}`;
+    return `${min} - ${max}`;
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (fameInvalid) return;
     const criteria: SearchCriteria = {};
     if (useDistance) criteria.distance = distance;
     if (useAge) criteria.ageRange = ageRange;
@@ -46,7 +71,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
       criteria.interests = interestsMode;
       criteria.customInterests = customInterests;
     }
-    if (useFame) criteria.fame = fame;
+    if (useFame) criteria.fameRange = fameRange;
     onSubmit(criteria);
     setCollapsed(true);
   }
@@ -64,7 +89,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
       >
         <span className="mr-2">📍 {distance === 500 ? "500+ km" : `${distance} km`}</span>
         <span className="mr-2">🎂 {ageRange[0]} - {ageRange[1]} </span>
-        <span className="mr-2">⭐ {fame > 0 ? `${fame}+` : "All"}</span>
+        <span className="mr-2">⭐ {fameLabel()}</span>
         {interestsMode === "custom" && displayedInterests.length > 0 && (
           <span className="mr-2">🎯 {displayedInterests.join(", ")}</span>
         )}
@@ -194,26 +219,38 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
           onChange={() => setUseFame(!useFame)}
           id="fame-filter"
         />
-        <label htmlFor="fame-filter" className="block font-medium mb-2">Fame</label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <span
-              key={star}
-              onClick={() => useFame && setFame(star)}
-              className={`cursor-pointer text-2xl ${
-                fame >= star ? "text-yellow-500" : "text-gray-400"
-              } ${!useFame ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              ★
-            </span>
-          ))}
-        </div>
+        <label htmlFor="fame-filter" className="block font-medium mb-2">Fame ⭐</label>
+        <input
+          type="number"
+          min={0}
+          placeholder="0"
+          value={fameMin}
+          onChange={(e) => setFameMin(e.target.value)}
+          className={`border rounded p-2 w-20 ${fameInvalid ? "border-red-500" : ""}`}
+          aria-label="Minimum fame"
+          disabled={!useFame}
+        />
+        <span>-</span>
+        <input
+          type="number"
+          min={0}
+          placeholder="∞"
+          value={fameMax}
+          onChange={(e) => setFameMax(e.target.value)}
+          className={`border rounded p-2 w-20 ${fameInvalid ? "border-red-500" : ""}`}
+          aria-label="Maximum fame"
+          disabled={!useFame}
+        />
       </div>
+      {fameError && (
+        <p className="text-sm text-red-600 -mt-4">{fameError}</p>
+      )}
 
       {/* Submit */}
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+        disabled={fameInvalid}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Search
       </button>
