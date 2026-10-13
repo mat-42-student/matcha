@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { X, Star, Trash2, Upload } from "lucide-react";
 import toast from 'react-hot-toast';
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from "@/lib/validators/imageValidator";
 
 export function ProfilePicturesModal({
   userId,
@@ -40,6 +41,17 @@ export function ProfilePicturesModal({
         const file = e.target.files?.[0];
         if (!file) return;
 
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            toast.error("Only JPEG, PNG and WebP pictures are allowed.");
+            e.target.value = "";
+            return;
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+            toast.error(`Picture must be at most ${MAX_IMAGE_SIZE / 1024 / 1024} MB.`);
+            e.target.value = "";
+            return;
+        }
+
         const formData = new FormData();
         formData.append("file", file);
 
@@ -56,7 +68,8 @@ export function ProfilePicturesModal({
                 toast.success("Photo added !");
                 onUpdated && onUpdated();
             } else {
-                toast.error("Error during picture upload");
+                const data = await res.json().catch(() => null);
+                toast.error(data?.error || "Error during picture upload");
             }
         } catch (error) {
             console.error(error);
@@ -181,7 +194,7 @@ export function ProfilePicturesModal({
             <input
               type="file"
               className="hidden"
-              accept="image/*"
+              accept={ALLOWED_IMAGE_TYPES.join(",")}
               onChange={handleUpload}
             />
           </label>

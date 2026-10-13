@@ -7,7 +7,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 **Socket : ne plus faire confiance au client.** `chat-msg` utilise `payload.from.id` → usurpation d'identité, message à n'importe qui sans match ni contrôle de blocage. `get-chat-users` permet de lire les matchs d'un autre user ; `notif` / `relation-changed` permettent d'envoyer des notifs arbitraires. Utiliser `socket.data.user`, vérifier match + block, limiter la taille des messages.
   - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (l. 143-153), [matcha/src/lib/socket/chat.ts](matcha/src/lib/socket/chat.ts)
   - Le `TODO` l. 104 de `socket.ts` : `socket.data.user` vient de la vue `my_profile` (pas de mot de passe), mais contient l'email → ne pas le renvoyer tel quel aux autres clients.
-- [ ] 🟢 **Upload d'images non validé** : aucun contrôle de contenu ni de taille, type MIME fourni par le client. Vérifier les magic bytes (JPEG/PNG/WebP), taille max, ignorer `file.type`.
+- [x] 🟢 **Upload d'images non validé** : aucun contrôle de contenu ni de taille, type MIME fourni par le client. Vérifier les magic bytes (JPEG/PNG/WebP), taille max, ignorer `file.type`.
   - [matcha/src/app/api/me/pictures/route.ts](matcha/src/app/api/me/pictures/route.ts) (l. 60-61)
 - [ ] 🟢 **Mots de passe en clair en DB** : le seed insère `faker.internet.password()` sans hash.
   - [matcha/src/lib/seed-users.ts](matcha/src/lib/seed-users.ts) (l. 478)
