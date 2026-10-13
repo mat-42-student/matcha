@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
 import { getMatchStatus, likeUser, unlikeUser } from "@/lib/db/likes";
+import { hasMainPicture } from "@/lib/db/pictures";
 import { sendUnreadMessagesCount } from "@/lib/socket/chat";
 import { send, toSocketUser } from "@/lib/socket/socket";
 import { LikeStatus, NotifPayload, RelationChangedPayload } from "@/lib/types";
@@ -69,6 +70,22 @@ export async function POST(
     }
 
     if (me.id === userId) return new NextResponse(null, { status: 204 });
+
+    if (!(await hasMainPicture(me.id))) {
+      return NextResponse.json(
+        { error: "You need a profile picture to like someone" },
+        { status: 403 }
+      );
+    }
+
+    // block in either direction, or already liked / matched
+    const status = await getMatchStatus(me.id, userId);
+    if (status === "block") {
+      return NextResponse.json({ error: "You cannot like this user" }, { status: 403 });
+    }
+    if (status === "like" || status === "match") {
+      return NextResponse.json({ success: false, newStatus: status });
+    }
 
     const res = await likeUser(me.id, userId);
     if (res === "match") notifyRelationChange(me, userId, "match", "match");

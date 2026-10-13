@@ -124,6 +124,17 @@ export async function getMainPicture(userId: string) {
 }
 
 
+/**
+ * Check whether a user has a main (profile) picture, without loading its data.
+ */
+export async function hasMainPicture(userId: string): Promise<boolean> {
+  const result = await executeQuery(
+    `SELECT 1 FROM pictures WHERE user_id = $1 AND is_main = TRUE LIMIT 1`,
+    [userId]
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
 export async function getUserPictures(userId: string) {
   const query = `
     SELECT id, mime_type, encode(data, 'base64') AS data, is_main

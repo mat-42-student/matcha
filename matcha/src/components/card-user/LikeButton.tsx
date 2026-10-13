@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useSocket } from "@/context/SocketContext";
 import { PublicUser } from "@/lib/types";
 import { useUsersStore } from "@/context/UsersStore";
@@ -44,6 +45,15 @@ export default function LikeButton({user}:{user: PublicUser}) {
         return;
       }
       const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Something went wrong");
+        return;
+      }
+      if (!data.success && data.newStatus) {
+        // nothing changed server-side: just resync the displayed status
+        updateUser({ ...currentUser, likeStatus: data.newStatus });
+        return;
+      }
       if (data.success) {
         // The target user is notified by the API route
         socket?.emit("get-chat-users");

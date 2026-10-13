@@ -24,8 +24,9 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 **Unlike d'un user bloqué = déblocage** : `unlikeUser` supprime toutes les lignes `matches` entre les deux users, `block` compris.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts) (l. 136)
   - Corrigé : le `DELETE` ne cible plus que mon `like` ou notre `match` ; si rien n'est supprimé (block, aucun like), pas de notif « unlike », pas de perte de fame, et la route renvoie le statut courant avec `success: false`.
-- [ ] 🟢 **Like possible sans photo de profil** côté API (vérifié seulement en UI), et like possible vers quelqu'un qui nous a bloqué.
+- [x] 🟢 **Like possible sans photo de profil** côté API (vérifié seulement en UI), et like possible vers quelqu'un qui nous a bloqué.
   - [matcha/src/app/api/match/[userId]/like/route.ts](matcha/src/app/api/match/[userId]/like/route.ts)
+  - Corrigé : 403 sans photo principale (`hasMainPicture`) ou en cas de block dans un sens ou l'autre ; un re-like d'un like/match existant renvoie le statut courant sans rien insérer. Toast d'erreur dans `LikeButton`.
 - [ ] 🟢/🟡 **« Signaler comme fake account » absent.**
 - [ ] 🟢 **Notification « message reçu » jamais créée** en DB (type présent dans l'enum, jamais émis).
 - [ ] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
