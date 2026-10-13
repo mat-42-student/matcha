@@ -85,7 +85,8 @@ export function ProfilePicturesModal({
         await fetchPics();
         onUpdated && onUpdated();
         } else {
-        toast.error("Error during suppression !");
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || "Error during suppression !");
         }
     } catch (err) {
         console.error(err);
@@ -104,7 +105,8 @@ export function ProfilePicturesModal({
         await fetchPics();
         onUpdated && onUpdated();
         } else {
-        toast.error("Error during update !");
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || "Error during update !");
         }
     } catch (err) {
         console.error(err);

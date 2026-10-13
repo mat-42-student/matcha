@@ -6,7 +6,7 @@ import { setMainPicture } from "@/lib/db/pictures";
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -21,12 +21,14 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const { id } = params;
-    if (!id || isNaN(Number(id))) {
+    const { id } = await context.params;
+    if (!/^\d{1,9}$/.test(id)) {
       return NextResponse.json({ error: "Invalid picture ID" }, { status: 400 });
     }
 
-    await setMainPicture(user.id, id);
+    if (!(await setMainPicture(user.id, id))) {
+      return NextResponse.json({ error: "Picture not found" }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

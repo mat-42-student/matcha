@@ -1,6 +1,6 @@
 // matcha/src/lib/db/pictures.ts
 
-import { executeQuery } from "./db-utils";
+import { executeQuery, pool } from "./db-utils";
 import { QueryResultRow } from "pg";
 
 /**
@@ -62,16 +62,44 @@ export async function getAllPicturesButMain(userId: string) {
  * This will unset the current main picture and set the provided one as main.
  * @param userId - The ID of the user.
  * @param pictureId - The ID of the picture to set as main.
+ * @returns false if the picture does not belong to the user (nothing changed).
  */
-export async function setMainPicture(userId: string, pictureId: string): Promise<void> {
-  // Unset all current main pictures
-  await executeQuery(`UPDATE pictures SET is_main = false WHERE user_id = $1`, [userId]);
+export async function setMainPicture(userId: string, pictureId: string): Promise<boolean> {
+  const client = await pool.connect();
 
-  // Set the new main picture
-  await executeQuery(`UPDATE pictures SET is_main = true WHERE id = $1 AND user_id = $2`, [
-    pictureId,
-    userId,
-  ]);
+  try {
+    await client.query("BEGIN");
+
+    const owned = await executeQuery(
+      `SELECT 1 FROM pictures WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+      [pictureId, userId],
+      client
+    );
+    if ((owned.rowCount ?? 0) === 0) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+
+    // two statements: the unique index on is_main forbids two main pictures at once
+    await executeQuery(
+      `UPDATE pictures SET is_main = false WHERE user_id = $1 AND is_main`,
+      [userId],
+      client
+    );
+    await executeQuery(
+      `UPDATE pictures SET is_main = true WHERE id = $1 AND user_id = $2`,
+      [pictureId, userId],
+      client
+    );
+
+    await client.query("COMMIT");
+    return true;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 
@@ -80,30 +108,41 @@ export async function setMainPicture(userId: string, pictureId: string): Promise
  * If the deleted picture was the main one, automatically sets another as main if available.
  * @param userId - The ID of the user
  * @param pictureId - The ID of the picture to delete
+ * @returns false if the picture does not belong to the user (nothing deleted).
  */
-export async function deleteUserPicture(userId: string, pictureId: string): Promise<void> {
-  // Check if picture exists and whether it's the main one
-  const checkResult = await executeQuery(
-    `SELECT is_main FROM pictures WHERE id = $1 AND user_id = $2`,
-    [pictureId, userId]
-  );
+export async function deleteUserPicture(userId: string, pictureId: string): Promise<boolean> {
+  const client = await pool.connect();
 
-  const isMain = checkResult.rows[0]?.is_main;
+  try {
+    await client.query("BEGIN");
 
-  // Delete the picture
-  await executeQuery(`DELETE FROM pictures WHERE id = $1 AND user_id = $2`, [pictureId, userId]);
-
-  // If it was the main picture, set another one as main
-  if (isMain) {
-    const otherPictures = await executeQuery(
-      `SELECT id FROM pictures WHERE user_id = $1 LIMIT 1`,
-      [userId]
+    const deleted = await executeQuery<{ is_main: boolean }>(
+      `DELETE FROM pictures WHERE id = $1 AND user_id = $2 RETURNING is_main`,
+      [pictureId, userId],
+      client
     );
-
-    const newMainId = otherPictures.rows[0]?.id;
-    if (newMainId) {
-      await executeQuery(`UPDATE pictures SET is_main = TRUE WHERE id = $1`, [newMainId]);
+    if ((deleted.rowCount ?? 0) === 0) {
+      await client.query("ROLLBACK");
+      return false;
     }
+
+    // If it was the main picture, promote the oldest remaining one
+    if (deleted.rows[0].is_main) {
+      await executeQuery(
+        `UPDATE pictures SET is_main = true
+         WHERE id = (SELECT id FROM pictures WHERE user_id = $1 ORDER BY id LIMIT 1)`,
+        [userId],
+        client
+      );
+    }
+
+    await client.query("COMMIT");
+    return true;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
 }
 

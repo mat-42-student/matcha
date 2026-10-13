@@ -32,7 +32,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
   - [ ] 🟡 Corriger ensuite les erreurs/warnings remontés (31 `any` / `eslint-disable` / `@ts-*` dans le code).
 - [ ] 🟢 **Erreurs TypeScript** (`npx tsc --noEmit`) :
-  - `params` synchrone dans les routes photos (voir §2)
+  - ~~`params` synchrone dans les routes photos (voir §2)~~ corrigé
   - [matcha/src/components/card-user/ChatCardUser.tsx](matcha/src/components/card-user/ChatCardUser.tsx) (l. 10) : `Picture` sans `id`
   - [matcha/src/lib/db/chat.ts](matcha/src/lib/db/chat.ts) (l. 41) : `getUnreadCountByUsers` non typé
 - [x] 🟢 À vérifier : la recherche ne filtre le fame que par un minimum (le sujet demande une **tranche**).
@@ -45,8 +45,9 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 
 ## 2. Bugs
 
-- [ ] 🟢 **Suppression / changement de photo principale cassés** : `params` lu de façon synchrone (supprimé en Next 16).
+- [x] 🟢 **Suppression / changement de photo principale cassés** : `params` lu de façon synchrone (supprimé en Next 16).
   - [matcha/src/app/api/me/pictures/[id]/route.ts](matcha/src/app/api/me/pictures/[id]/route.ts), [matcha/src/app/api/me/pictures/[id]/main/route.ts](matcha/src/app/api/me/pictures/[id]/main/route.ts)
+  - Corrigé : `await context.params` ; `setMainPicture` / `deleteUserPicture` en transaction, 404 si la photo n'appartient pas à l'utilisateur (avant, un id étranger retirait la photo principale) ; promotion de la plus ancienne photo restante à la suppression de la principale.
 - [ ] 🟢 **Une erreur DB dans un handler socket peut crasher le serveur** : aucun try/catch dans les handlers ni dans `authUser` (promesse rejetée non gérée).
 - [ ] 🟢 **`likeUser` incohérent** : doublons possibles (pas d'index unique sur la paire), re-like après match insère une nouvelle ligne, nettoyage des notifs hors transaction (`deleteNotificationsBetweenUsers` n'utilise pas le `client`), `addFame` après le COMMIT.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts), [matcha/src/lib/db/notifications.ts](matcha/src/lib/db/notifications.ts)
