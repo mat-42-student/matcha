@@ -10,6 +10,7 @@ export default function VerifyError() {
   if (reason === "missing") message = "Invalid verification link (missing token).";
   if (reason === "invalid") message = "This verification link is invalid.";
   if (reason === "expired") message = "This link has expired. Request a new verification email.";
+  if (reason === "taken") message = "This email address is already in use.";
   if (reason === "server") message = "Internal server error. Please try again later.";
 
   return (

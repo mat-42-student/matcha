@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
 
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
     const updates: Record<string, any> = {};
     for (const [field, value] of Object.entries(body)) {
       const { valid, error } = validateProfileField(field, value);

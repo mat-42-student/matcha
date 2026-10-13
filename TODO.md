@@ -17,9 +17,10 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟡 **Pas de username** : inscription et login se font par email, le sujet impose un username (schéma, signup, login, validateurs, seed, UI).
 - [ ] 🟢 **`is_verified` jamais vérifié au login** → un compte non vérifié peut se connecter.
   - [matcha/src/lib/db/users.ts](matcha/src/lib/db/users.ts) (`loginUser`)
-- [ ] 🟢 **Changement d'email sans confirmation** via `POST /api/profile` (`email` est dans les champs autorisés de `updateUser`), sans contrôle d'unicité (→ 500). Retirer `email` des champs modifiables directement. `birthdate`, `latitude`, `longitude`, `city`, `country` passent aussi sans validation (le `default` du validateur accepte tout).
+- [x] 🟢 **Changement d'email sans confirmation** via `POST /api/profile` (`email` est dans les champs autorisés de `updateUser`), sans contrôle d'unicité (→ 500). Retirer `email` des champs modifiables directement. `birthdate`, `latitude`, `longitude`, `city`, `country` passent aussi sans validation (le `default` du validateur accepte tout).
   - [matcha/src/app/api/profile/route.ts](matcha/src/app/api/profile/route.ts), [matcha/src/lib/validators/serverValidator.ts](matcha/src/lib/validators/serverValidator.ts)
   - `change-request` ne valide pas non plus le format ni l'unicité de `new_email`.
+  - Corrigé : `email` retiré de `updateUser` (→ `updateUserEmail`, appelé uniquement par `change-confirm`), champs inconnus refusés, `birthdate` / localisation validés comme les CHECK SQL ; `change-request` valide format + unicité et invalide les anciens tokens `change` ; unicité revérifiée à la confirmation.
 - [ ] 🟢 **Unlike d'un user bloqué = déblocage** : `unlikeUser` supprime toutes les lignes `matches` entre les deux users, `block` compris.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts) (l. 136)
 - [ ] 🟢 **Like possible sans photo de profil** côté API (vérifié seulement en UI), et like possible vers quelqu'un qui nous a bloqué.

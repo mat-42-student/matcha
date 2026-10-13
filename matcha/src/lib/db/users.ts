@@ -56,7 +56,7 @@ export async function updateUser(
   updates: Partial<User>
 ): Promise<User | null> {
   const allowedFields: (keyof User)[] = [
-    "first_name","last_name","email","city","country",
+    "first_name","last_name","city","country",
     "gender","sex_pref","bio","birthdate","latitude","longitude"
   ];
 
@@ -70,6 +70,13 @@ export async function updateUser(
   const result = await executeQuery<User>(query, [...values, id]);
 
   return result.rows[0] ?? null;
+}
+
+/**
+ * Update user email (only after confirmation through the email change flow)
+ */
+export async function updateUserEmail(id: string, email: string): Promise<void> {
+  await executeQuery('UPDATE users SET email = $1 WHERE id = $2', [email, id]);
 }
 
 /**

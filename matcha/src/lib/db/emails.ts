@@ -58,3 +58,12 @@ export async function deleteEmailTokensForUser(userId: string): Promise<boolean>
   const result = await executeQuery(query, [userId]);
   return (result.rowCount ?? 0) > 0;
 }
+
+export async function deleteEmailTokensForUserByType(
+  userId: string,
+  type: EmailTokenType
+): Promise<boolean> {
+  const query = `DELETE FROM email_tokens WHERE user_id = $1 AND type = $2`;
+  const result = await executeQuery(query, [userId, type]);
+  return (result.rowCount ?? 0) > 0;
+}

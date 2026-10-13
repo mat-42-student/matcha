@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getEmailTokenByToken, deleteEmailTokenByToken } from "@/lib/db/emails";
-import { updateUser } from "@/lib/db/users";
+import { isEmailUsed, updateUserEmail } from "@/lib/db/users";
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,7 +32,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    await updateUser(record.user_id, { email: record.new_email });
+    // The address may have been taken since the request was made
+    if (await isEmailUsed(record.new_email)) {
+      await deleteEmailTokenByToken(token);
+      return NextResponse.redirect(
+        new URL("/verify-email/error?reason=taken", process.env.NEXT_PUBLIC_BASE_URL)
+      );
+    }
+
+    await updateUserEmail(record.user_id, record.new_email);
     await deleteEmailTokenByToken(token);
 
     return NextResponse.redirect(

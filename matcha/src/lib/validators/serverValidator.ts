@@ -3,8 +3,8 @@
 
 import { isCommonPassword } from "./commonPasswords";
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+export function isValidEmail(email: string): boolean {
+  return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function isStrongPassword(password: string): boolean {
@@ -94,11 +94,33 @@ export function validateProfileField(
       return { valid: true };
     }
 
-    case "email": {
-      const str = String(value).trim();
-      const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-      if (!emailRegex.test(str))
-        return { valid: false, error: "Invalid email address" };
+    case "birthdate": {
+      if (typeof value !== "string")
+        return { valid: false, error: "Invalid birthdate format" };
+      const age = calculateAgeISO(value);
+      if (age === null) return { valid: false, error: "Invalid birthdate format" };
+      if (age < 18) return { valid: false, error: "You must be at least 18 years old" };
+      if (age > 100) return { valid: false, error: "Age seems invalid" };
+      return { valid: true };
+    }
+
+    case "latitude":
+    case "longitude": {
+      const max = field === "latitude" ? 90 : 180;
+      if (typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > max)
+        return { valid: false, error: `Invalid ${field}` };
+      return { valid: true };
+    }
+
+    case "city":
+    case "country": {
+      const max = field === "city" ? 50 : 30;
+      if (typeof value !== "string")
+        return { valid: false, error: `Invalid ${field}` };
+      if (value.length > max)
+        return { valid: false, error: `${field} is too long (max ${max} characters)` };
+      if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(value))
+        return { valid: false, error: "Contains invalid characters" };
       return { valid: true };
     }
 
@@ -122,7 +144,8 @@ export function validateProfileField(
     }
 
     default:
-      return { valid: true }; // unknown fields are considered valid
+      // email goes through /api/e-mail/change-request
+      return { valid: false, error: `Field '${field}' cannot be updated` };
   }
 }
 

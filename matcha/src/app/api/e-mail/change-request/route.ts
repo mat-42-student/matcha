@@ -2,7 +2,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
-import { createEmailToken } from "@/lib/db/emails";
+import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
+import { isEmailUsed } from "@/lib/db/users";
+import { isValidEmail } from "@/lib/validators/serverValidator";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
@@ -18,16 +20,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
 
-    const { new_email } = await req.json();
-    if (!new_email) {
+    const body = await req.json().catch(() => null);
+    if (typeof body?.new_email !== "string" || !body.new_email.trim()) {
       return NextResponse.json({ error: "Missing new_email" }, { status: 400 });
+    }
+    const new_email = body.new_email.trim();
+
+    if (!isValidEmail(new_email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+    if (new_email === user.email) {
+      return NextResponse.json({ error: "This is already your email address" }, { status: 400 });
+    }
+    if (await isEmailUsed(new_email)) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
     // Generate token
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
 
-    // Store change request in email_tokens table
+    // Only the latest change request stays valid
+    await deleteEmailTokensForUserByType(user.id, "change");
     await createEmailToken(user.id, "change", token, expiresAt, new_email);
 
     // Send confirmation email

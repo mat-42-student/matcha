@@ -86,7 +86,9 @@ export default function ProfileForm({
       return true;
     } catch (err) {
       console.error(err);
-      toast.error(`Failed to update ${field}`);
+      toast.error(
+        field === "email" && err instanceof Error ? err.message : `Failed to update ${field}`
+      );
       setEditingField(field);
       return false;
     }
