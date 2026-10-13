@@ -25,6 +25,7 @@ export async function analyzeProfileCompletion(user: any): Promise<Completion> {
   if (!user.sex_pref) missingRequired.push("Orientation not specified");
   if (!user.latitude || !user.longitude)
     missingRequired.push("Location missing");
+  // required criteria are mirrored in compatible_users_from (init-db/01-matcha.sql)
   if (!Array.isArray(pictures) || pictureCount < 1)
     missingRequired.push("You need at least 1 picture");
   if (!Array.isArray(user.interests) || user.interests.length < 3)

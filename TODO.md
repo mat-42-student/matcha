@@ -37,7 +37,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 À vérifier : la recherche ne filtre le fame que par un minimum (le sujet demande une **tranche**).
 - [ ] 🟢 Orientation non renseignée (`sex_pref` / `gender` NULL) exclue des suggestions au lieu d'être traitée comme bisexuelle (`COALESCE` dans `compatible_users_from`).
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 220)
-- [ ] 🟢 **Empêcher l'affichage des comptes incomplets** dans les suggestions et la recherche. Ex. `b@mail.com` sans photo : la carte s'affiche mais la modale ne s'ouvre pas (`open && mainPic` dans [CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) l. 86), alors que la visite est enregistrée et notifiée.
+- [x] 🟢 **Empêcher l'affichage des comptes incomplets** dans les suggestions et la recherche. Ex. `b@mail.com` sans photo : la carte s'affiche mais la modale ne s'ouvre pas (`open && mainPic` dans [CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) l. 86), alors que la visite est enregistrée et notifiée.
   - Filtrer en SQL dans `compatible_users_from` (utilisée par [matcha/src/lib/db/search.ts](matcha/src/lib/db/search.ts)) : au minimum une photo principale (`is_main`) et une localisation.
   - Les critères « requis » existent déjà côté JS dans [matcha/src/lib/profileCompletion.ts](matcha/src/lib/profileCompletion.ts) (genre, orientation, localisation, ≥ 1 photo, ≥ 3 tags) : décider lesquels appliquer et les garder alignés. Attention : exiger `sex_pref` contredit le sujet (orientation non renseignée = bisexuel, cf. item ci-dessus).
 

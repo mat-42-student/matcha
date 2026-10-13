@@ -216,6 +216,14 @@ AS $$
   JOIN users me ON me.id = ref_user_id
   WHERE
     u.id <> me.id
+    -- only complete profiles (keep in sync with lib/profileCompletion.ts)
+    AND u.gender IS NOT NULL
+    AND u.latitude IS NOT NULL
+    AND u.longitude IS NOT NULL
+    AND json_array_length(u.interests) >= 3
+    AND EXISTS (
+      SELECT 1 FROM pictures p WHERE p.user_id = u.id AND p.is_main
+    )
     AND (
       me.sex_pref = 'B' OR me.sex_pref = u.gender
     )
