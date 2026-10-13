@@ -22,11 +22,6 @@ export interface RelationChangedPayload {
   likeStatus: LikeStatus;
 }
 
-export interface RelationChangedSocketEvent {
-  toUserId: string;
-  likeStatus: LikeStatus;
-}
-
 export type PublicUser = {
   id: string;
   first_name: string;
@@ -76,16 +71,32 @@ export function notificationTypeToTab(notificationType: string): LikeTabsTypes {
   }
 }
 
+// Identity exposed to other users through sockets (never the full profile: it contains the email)
+export type SocketUser = Pick<PublicUser, "id" | "first_name">;
+
 export interface Payload {
-  from: PublicUser;
-  to: PublicUser;
+  from: SocketUser;
+  to: SocketUser;
   msg: string;
 }
 
-export interface UnreadMessages {
+export interface NotifPayload {
+  from: SocketUser;
+  msg: string;
+}
+
+export const MAX_MESSAGE_LENGTH = 1000;
+
+// Sent by the client: the sender is always the socket's session user
+export interface ChatMsgEvent {
+  to: string;
+  msg: string;
+}
+
+export type UnreadMessages = {
   sender_id: string;
   unread_count: number;
-}
+};
 
 export const COLOR = {
   match: "bg-gradient-to-tr from-pink-200 via-yellow-100 to-teal-200",

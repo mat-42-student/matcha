@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
-import { PublicUser, Payload } from "@/lib/types";
+import { PublicUser, ChatMsgEvent, MAX_MESSAGE_LENGTH } from "@/lib/types";
 import ChatCardUser from "../card-user/ChatCardUser";
 import { useMe } from "@/context/UserContext";
 
@@ -40,9 +40,8 @@ export default function ChatWindow({
 
     isSendingRef.current = true;
     setIsSending(true);
-    const payload: Payload = {
-      from: me,
-      to: selectedUser,
+    const payload: ChatMsgEvent = {
+      to: selectedUser.id,
       msg: trimmedMessage,
     };
 
@@ -150,6 +149,7 @@ export default function ChatWindow({
           onKeyDown={(e) => (e.key === "Enter" && !e.shiftKey) && send(e)}
           className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none resize-none"
           autoFocus
+          maxLength={MAX_MESSAGE_LENGTH}
           placeholder="Your message"
           disabled={isSending}
         >

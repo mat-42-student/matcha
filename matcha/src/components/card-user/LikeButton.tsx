@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import { useSocket } from "@/context/SocketContext";
-import { useMe } from "@/context/UserContext";
 import { PublicUser } from "@/lib/types";
 import { useUsersStore } from "@/context/UsersStore";
 
@@ -21,7 +20,6 @@ export default function LikeButton({user}:{user: PublicUser}) {
   const [disabled, setDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { socket, refreshNotifications, clearUnreadForUser } =  useSocket();
-  const {me} = useMe();
   const currentUser = users.find((u) => u.id === user.id) ?? user;
 
   async function handleClick(e: React.MouseEvent) {
@@ -47,28 +45,8 @@ export default function LikeButton({user}:{user: PublicUser}) {
       }
       const data = await res.json();
       if (data.success) {
-        const notifMsg = method === "POST"
-          ? (data.newStatus === "match" ? "match" : "like")
-          : "unlike";
-        const recipientLikeStatus = method === "POST"
-          ? (data.newStatus === "match" ? "match" : "isLiked")
-          : "none";
-
-        socket?.emit("notif", {
-          from: me,
-          to: user,
-          msg: notifMsg
-          }
-        );
-        socket?.emit("relation-changed", {
-          toUserId: currentUser.id,
-          likeStatus: recipientLikeStatus,
-        });
-        socket?.emit("get-chat-users", {
-          from: me,
-          to: me,
-          msg: "",
-        });
+        // The target user is notified by the API route
+        socket?.emit("get-chat-users");
         if (method === "DELETE") {
           clearUnreadForUser(currentUser.id);
         }

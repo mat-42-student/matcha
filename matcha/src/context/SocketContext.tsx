@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
-import { Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
+import { NotifPayload, Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
 
 interface Notification {
   id: number;
@@ -94,7 +94,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const handleNotif = useCallback(async (payload: Payload) => {
+  const handleNotif = useCallback(async (payload: NotifPayload) => {
     switch (payload.msg) {
       case "like":
         toast(payload.from.first_name + " liked you !");
@@ -160,11 +160,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       relationChanged.likeStatus === "none" ||
       relationChanged.likeStatus === "block"
     ) {
-      socket.emit("get-chat-users", {
-        from: me,
-        to: me,
-        msg: "",
-      });
+      socket.emit("get-chat-users");
       fetchNotifications();
     }
   }, [socket, me, relationChanged, fetchNotifications]);

@@ -1,4 +1,4 @@
-import { PublicUser, UnreadMessages } from '@/lib/types';
+import { PublicUser, SocketUser, UnreadMessages } from '@/lib/types';
 import { executeQuery } from './db-utils';
 
 export interface ChatMessage {
@@ -23,6 +23,30 @@ export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]>
   return result.rows;
 }
 
+/**
+ * Returns the other user if both are matched and neither blocked the other, null otherwise
+ */
+export async function getChatPartner(me: string, other: string): Promise<SocketUser | null> {
+  const query = `
+    SELECT u.id, u.first_name
+    FROM users u
+    WHERE u.id = $2
+      AND u.id != $1
+      AND EXISTS (
+        SELECT 1 FROM matches
+        WHERE ((user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1))
+          AND status = 'match'
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM matches
+        WHERE ((user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1))
+          AND status = 'block'
+      );
+  `;
+  const result = await executeQuery<SocketUser>(query, [me, other]);
+  return result.rows[0] ?? null;
+}
+
 export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessages[]> {
   const query = `
     SELECT c.sender_id, COUNT(*)::int AS unread_count
@@ -37,7 +61,7 @@ export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessa
       AND m.status = 'match'
     GROUP BY c.sender_id;
   `;
-  const result = await executeQuery(query, [userId]);
+  const result = await executeQuery<UnreadMessages>(query, [userId]);
   return result.rows;
 }
 

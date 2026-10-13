@@ -17,11 +17,7 @@ export default function ChatSidebar({
 
   useEffect(() => {
     if (socket) {
-      socket.emit("get-chat-users", {
-        from: me,
-        to: me,
-        msg: ""
-      });
+      socket.emit("get-chat-users");
     }
   }, [socket, me]);
 

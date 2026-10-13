@@ -1,23 +1,33 @@
-import { Payload, UnreadMessages } from "@/lib/types";
+import { ChatMsgEvent, MAX_MESSAGE_LENGTH, Payload, SocketUser, UnreadMessages } from "@/lib/types";
 import { isUserActivelyChattingWith, send } from "./socket";
-import { markConversationAsRead, storeMessage, getOnlineMatchedUsers, getUnreadCountByUsers } from "../db/chat";
+import { markConversationAsRead, storeMessage, getOnlineMatchedUsers, getUnreadCountByUsers, getChatPartner } from "../db/chat";
 
-export async function handleChatMessage(payload: Payload) {
-  send(payload.to.id, "chat-msg", payload);
-  send(payload.from.id, "chat-msg", payload);
-  await storeMessage(payload.from.id, payload.to.id, payload.msg);
+export async function handleChatMessage(sender: SocketUser, event: ChatMsgEvent) {
+  if (typeof event?.to !== "string" || typeof event?.msg !== "string") return;
 
-  if (isUserActivelyChattingWith(payload.to.id, payload.from.id)) {
-    await markConversationAsRead(payload.from.id, payload.to.id);
+  const msg = event.msg.trim();
+  if (!msg || msg.length > MAX_MESSAGE_LENGTH) return;
+
+  const recipient = await getChatPartner(sender.id, event.to);
+  if (!recipient) return;
+
+  await storeMessage(sender.id, recipient.id, msg);
+
+  const payload: Payload = { from: sender, to: recipient, msg };
+  send(recipient.id, "chat-msg", payload);
+  send(sender.id, "chat-msg", payload);
+
+  if (isUserActivelyChattingWith(recipient.id, sender.id)) {
+    await markConversationAsRead(sender.id, recipient.id);
   }
 
-  await sendUnreadMessagesCount(payload.to.id);
+  await sendUnreadMessagesCount(recipient.id);
 }
 
-export async function handleUsersInfo(payload: Payload) {
-  const users = await getOnlineMatchedUsers(payload.from.id);
-  send(payload.from.id, "chat-users", users);
-  await sendUnreadMessagesCount(payload.from.id);
+export async function handleUsersInfo(userId: string) {
+  const users = await getOnlineMatchedUsers(userId);
+  send(userId, "chat-users", users);
+  await sendUnreadMessagesCount(userId);
 }
 
 export async function sendUnreadMessagesCount(userId: string ) {

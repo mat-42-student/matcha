@@ -5,9 +5,8 @@ import type { Server as HttpServer } from "http";
 // @ts-expect-error
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
-import { Payload, PublicUser, RelationChangedSocketEvent } from "@/lib/types";
+import { ChatMsgEvent, NotifPayload, PublicUser, SocketUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
-import { handleNotif, handleRelationChanged } from "./notifications";
 import { updateLastLogin } from "../db/users";
 import { markConversationAsRead } from "../db/chat";
 
@@ -32,24 +31,29 @@ function broadcastOnlineUsers() {
 }
 
 
-const system: PublicUser = {
+const system: SocketUser = {
   id: "System",
   first_name: "System",
-  last_name: "System",
-  email: "System",
-  gender: "System",
-  city: "System",
-  latitude: 0,
-  longitude: 0,
-  distance: 0,
-  bio: "System",
-  age: 0,
-  sex_pref: "System",
-  interests: ["System"],
-  fame: 0,
-  score: 0,
-  likeStatus: "none",
-  last_login: new Date(),
+}
+
+/***
+ * Strip a user down to what other users may see through sockets
+ */
+export function toSocketUser(user: Pick<PublicUser, "id" | "first_name">): SocketUser {
+  return { id: user.id, first_name: user.first_name };
+}
+
+/***
+ * Register a socket event handler, catching errors so a bad payload or a DB error cannot crash the server
+ */
+function on<T>(socket: Socket, event: string, handler: (payload: T) => unknown) {
+  socket.on(event, async (payload: T) => {
+    try {
+      await handler(payload);
+    } catch (err) {
+      console.error(`Socket handler "${event}" failed:`, err);
+    }
+  });
 }
 
 /***
@@ -97,13 +101,17 @@ export async function initSocket(httpServer: HttpServer) {
     const sessionId = cookies["session_id"];
 
     if (!sessionId) return next(new Error("unauthorized"));
-    const user = await getSessionUser(sessionId);
-    if (!user) return next(new Error("unauthorized"));
+    try {
+      const user = await getSessionUser(sessionId);
+      if (!user) return next(new Error("unauthorized"));
 
-
-    //TODO user unsafe containing password maybe
-    socket.data.user = user;
-    next();
+      // Comes from the my_profile view (no password, but contains the email): never forward it as-is to other users
+      socket.data.user = user;
+      next();
+    } catch (err) {
+      console.error("Socket auth failed:", err);
+      next(new Error("unauthorized"));
+    }
   }
 
   function handleDisconnect(socket: Socket) {
@@ -130,27 +138,34 @@ export async function initSocket(httpServer: HttpServer) {
     addSocket(socket);
     broadcastOnlineUsers();
 
-    const welcome: Payload = {
+    const welcome: NotifPayload = {
       msg: `Hi ${socket.data.user.first_name}`,
       from: system,
-      to: socket.data.user
     }
 
     socket.emit("notif", welcome)
-    await sendUnreadMessagesCount(socket.data.user.id);
+
+    // The acting user is always the session user (socket.data.user), never an id sent by the client
+    const userId: string = socket.data.user.id;
 
     socket.on("disconnect", () => handleDisconnect(socket));
-    socket.on("chat-msg", (payload: Payload) => handleChatMessage(payload));
-    socket.on("chat-mark-read", async (payload: { senderId: string }) => {
-      await markConversationAsRead(payload.senderId, socket.data.user.id);
-      await sendUnreadMessagesCount(socket.data.user.id);
+    on<ChatMsgEvent>(socket, "chat-msg", (payload) => handleChatMessage(toSocketUser(socket.data.user), payload));
+    on<{ senderId: string }>(socket, "chat-mark-read", async (payload) => {
+      if (typeof payload?.senderId !== "string") return;
+      await markConversationAsRead(payload.senderId, userId);
+      await sendUnreadMessagesCount(userId);
     });
-    socket.on("chat-active-user", (payload: { userId: string | null }) => {
-      socket.data.activeChatUserId = payload.userId;
+    on<{ userId: string | null }>(socket, "chat-active-user", (payload) => {
+      const activeId = payload?.userId;
+      socket.data.activeChatUserId = typeof activeId === "string" ? activeId : null;
     });
-    socket.on("get-chat-users", (payload: Payload) => handleUsersInfo(payload));
-    socket.on("notif", (payload: Payload) => handleNotif(socket.data.user, payload));
-    socket.on("relation-changed", (payload: RelationChangedSocketEvent) => handleRelationChanged(socket.data.user.id, payload));
+    on(socket, "get-chat-users", () => handleUsersInfo(userId));
+
+    try {
+      await sendUnreadMessagesCount(userId);
+    } catch (err) {
+      console.error("Failed to send unread messages count:", err);
+    }
   }
 
   io.use(authUser); // middleware

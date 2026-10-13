@@ -3,6 +3,21 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
 import { getMatchStatus, likeUser, unlikeUser } from "@/lib/db/likes";
 import { sendUnreadMessagesCount } from "@/lib/socket/chat";
+import { send, toSocketUser } from "@/lib/socket/socket";
+import { LikeStatus, NotifPayload, RelationChangedPayload } from "@/lib/types";
+
+/**
+ * Tell the target user, in real time, that the session user changed their relation
+ */
+function notifyRelationChange(
+  me: { id: string; first_name: string },
+  targetId: string,
+  msg: "like" | "match" | "unlike",
+  targetLikeStatus: LikeStatus
+) {
+  send<NotifPayload>(targetId, "notif", { from: toSocketUser(me), msg });
+  send<RelationChangedPayload>(targetId, "relation-changed", { userId: me.id, likeStatus: targetLikeStatus });
+}
 
 /**
  * GET /api/match/[userId]/like
@@ -56,6 +71,8 @@ export async function POST(
     if (me.id === userId) return new NextResponse(null, { status: 204 });
 
     const res = await likeUser(me.id, userId);
+    if (res === "match") notifyRelationChange(me, userId, "match", "match");
+    else if (res === "like") notifyRelationChange(me, userId, "like", "isLiked");
 
     return NextResponse.json({ success: true, newStatus: res });
   } catch (err) {
@@ -87,6 +104,7 @@ export async function DELETE(
     }
 
     await unlikeUser(me.id, userId);
+    notifyRelationChange(me, userId, "unlike", "none");
     await Promise.all([
       sendUnreadMessagesCount(me.id),
       sendUnreadMessagesCount(userId),
