@@ -9,8 +9,9 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Le `TODO` l. 104 de `socket.ts` : `socket.data.user` vient de la vue `my_profile` (pas de mot de passe), mais contient l'email → ne pas le renvoyer tel quel aux autres clients.
 - [x] 🟢 **Upload d'images non validé** : aucun contrôle de contenu ni de taille, type MIME fourni par le client. Vérifier les magic bytes (JPEG/PNG/WebP), taille max, ignorer `file.type`.
   - [matcha/src/app/api/me/pictures/route.ts](matcha/src/app/api/me/pictures/route.ts) (l. 60-61)
-- [ ] 🟢 **Mots de passe en clair en DB** : le seed insère `faker.internet.password()` sans hash.
-  - [matcha/src/lib/seed-users.ts](matcha/src/lib/seed-users.ts) (l. 478)
+- [x] 🟢 **Mots de passe en clair en DB** : le seed insère `faker.internet.password()` sans hash.
+  - [matcha/src/lib/seed-users.ts](matcha/src/lib/seed-users.ts) (l. 55)
+  - Corrigé : mot de passe commun `SEED_PASSWORD` (`.env`), hashé une fois avec bcrypt et réutilisé pour tous les profils seedés → ils sont désormais connectables (cf. README).
 - [ ] 🟢 **Seed : 20 profils au lieu de ≥ 500** (`MIN_USERS = 20`).
   - [ ] 🟡 Rendre le seed robuste sans réseau / sans clé Pixabay (actuellement une erreur de téléchargement interrompt la boucle). `userCount` est une string (COUNT) comparée à un nombre ; les ids d'intérêts sont supposés contigus `1..N`.
 - [ ] 🟡 **Pas de username** : inscription et login se font par email, le sujet impose un username (schéma, signup, login, validateurs, seed, UI).

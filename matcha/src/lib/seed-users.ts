@@ -2,11 +2,14 @@
 
 import { faker } from "@faker-js/faker";
 import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 import fs from "fs";
 import path from "path";
 
 const MIN_USERS = 20;
 const API_KEY = process.env.PIX_KEY;
+// Mot de passe commun à tous les profils seedés (hashé une seule fois dans seed())
+const SEED_PASSWORD = process.env.SEED_PASSWORD || "Matcha-Seed-42";
 const filePath = path.join(process.cwd(), "src/data/fr-cities.json");
 const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
@@ -34,7 +37,7 @@ function getRandomName(sex: string) {
   return (faker.person.firstName(gender));
 }
 
-async function insertUser(pool: Pool) {
+async function insertUser(pool: Pool, passwordHash: string) {
   const gender = Math.random() < 0.5 ? 'M' : 'F';
   const sexPref = 'B'
 
@@ -52,7 +55,7 @@ async function insertUser(pool: Pool) {
       firstName,
       lastName,
       email,
-      faker.internet.password(),
+      passwordHash,
       gender,
       sexPref,
       faker.person.bio(),
@@ -136,8 +139,9 @@ export async function seed() {
     const femalePics = await getPixabayPictureUrls('F', remainingUsers);
     console.log("... Done");
     console.log(`Seeding ${remainingUsers} users...`);
+    const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
     for (let i = userCount; i < MIN_USERS; i++) {
-      const [ id, gender ] = await insertUser(pool);
+      const [ id, gender ] = await insertUser(pool, passwordHash);
       await insertUserInterests(pool, id);
       const urlPic = gender === 'M' ? malePics.pop() : femalePics.pop();
       await insertUserPic(pool, id, urlPic as string);
