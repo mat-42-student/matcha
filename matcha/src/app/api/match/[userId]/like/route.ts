@@ -103,7 +103,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    await unlikeUser(me.id, userId);
+    if (!(await unlikeUser(me.id, userId))) {
+      const status = await getMatchStatus(me.id, userId);
+      return NextResponse.json({ success: false, newStatus: status });
+    }
     notifyRelationChange(me, userId, "unlike", "none");
     await Promise.all([
       sendUnreadMessagesCount(me.id),

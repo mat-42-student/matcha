@@ -124,36 +124,41 @@ async function getUserName(userId: string): Promise<string> {
 
 
 /**
- * fame issue 
+ * Remove my like (or our match) towards targetId.
+ * Blocks are left untouched. Returns false if there was nothing to unlike.
  */
-export async function unlikeUser(meId: string, targetId: string) {
+export async function unlikeUser(meId: string, targetId: string): Promise<boolean> {
   const client = await pool.connect();
+  let removed = false;
 
   try {
     await client.query("BEGIN");
 
-    // Supprime le match ou le like entre les deux utilisateurs
+    // Supprime mon like ou notre match (jamais un block)
     const query = `
       DELETE FROM matches
-      WHERE (user1_id = $1 AND user2_id = $2)
-         OR (user1_id = $2 AND user2_id = $1)
+      WHERE (user1_id = $1 AND user2_id = $2 AND status = 'like')
+         OR (((user1_id = $1 AND user2_id = $2)
+           OR (user1_id = $2 AND user2_id = $1)) AND status = 'match')
     `;
-    await executeQuery(query, [meId, targetId], client);
+    const res = await executeQuery(query, [meId, targetId], client);
+    removed = (res.rowCount ?? 0) > 0;
 
     // Crée la notification de "unlike"
-    await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
+    if (removed)
+      await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
 
-    // Diminue la "fame" du user qui s’est fait unliker
-    
     await client.query("COMMIT");
-    
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
   }
-  await addFame(-5, targetId);
+
+  // Diminue la "fame" du user qui s’est fait unliker
+  if (removed) await addFame(-5, targetId);
+  return removed;
 }
 
 export async function getUsersWhoLikedMe(meId: string): Promise<PublicUser[]> {

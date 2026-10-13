@@ -21,8 +21,9 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - [matcha/src/app/api/profile/route.ts](matcha/src/app/api/profile/route.ts), [matcha/src/lib/validators/serverValidator.ts](matcha/src/lib/validators/serverValidator.ts)
   - `change-request` ne valide pas non plus le format ni l'unicité de `new_email`.
   - Corrigé : `email` retiré de `updateUser` (→ `updateUserEmail`, appelé uniquement par `change-confirm`), champs inconnus refusés, `birthdate` / localisation validés comme les CHECK SQL ; `change-request` valide format + unicité et invalide les anciens tokens `change` ; unicité revérifiée à la confirmation.
-- [ ] 🟢 **Unlike d'un user bloqué = déblocage** : `unlikeUser` supprime toutes les lignes `matches` entre les deux users, `block` compris.
+- [x] 🟢 **Unlike d'un user bloqué = déblocage** : `unlikeUser` supprime toutes les lignes `matches` entre les deux users, `block` compris.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts) (l. 136)
+  - Corrigé : le `DELETE` ne cible plus que mon `like` ou notre `match` ; si rien n'est supprimé (block, aucun like), pas de notif « unlike », pas de perte de fame, et la route renvoie le statut courant avec `success: false`.
 - [ ] 🟢 **Like possible sans photo de profil** côté API (vérifié seulement en UI), et like possible vers quelqu'un qui nous a bloqué.
   - [matcha/src/app/api/match/[userId]/like/route.ts](matcha/src/app/api/match/[userId]/like/route.ts)
 - [ ] 🟢/🟡 **« Signaler comme fake account » absent.**
@@ -47,7 +48,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 **Une erreur DB dans un handler socket peut crasher le serveur** : aucun try/catch dans les handlers ni dans `authUser` (promesse rejetée non gérée).
 - [ ] 🟢 **`likeUser` incohérent** : doublons possibles (pas d'index unique sur la paire), re-like après match insère une nouvelle ligne, nettoyage des notifs hors transaction (`deleteNotificationsBetweenUsers` n'utilise pas le `client`), `addFame` après le COMMIT.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts), [matcha/src/lib/db/notifications.ts](matcha/src/lib/db/notifications.ts)
-- [ ] 🟢 `unlikeUser` envoie une notif « unlike » et retire 5 de fame même sans like préalable (le sujet ne demande la notif que pour un user connecté).
+- [ ] 🟢 `unlikeUser` envoie une notif « unlike » même pour un simple like (le sujet ne demande la notif que pour un user connecté). Le cas « sans like préalable » est corrigé.
 - [ ] 🟢 Notifs de visite envoyées même si l'un des deux a bloqué l'autre ([matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts)).
 - [ ] 🟢 `/api/users/location` : aucune validation, pas de try/catch (coordonnée invalide → CHECK SQL → 500).
 - [ ] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
