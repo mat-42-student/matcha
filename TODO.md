@@ -4,7 +4,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 
 ## 1. Bloquants évaluation (sécurité / sujet)
 
-- [ ] 🟢 **Socket : ne plus faire confiance au client.** `chat-msg` utilise `payload.from.id` → usurpation d'identité, message à n'importe qui sans match ni contrôle de blocage. `get-chat-users` permet de lire les matchs d'un autre user ; `notif` / `relation-changed` permettent d'envoyer des notifs arbitraires. Utiliser `socket.data.user`, vérifier match + block, limiter la taille des messages.
+- [x] 🟢 **Socket : ne plus faire confiance au client.** `chat-msg` utilise `payload.from.id` → usurpation d'identité, message à n'importe qui sans match ni contrôle de blocage. `get-chat-users` permet de lire les matchs d'un autre user ; `notif` / `relation-changed` permettent d'envoyer des notifs arbitraires. Utiliser `socket.data.user`, vérifier match + block, limiter la taille des messages.
   - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (l. 143-153), [matcha/src/lib/socket/chat.ts](matcha/src/lib/socket/chat.ts)
   - Le `TODO` l. 104 de `socket.ts` : `socket.data.user` vient de la vue `my_profile` (pas de mot de passe), mais contient l'email → ne pas le renvoyer tel quel aux autres clients.
 - [ ] 🟢 **Upload d'images non validé** : aucun contrôle de contenu ni de taille, type MIME fourni par le client. Vérifier les magic bytes (JPEG/PNG/WebP), taille max, ignorer `file.type`.
@@ -34,6 +34,9 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 À vérifier : la recherche ne filtre le fame que par un minimum (le sujet demande une **tranche**).
 - [ ] 🟢 Orientation non renseignée (`sex_pref` / `gender` NULL) exclue des suggestions au lieu d'être traitée comme bisexuelle (`COALESCE` dans `compatible_users_from`).
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 220)
+- [ ] 🟢 **Empêcher l'affichage des comptes incomplets** dans les suggestions et la recherche. Ex. `b@mail.com` sans photo : la carte s'affiche mais la modale ne s'ouvre pas (`open && mainPic` dans [CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) l. 86), alors que la visite est enregistrée et notifiée.
+  - Filtrer en SQL dans `compatible_users_from` (utilisée par [matcha/src/lib/db/search.ts](matcha/src/lib/db/search.ts)) : au minimum une photo principale (`is_main`) et une localisation.
+  - Les critères « requis » existent déjà côté JS dans [matcha/src/lib/profileCompletion.ts](matcha/src/lib/profileCompletion.ts) (genre, orientation, localisation, ≥ 1 photo, ≥ 3 tags) : décider lesquels appliquer et les garder alignés. Attention : exiger `sex_pref` contredit le sujet (orientation non renseignée = bisexuel, cf. item ci-dessus).
 
 ## 2. Bugs
 
@@ -54,7 +57,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 ## 3. Architecture
 
 - [ ] 🟡/🔴 **Table `matches` fourre-tout** (`like` / `match` / `block` dans un `status`) : on ne sait pas qui a bloqué qui, un block écrase un match, pas de contrainte d'unicité. Passer à `likes(from, to)` + `blocks(blocker, blocked)`, match = like réciproque. Impacte `likes.ts`, `matches.ts`, `chat.ts`, `views.ts`, les vues SQL et `compatible_users_from`.
-- [ ] 🟡 **Notifications temps réel déclenchées par le client** ([LikeButton.tsx](matcha/src/components/card-user/LikeButton.tsx) l. 57-71 émet `notif` / `relation-changed`). Les émettre côté serveur après l'écriture en DB (comme la route `views`).
+- [ ] 🟡 **Notifications temps réel déclenchées par le client** : like / unlike / match désormais émis par la route `like` (les events socket `notif` / `relation-changed` côté client ont été supprimés). Reste : le block n'envoie rien en temps réel, et les notifs « message » (cf. §1).
 - [ ] 🟢 **Bloc d'auth copié-collé dans ~30 routes** (messages FR/EN mélangés) → helper `requireUser()`.
 - [ ] 🟡 **Logique métier dans `db-utils.ts`** (score, Haversine) → la sortir dans un module dédié. `completeUserInfos` fait **une requête par user** (`getMatchStatus`) → 500 requêtes par recherche. Filtre de distance fait en JS après chargement complet alors que `earthdistance` est installé.
 - [ ] 🟡 (optionnel) Images en `bytea` renvoyées en base64 dans du JSON, un fetch par carte : servir en binaire avec `Content-Type` et cache.
