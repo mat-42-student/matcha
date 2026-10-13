@@ -21,7 +21,7 @@ services:
     restart: on-failure
 
   matcha_server:
-    image: node:alpine
+    image: node:26-alpine
     container_name: matcha_server
     working_dir: /app
     volumes:
