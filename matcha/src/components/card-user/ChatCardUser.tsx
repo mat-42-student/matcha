@@ -7,7 +7,7 @@ import { PublicUser, Picture } from "@/lib/types";
 import Image from "next/image";
 
 export default function ChatCardUser({ user }: { user: PublicUser }) {
-  const [mainPic, setMainPic] = useState<Picture>({ mime_type: "", data: "" });
+  const [mainPic, setMainPic] = useState<string | null>(null);
   const { onlineUsers } = useSocket();
 
   const isOnline = onlineUsers.includes(user.id);
@@ -20,7 +20,7 @@ export default function ChatCardUser({ user }: { user: PublicUser }) {
 
         const picJson: Picture = await res.json();
         const imageUrl = `data:${picJson.mime_type};base64,${picJson.data}`;
-        setMainPic({ ...picJson, data: imageUrl });
+        setMainPic(imageUrl);
       } catch (err) {
         console.error("Could not retrieve main picture:", err);
       }
@@ -31,13 +31,13 @@ export default function ChatCardUser({ user }: { user: PublicUser }) {
 
   return (
     <div className="flex justify-between items-center mb-2 max-w-80">
-      {mainPic.data ? (
+      {mainPic ? (
         <Image
           unoptimized
           width={0}
           height={0}
           className="w-25 h-25 rounded-full object-cover shadow-md border-2 border-pink-500"
-          src={mainPic.data}
+          src={mainPic}
           alt="profile picture"
         />
       ) : (

@@ -46,10 +46,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - `no-unused-expressions` (4) : `cond && fn()` dans [ProfileInterests.tsx](matcha/src/components/profile/ProfileInterests.tsx) (l. 63), [ProfilePicturesModal.tsx](matcha/src/components/profile/ProfilePicturesModal.tsx) (l. 69, 86, 106).
   - `no-location-assign-relative-destination` : [Header.tsx](matcha/src/components/header/Header.tsx) (l. 16) → router Next.
   - [socket.ts](matcha/src/lib/socket/socket.ts) : `@ts-expect-error` sans description sur l'import `cookie` (l. 5), deux `eslint-disable no-var` devenus inutiles (l. 16, 18).
-- [ ] 🟢 **Erreurs TypeScript** (`npx tsc --noEmit`) :
-  - ~~`params` synchrone dans les routes photos (voir §2)~~ corrigé
-  - [matcha/src/components/card-user/ChatCardUser.tsx](matcha/src/components/card-user/ChatCardUser.tsx) (l. 10) : `Picture` sans `id`
-  - [matcha/src/lib/db/chat.ts](matcha/src/lib/db/chat.ts) (l. 41) : `getUnreadCountByUsers` non typé
+- [x] 🟢 **Erreurs TypeScript** (`npx tsc --noEmit`) :
+  - Corrigé (`tsc` : 0 erreur) : `params` asynchrone dans les routes photos (voir §2) ; `ChatCardUser` stocke uniquement l'URL de l'image (`string | null`) au lieu d'un `Picture` incomplet ; `getUnreadCountByUsers` déjà typé (`UnreadMessages[]`).
 - [x] 🟢 À vérifier : la recherche ne filtre le fame que par un minimum (le sujet demande une **tranche**).
   - Corrigé : tranche min/max (bornes optionnelles) sur le score brut affiché sur les cartes, validée côté client et serveur (`validateFameRange`).
 - [ ] 🟢 Orientation non renseignée (`sex_pref` / `gender` NULL) exclue des suggestions au lieu d'être traitée comme bisexuelle (`COALESCE` dans `compatible_users_from`).
