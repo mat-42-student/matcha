@@ -171,26 +171,6 @@ export async function getUsersCount(): Promise<number> {
   return parseInt(result.rows[0].total, 10);
 }
 
-export async function updateUserLocationBySession(
-  sessionId: string,
-  latitude: number,
-  longitude: number,
-  city: string,
-  country: string
-): Promise<void> {
-  const query = `
-    UPDATE users
-    SET country = $1, city = $2, latitude = $3, longitude = $4
-    WHERE id = (
-      SELECT user_id 
-      FROM sessions 
-      WHERE id = $5 
-        AND expires_at > now()
-    )
-  `;
-  await executeQuery(query, [country, city, latitude, longitude, sessionId]);
-}
-
 export async function getUserByEmail(email: string): Promise<PublicUser | null> {
 	const result = await executeQuery<PublicUser>(
 		'SELECT * FROM users WHERE email = $1',

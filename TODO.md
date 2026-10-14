@@ -71,7 +71,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : `unlikeUser` renvoie le statut supprimé (`RETURNING status`) ; notif « unlike » + toast seulement pour un unmatch ; pour un simple like, la notif « liked you » est retirée et seul `relation-changed` est envoyé (mise à jour silencieuse de l'UI). Fame −5 dans les deux cas.
 - [x] 🟢 Notifs de visite envoyées même si l'un des deux a bloqué l'autre ([matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts)).
   - Corrigé : `recordProfileView` fait `INSERT … SELECT … WHERE NOT EXISTS (block)` ; en cas de blocage dans un sens ou l'autre, rien n'est enregistré (ni visite, ni fame, ni notif DB, ni event socket).
-- [ ] 🟢 `/api/users/location` : aucune validation, pas de try/catch (coordonnée invalide → CHECK SQL → 500).
+- [x] 🟢 `/api/users/location` : aucune validation, pas de try/catch (coordonnée invalide → CHECK SQL → 500).
+  - Corrigé : route morte (seul appelant `components/geoloc/Geoloc.tsx`, monté nulle part) supprimée avec `updateUserLocationBySession`. La localisation passe par `/api/profile` (`ProfileGeoloc`), déjà validée par `validateProfileField`.
 - [ ] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
 - [ ] 🟢 **Tokens email** : token de reset loggé en clair ([password-request/route.ts](matcha/src/app/api/e-mail/password-request/route.ts) l. 22) ; anciens tokens jamais invalidés ; un reset ne supprime pas les sessions existantes.
 - [ ] 🟢 `/api/users/[userId]/pics` et `/allpics` sans authentification (ni contrôle de blocage).
