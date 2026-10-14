@@ -48,6 +48,7 @@ export default function ChatCardUser({ user }: { user: PublicUser }) {
 
       <div className="text-pink-700 font-semibold p-2 text-right">
         <div>{user.first_name}</div>
+        <div className="text-xs text-gray-500">@{user.username}</div>
         <div>{user.age} 🎂</div>
         <div>{user.fame} ⭐</div>
         <div>{user.city} 🏠</div>

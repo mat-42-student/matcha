@@ -58,9 +58,10 @@ export default function LoginForm() {
 				)}
 
 				<input
-					type="email"
-					name="email"
-					placeholder="Email"
+					type="text"
+					name="identifier"
+					placeholder="Username or email"
+					autoComplete="username"
 					required
 					className="px-4 py-2 rounded-full border border-gray-300 
                    focus:outline-none focus:ring-2 focus:ring-pink-400

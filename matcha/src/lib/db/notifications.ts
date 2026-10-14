@@ -38,10 +38,11 @@ export async function createNotification(
  */
 export async function getNotificationsByUser(userId: string) {
   const query = `
-    SELECT *
-    FROM notifications
-    WHERE target_id = $1
-    ORDER BY created_at DESC;
+    SELECT n.*, u.username AS sender_username
+    FROM notifications n
+    LEFT JOIN users u ON u.id = n.sender_id
+    WHERE n.target_id = $1
+    ORDER BY n.created_at DESC;
   `;
 
   const result = await executeQuery(query, [userId]);

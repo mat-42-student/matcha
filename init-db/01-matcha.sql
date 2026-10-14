@@ -4,6 +4,9 @@ CREATE EXTENSION IF NOT EXISTS earthdistance;
 CREATE TABLE "users" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
 
+  "username" varchar(20) NOT NULL
+    CHECK (username ~ $$^[A-Za-z0-9_]{3,20}$$),
+
   "first_name" varchar(50) NOT NULL
     CHECK (char_length(first_name) >= 2 AND first_name !~ $$[^A-Za-zÀ-ÖØ-öø-ÿ' -]$$),
 
@@ -136,6 +139,7 @@ CREATE TABLE email_tokens (
 CREATE VIEW "users_with_interests" AS
 SELECT
   u.id,
+  u.username,
   u.first_name,
   LEFT(u.last_name, 1) AS last_name,
   u.gender,
@@ -155,6 +159,7 @@ GROUP BY u.id;
 CREATE VIEW my_profile AS
 SELECT
   u.id,
+  u.username,
   u.first_name,
   u.last_name,
   u.email,
@@ -188,6 +193,7 @@ CREATE OR REPLACE FUNCTION compatible_users_from(
 )
 RETURNS TABLE (
   id UUID,
+  username TEXT,
   first_name TEXT,
   last_name TEXT,
   gender TEXT,
@@ -202,6 +208,7 @@ RETURNS TABLE (
 AS $$
   SELECT
     u.id,
+    u.username,
     u.first_name,
     u.last_name,
     u.gender,
@@ -242,6 +249,8 @@ AS $$
         AND m.status = 'block'
     );
 $$ LANGUAGE sql STABLE;
+
+CREATE UNIQUE INDEX ON "users" (lower("username"));
 
 CREATE INDEX ON "sessions" ("user_id");
 

@@ -1,4 +1,5 @@
 INSERT INTO users (
+    username,
     first_name,
     last_name,
     email,
@@ -14,6 +15,7 @@ INSERT INTO users (
     fame
 )
 VALUES (
+    'jdupont',
     'Jean',
     'Dupont',
     'a@mail.com',

@@ -14,7 +14,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : mot de passe commun `SEED_PASSWORD` (`.env`), hashé une fois avec bcrypt et réutilisé pour tous les profils seedés → ils sont désormais connectables (cf. README).
 - [ ] 🟢 **Seed : 20 profils au lieu de ≥ 500** (`MIN_USERS = 20`).
   - [ ] 🟡 Rendre le seed robuste sans réseau / sans clé Pixabay (actuellement une erreur de téléchargement interrompt la boucle). `userCount` est une string (COUNT) comparée à un nombre ; les ids d'intérêts sont supposés contigus `1..N`.
-- [ ] 🟡 **Pas de username** : inscription et login se font par email, le sujet impose un username (schéma, signup, login, validateurs, seed, UI).
+- [x] 🟡 **Pas de username** : inscription et login se font par email, le sujet impose un username (schéma, signup, login, validateurs, seed, UI).
+  - Corrigé : colonne `username` (`^[A-Za-z0-9_]{3,20}$`, unique insensible à la casse), demandée au signup, login par username **ou** email, modifiable dans le profil, affichée en `@username` sur les cards/chat et utilisée dans les notifications. Nécessite `make vdown && make`.
 - [ ] 🟢 **`is_verified` jamais vérifié au login** → un compte non vérifié peut se connecter.
   - [matcha/src/lib/db/users.ts](matcha/src/lib/db/users.ts) (`loginUser`)
 - [x] 🟢 **Changement d'email sans confirmation** via `POST /api/profile` (`email` est dans les champs autorisés de `updateUser`), sans contrôle d'unicité (→ 500). Retirer `email` des champs modifiables directement. `birthdate`, `latitude`, `longitude`, `city`, `country` passent aussi sans validation (le `default` du validateur accepte tout).
@@ -98,5 +99,5 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 
 1. Les 🟢 de la section 1 + bugs `params` et try/catch sockets (éliminer les risques de note 0).
 2. Corriger le lint (`make lint`) : hooks React d'abord, puis le reste.
-3. Username.
+3. ~~Username.~~
 4. Refonte `matches` + notifications côté serveur.

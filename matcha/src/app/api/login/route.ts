@@ -7,14 +7,14 @@ import { loginUser } from "@/lib/db/users";
 export async function POST(req: NextRequest) {
 	try {
 		const formData = await req.formData();
-		const email = formData.get("email") as string;
+		const identifier = formData.get("identifier") as string;
 		const password = formData.get("password") as string;
 
-		if (!email || !password) {
+		if (!identifier || !password) {
 			return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 		}
 
-		const user = await loginUser(email, password);
+		const user = await loginUser(identifier, password);
 		if (!user) {
 			return NextResponse.json({ error: "Invalid login" }, { status: 401 });
 		}
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
 		const res = NextResponse.json({
 			success: true,
-			user: { id: user.id, email: user.email, first_name: user.first_name }
+			user: { id: user.id, username: user.username, email: user.email, first_name: user.first_name }
 		});
 
 		res.cookies.set("session_id", sessionId, {

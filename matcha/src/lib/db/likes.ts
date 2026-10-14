@@ -65,12 +65,12 @@ export async function likeUser(meId: string, targetId: string): Promise<string> 
     );
 
     // Fetch sender info once
-    const senderRes = await executeQuery<{ first_name: string }>(
-      `SELECT first_name FROM users WHERE id = $1`,
+    const senderRes = await executeQuery<{ username: string }>(
+      `SELECT username FROM users WHERE id = $1`,
       [meId],
       client
     );
-    const senderName = senderRes.rows[0]?.first_name || "Someone";
+    const senderName = senderRes.rows[0]?.username || "Someone";
 
     if (existing.rows.length > 0 && existing.rows[0].status === "like") {
       // Reciprocated like → match
@@ -112,14 +112,14 @@ export async function likeUser(meId: string, targetId: string): Promise<string> 
 }
 
 /**
- * Helper to fetch a user's first name
+ * Helper to fetch a user's username
  */
 async function getUserName(userId: string): Promise<string> {
-  const res = await executeQuery<{ first_name: string }>(
-    `SELECT first_name FROM users WHERE id = $1`,
+  const res = await executeQuery<{ username: string }>(
+    `SELECT username FROM users WHERE id = $1`,
     [userId]
   );
-  return res.rows[0]?.first_name || "Someone";
+  return res.rows[0]?.username || "Someone";
 }
 
 

@@ -3,7 +3,7 @@
 import { validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { createUser, isEmailUsed } from '@/lib/db/users';
+import { createUser, isEmailUsed, isUsernameUsed } from '@/lib/db/users';
 import { createEmailToken } from '@/lib/db/emails';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
@@ -11,6 +11,7 @@ import nodemailer from 'nodemailer';
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
+    const username = formData.get('username') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const first_name = formData.get('first_name') as string;
@@ -18,6 +19,7 @@ export async function POST(req: NextRequest) {
     const birthdate = formData.get('birthdate') as string;
 
     const { valid, errors } = validateSignupData({
+      username,
       email,
       password,
       first_name,
@@ -25,10 +27,12 @@ export async function POST(req: NextRequest) {
       birthdate,
     });
 
-    console.log("errors");
-
     if (!valid) {
       return NextResponse.json({ errors }, { status: 400 });
+    }
+
+    if (await isUsernameUsed(username)) {
+      return NextResponse.json({ errors: { username: 'Username is already taken' } }, { status: 400 });
     }
 
     const existingUser = await isEmailUsed(email);
@@ -39,6 +43,7 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const newUser = await createUser({
+      username,
       first_name,
       last_name,
       email,
@@ -73,6 +78,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    // unique violation: username/email taken by a concurrent signup
+    if ((error as { code?: string }).code === '23505') {
+      return NextResponse.json({ error: 'Username or email is already used' }, { status: 400 });
+    }
     console.error("Signup error:", error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

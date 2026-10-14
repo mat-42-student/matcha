@@ -85,6 +85,7 @@ export default function CardUserModal({
             <span className="text-xl text-pink-700 font-semibold">{user.first_name}</span>
             <span className="text-sm text-gray-400"> ({user.gender}) </span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
+            <div className="text-xs text-gray-500">@{user.username}</div>
           </div>
           <span className="text-sm text-gray-600" title="Fame">
             ⭐{user.fame}

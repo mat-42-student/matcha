@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { validateProfileField } from "@/lib/validators/clientValidator";
 import type { PublicUser } from "@/lib/types";
 
-type FormField = "first_name" | "last_name" | "email" | "gender" | "sex_pref" | "bio";
+type FormField = "username" | "first_name" | "last_name" | "email" | "gender" | "sex_pref" | "bio";
 type FormData = Record<FormField, string>;
 
 export default function ProfileForm({
@@ -18,6 +18,7 @@ export default function ProfileForm({
 }) {
   const initialData = useMemo<FormData>(
     () => ({
+      username: user.username || "",
       first_name: user.first_name || "",
       last_name: user.last_name || "",
       email: user.email || "",
@@ -85,16 +86,17 @@ export default function ProfileForm({
         body: JSON.stringify({ [field]: value }),
       });
 
-      if (!res.ok) throw new Error("Update error");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to update ${field}`);
+      }
 
       onUserUpdate?.({ [field]: value });
       toast.success(`${field.replace("_", " ")} updated successfully`);
       return true;
     } catch (err) {
       console.error(err);
-      toast.error(
-        field === "email" && err instanceof Error ? err.message : `Failed to update ${field}`
-      );
+      toast.error(err instanceof Error ? err.message : `Failed to update ${field}`);
       setEditingField(field);
       return false;
     }
@@ -211,6 +213,7 @@ export default function ProfileForm({
   return (
     <div>    
       <div className="w-full">
+        {renderRow("Username", "username")}
         {renderRow("First Name", "first_name")}
         {renderRow("Last Name", "last_name")}
         {renderRow("Email", "email")}

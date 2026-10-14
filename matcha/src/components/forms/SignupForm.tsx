@@ -50,6 +50,25 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         <p className="text-red-600 text-sm text-center">{errors.general}</p>
       )}
 
+      {/* Username */}
+      <div>
+        <input
+          name="username"
+          type="text"
+          placeholder="Username"
+          autoComplete="username"
+          required
+          minLength={3}
+          maxLength={20}
+          pattern="[A-Za-z0-9_]+"
+          title="3-20 letters, numbers or underscores"
+          className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900 w-full"
+        />
+        {errors.username && (
+          <p className="text-red-500 text-xs mt-1">{errors.username}</p>
+        )}
+      </div>
+
       {/* Email */}
       <div>
         <input

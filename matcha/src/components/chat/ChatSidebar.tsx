@@ -61,6 +61,7 @@ export default function ChatSidebar({
               ></span>
 
               <span>{u.first_name} {u.last_name}</span>
+              <span className="text-xs text-gray-500">@{u.username}</span>
             </div>
 
             {unread > 0 && (

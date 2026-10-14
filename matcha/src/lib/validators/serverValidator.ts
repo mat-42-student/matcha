@@ -7,6 +7,10 @@ export function isValidEmail(email: string): boolean {
   return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+export function isValidUsername(username: string): boolean {
+  return /^[A-Za-z0-9_]{3,20}$/.test(username);
+}
+
 function isStrongPassword(password: string): boolean {
   return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
 }
@@ -23,6 +27,7 @@ function calculateAgeISO(dateStr: string): number | null {
 }
 
 export function validateSignupData(data: {
+  username?: string;
   email?: string;
   password?: string;
   first_name?: string;
@@ -32,11 +37,16 @@ export function validateSignupData(data: {
   const errors: Record<string, string> = {};
   const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/;
 
+  const username = data.username ?? "";
   const email = data.email?.trim() ?? "";
   const password = data.password ?? "";
   const first = data.first_name?.trim() ?? "";
   const last = data.last_name?.trim() ?? "";
   const birth = data.birthdate ?? "";
+
+  if (!username) errors.username = "Username is required";
+  else if (!isValidUsername(username))
+    errors.username = "Username must be 3-20 characters: letters, numbers or underscores";
 
   if (!email) errors.email = "Email is required";
   else if (!isValidEmail(email)) errors.email = "Invalid email address";
@@ -84,6 +94,12 @@ export function validateProfileField(
   }
 
   switch (field) {
+    case "username": {
+      if (typeof value !== "string" || !isValidUsername(value))
+        return { valid: false, error: "Must be 3-20 characters: letters, numbers or underscores" };
+      return { valid: true };
+    }
+
     case "first_name":
     case "last_name": {
       const str = String(value).trim();

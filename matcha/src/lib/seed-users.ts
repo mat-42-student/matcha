@@ -37,21 +37,31 @@ function getRandomName(sex: string) {
   return (faker.person.firstName(gender));
 }
 
+// ex. "Jean-Luc", "Dupont" -> "jeanluc_dupont_4821" (fits ^[A-Za-z0-9_]{3,20}$)
+function getUsername(firstName: string, lastName: string) {
+  const clean = (s: string) =>
+    s.normalize("NFD").replace(/[^A-Za-z0-9]/g, "").toLowerCase();
+  const base = `${clean(firstName)}_${clean(lastName)}`.slice(0, 14);
+  return `${base}_${faker.number.int({ min: 1000, max: 99999 })}`;
+}
+
 async function insertUser(pool: Pool, passwordHash: string) {
   const gender = Math.random() < 0.5 ? 'M' : 'F';
   const sexPref = 'B'
 
   const firstName = getRandomName(gender);
   const lastName = faker.person.lastName()
+  const username = getUsername(firstName, lastName);
   const city = getRandomCity();
   const email = `${firstName}.${lastName}@${faker.internet.domainName()}`
     .toLowerCase()
     .replace(/\s+/g, ""); // supprime tout espace éventuel
 
   const { rows } = await pool.query(
-    `INSERT INTO users (first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+    `INSERT INTO users (username, first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
     [
+      username,
       firstName,
       lastName,
       email,

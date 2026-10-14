@@ -30,12 +30,17 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
  
+export function isValidUsername(username: string): boolean {
+  return /^[A-Za-z0-9_]{3,20}$/.test(username);
+}
+
 export function isStrongPassword(pw: string): boolean {
   // Example policy: at least 8 chars, one letter, one digit
   return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(pw);
 }
 
 export function validateSignupForm(fields: {
+  username?: string | null;
   email?: string | null;
   password?: string | null;
   first_name?: string | null;
@@ -44,6 +49,7 @@ export function validateSignupForm(fields: {
 }): { valid: boolean; errors: ValidationErrors } {
   const errors: ValidationErrors = {};
 
+  const username = fields.username ?? '';
   const email = fields.email?.trim() ?? '';
   const password = fields.password ?? '';
   const first = fields.first_name?.trim() ?? '';
@@ -52,6 +58,10 @@ export function validateSignupForm(fields: {
 
   // ✅ regex for names (letters only, allow accents, spaces, apostrophes, and hyphens)
   const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/;
+
+  if (!username) errors.username = 'Username is required';
+  else if (!isValidUsername(username))
+    errors.username = 'Username must be 3-20 characters: letters, numbers or underscores';
 
   if (!email) errors.email = 'Email is required';
   else if (!isValidEmail(email)) errors.email = 'Invalid email address';
@@ -87,6 +97,10 @@ export function validateSignupForm(fields: {
 
 export function validateProfileField(field: string, value: string) {
   switch (field) {
+    case "username":
+      if (!isValidUsername(value))
+        return { valid: false, error: "3-20 letters, numbers or underscores" };
+      return { valid: true };
     case "first_name":
     case "last_name":
       if (!value || value.length < 2) return { valid: false, error: "Too short" };

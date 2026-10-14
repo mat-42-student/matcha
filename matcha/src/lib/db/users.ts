@@ -5,6 +5,7 @@ import { PublicUser } from '../types';
 
 export interface User {
   id: string;
+  username: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -42,7 +43,7 @@ async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): P
  */
 export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
   const allowedFields: (keyof User)[] = [
-    "first_name","last_name","email","passwd","country","city",
+    "username","first_name","last_name","email","passwd","country","city",
     "latitude","longitude","birthdate","gender","sex_pref","bio","fame"
   ];
   return insertUser(user, allowedFields);
@@ -56,7 +57,7 @@ export async function updateUser(
   updates: Partial<User>
 ): Promise<User | null> {
   const allowedFields: (keyof User)[] = [
-    "first_name","last_name","city","country",
+    "username","first_name","last_name","city","country",
     "gender","sex_pref","bio","birthdate","latitude","longitude"
   ];
 
@@ -96,6 +97,17 @@ export async function isEmailUsed(email: string): Promise<boolean> {
 }
 
 /**
+ * Check if a username is taken (case-insensitive), optionally ignoring one user
+ */
+export async function isUsernameUsed(username: string, excludeId?: string): Promise<boolean> {
+  const result = await executeQuery(
+    'SELECT 1 FROM users WHERE lower(username) = lower($1) AND id IS DISTINCT FROM $2',
+    [username, excludeId ?? null]
+  );
+  return result.rows.length > 0;
+}
+
+/**
  * List all users
  */
 // export async function listUsers(): Promise<User[]> {
@@ -106,8 +118,12 @@ export async function isEmailUsed(email: string): Promise<boolean> {
 /**
  * Try to log user
  */
-export async function loginUser(email: string, password: string): Promise<User | null> {
-  const result = await executeQuery<User>('SELECT * FROM users WHERE email = $1', [email]);
+export async function loginUser(identifier: string, password: string): Promise<User | null> {
+  // identifier is either an email or a username (case-insensitive)
+  const query = identifier.includes('@')
+    ? 'SELECT * FROM users WHERE email = $1'
+    : 'SELECT * FROM users WHERE lower(username) = lower($1)';
+  const result = await executeQuery<User>(query, [identifier]);
   const user = result.rows[0];
   if (!user) return null;
 
