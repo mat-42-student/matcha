@@ -8,13 +8,20 @@ import { createNotification } from "@/lib/db/notifications";
  * Record a user profile view.
  * - Inserts or updates a record in the "views" table.
  * - If it's a new view (not an update), increases the viewed user's fame by 1.
+ * - Nothing is recorded (nor notified) if either user blocked the other.
  * - Return true if a new line was created
  */
 export async function recordProfileView(viewedUserId: string, viewerUserId: string): Promise<boolean> {
-  // Insert or update the view
+  // Insert or update the view, unless a block exists between both users
   const insertQuery = `
     INSERT INTO views (user_id, seen_by)
-    VALUES ($1, $2)
+    SELECT $1::uuid, $2::uuid
+    WHERE NOT EXISTS (
+      SELECT 1 FROM matches
+      WHERE ((user1_id = $1 AND user2_id = $2)
+          OR (user1_id = $2 AND user2_id = $1))
+        AND status = 'block'
+    )
     ON CONFLICT (user_id, seen_by)
     DO UPDATE SET created_at = CURRENT_TIMESTAMP
     RETURNING (xmax = 0) AS inserted;

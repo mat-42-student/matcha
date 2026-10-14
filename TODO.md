@@ -69,7 +69,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : index unique `matches_pair_idx` sur la paire non ordonnée ; `likeUser` verrouille la ligne de la paire (`FOR UPDATE`) et ne fait rien si déjà liké / matché / bloqué (renvoie `null`), `INSERT … ON CONFLICT DO NOTHING` + relecture en cas de like simultané ; nettoyage des notifs et `addFame` dans la transaction (aussi pour `unlikeUser`).
 - [x] 🟢 `unlikeUser` envoie une notif « unlike » même pour un simple like (le sujet ne demande la notif que pour un user connecté). Le cas « sans like préalable » est corrigé.
   - Corrigé : `unlikeUser` renvoie le statut supprimé (`RETURNING status`) ; notif « unlike » + toast seulement pour un unmatch ; pour un simple like, la notif « liked you » est retirée et seul `relation-changed` est envoyé (mise à jour silencieuse de l'UI). Fame −5 dans les deux cas.
-- [ ] 🟢 Notifs de visite envoyées même si l'un des deux a bloqué l'autre ([matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts)).
+- [x] 🟢 Notifs de visite envoyées même si l'un des deux a bloqué l'autre ([matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts)).
+  - Corrigé : `recordProfileView` fait `INSERT … SELECT … WHERE NOT EXISTS (block)` ; en cas de blocage dans un sens ou l'autre, rien n'est enregistré (ni visite, ni fame, ni notif DB, ni event socket).
 - [ ] 🟢 `/api/users/location` : aucune validation, pas de try/catch (coordonnée invalide → CHECK SQL → 500).
 - [ ] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
 - [ ] 🟢 **Tokens email** : token de reset loggé en clair ([password-request/route.ts](matcha/src/app/api/e-mail/password-request/route.ts) l. 22) ; anciens tokens jamais invalidés ; un reset ne supprime pas les sessions existantes.
