@@ -29,8 +29,21 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : 403 sans photo principale (`hasMainPicture`) ou en cas de block dans un sens ou l'autre ; un re-like d'un like/match existant renvoie le statut courant sans rien insérer. Toast d'erreur dans `LikeButton`.
 - [ ] 🟢/🟡 **« Signaler comme fake account » absent.**
 - [ ] 🟢 **Notification « message reçu » jamais créée** en DB (type présent dans l'enum, jamais émis).
-- [ ] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
-  - [ ] 🟡 Corriger ensuite les erreurs/warnings remontés (31 `any` / `eslint-disable` / `@ts-*` dans le code).
+- [x] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
+  - Corrigé : `eslint@9` + `eslint-config-next@16.4.0` en devDependencies, config flat native, `make lint` / `make typecheck` (fonctionnent site éteint).
+- [ ] 🟡 **Erreurs de hooks React** (`make lint`) : risque de rendus en cascade / données périmées → warnings console. À traiter en priorité.
+  - `react-hooks/set-state-in-effect` (17 erreurs) : `setState` appelé directement dans un `useEffect` (souvent un fetch initial ou une resynchro de prop → state).
+    - [SocketContext.tsx](matcha/src/context/SocketContext.tsx) (l. 144, 164, 172), [UsersStore.tsx](matcha/src/context/UsersStore.tsx) (l. 32)
+    - [ChatWindow.tsx](matcha/src/components/chat/ChatWindow.tsx) (l. 71, 101), [FilterBar.tsx](matcha/src/components/browse/FilterBar.tsx) (l. 58), [MainContent.tsx](matcha/src/components/browse/MainContent.tsx) (l. 28)
+    - `components/like/` : [LikeMe.tsx](matcha/src/components/like/LikeMe.tsx), [Liked.tsx](matcha/src/components/like/Liked.tsx), [Matches.tsx](matcha/src/components/like/Matches.tsx), [Visitors.tsx](matcha/src/components/like/Visitors.tsx) (l. 27, même pattern ×4 → factoriser), [LikeTabs.tsx](matcha/src/components/like/LikeTabs.tsx) (l. 20)
+    - `components/profile/` : [ProfileForm.tsx](matcha/src/components/profile/ProfileForm.tsx) (l. 32), [ProfileGeoloc.tsx](matcha/src/components/profile/ProfileGeoloc.tsx) (l. 119), [ProfilePicture.tsx](matcha/src/components/profile/ProfilePicture.tsx) (l. 37), [ProfilePicturesModal.tsx](matcha/src/components/profile/ProfilePicturesModal.tsx) (l. 37)
+  - `react-hooks/exhaustive-deps` (3 warnings) : dépendances manquantes → [Geoloc.tsx](matcha/src/components/geoloc/Geoloc.tsx) (l. 60), [ProfileGeoloc.tsx](matcha/src/components/profile/ProfileGeoloc.tsx) (l. 126), [SocketContext.tsx](matcha/src/context/SocketContext.tsx) (l. 213, `socket`).
+- [ ] 🟡 **Nettoyage du lint** (le reste des 66 problèmes, objectif zéro erreur / warning) :
+  - `no-explicit-any` (31 erreurs) : surtout [ProfileForm.tsx](matcha/src/components/profile/ProfileForm.tsx) (×7) et [ui/tabs.tsx](matcha/src/components/ui/tabs.tsx) (×6) ; aussi `ui/input`, `ui/textarea`, `ui/cards`, `ProfileInterests`, `ProfileTabs`, `ProfileGeoloc`, `ProfilePicturesModal`, routes `me/interests`, `me/notifications`, `profile`, `lib/db/users.ts`, `lib/gps.ts`, `profileCompletion.ts`, `serverValidator.ts`.
+  - `no-unused-vars` (7) : `api/users/route.ts`, `verify-email/page.tsx`, `ProfileInterests`, `ProfileTabs`, `useGeolocation`, `profileCompletion.ts` (cf. §4 code mort).
+  - `no-unused-expressions` (4) : `cond && fn()` dans [ProfileInterests.tsx](matcha/src/components/profile/ProfileInterests.tsx) (l. 63), [ProfilePicturesModal.tsx](matcha/src/components/profile/ProfilePicturesModal.tsx) (l. 69, 86, 106).
+  - `no-location-assign-relative-destination` : [Header.tsx](matcha/src/components/header/Header.tsx) (l. 16) → router Next.
+  - [socket.ts](matcha/src/lib/socket/socket.ts) : `@ts-expect-error` sans description sur l'import `cookie` (l. 5), deux `eslint-disable no-var` devenus inutiles (l. 16, 18).
 - [ ] 🟢 **Erreurs TypeScript** (`npx tsc --noEmit`) :
   - ~~`params` synchrone dans les routes photos (voir §2)~~ corrigé
   - [matcha/src/components/card-user/ChatCardUser.tsx](matcha/src/components/card-user/ChatCardUser.tsx) (l. 10) : `Picture` sans `id`
@@ -84,6 +97,6 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 ## Ordre conseillé
 
 1. Les 🟢 de la section 1 + bugs `params` et try/catch sockets (éliminer les risques de note 0).
-2. Installer ESLint et corriger.
+2. Corriger le lint (`make lint`) : hooks React d'abord, puis le reste.
 3. Username.
 4. Refonte `matches` + notifications côté serveur.
