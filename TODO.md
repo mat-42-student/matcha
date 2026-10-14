@@ -73,7 +73,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : `recordProfileView` fait `INSERT … SELECT … WHERE NOT EXISTS (block)` ; en cas de blocage dans un sens ou l'autre, rien n'est enregistré (ni visite, ni fame, ni notif DB, ni event socket).
 - [x] 🟢 `/api/users/location` : aucune validation, pas de try/catch (coordonnée invalide → CHECK SQL → 500).
   - Corrigé : route morte (seul appelant `components/geoloc/Geoloc.tsx`, monté nulle part) supprimée avec `updateUserLocationBySession`. La localisation passe par `/api/profile` (`ProfileGeoloc`), déjà validée par `validateProfileField`.
-- [ ] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
+- [x] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
+  - Corrigé : `validateSearchCriteria` (serverValidator) valide tout le body (objet, `distance` ≥ 0, `ageRange` = 2 entiers 18–100 avec min ≤ max, `fameRange`, `interests` ∈ similar/custom, `customInterests` = tableau de strings) → 400 ; JSON invalide → 400. Côté client : toast d'erreur au lieu de `setResults(undefined)`, validation des âges dans `SearchForm` comme pour la fame.
 - [ ] 🟢 **Tokens email** : token de reset loggé en clair ([password-request/route.ts](matcha/src/app/api/e-mail/password-request/route.ts) l. 22) ; anciens tokens jamais invalidés ; un reset ne supprime pas les sessions existantes.
 - [ ] 🟢 `/api/users/[userId]/pics` et `/allpics` sans authentification (ni contrôle de blocage).
 - [x] 🟢 `/api/me/interests` renvoie `err.message` au client.

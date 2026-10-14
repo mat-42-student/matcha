@@ -197,3 +197,46 @@ export function validateFameRange(range: unknown): ValidationResult {
 
   return { valid: true };
 }
+
+const SEARCH_MIN_AGE = 18;
+const SEARCH_MAX_AGE = 100;
+const MAX_SEARCH_INTERESTS = 50;
+
+// body of POST /api/search, cf. SearchCriteria ; every field is optional
+export function validateSearchCriteria(body: unknown): ValidationResult {
+  if (typeof body !== "object" || body === null || Array.isArray(body))
+    return { valid: false, error: "Invalid search criteria" };
+
+  const { distance, ageRange, fameRange, interests, customInterests } =
+    body as Record<string, unknown>;
+
+  if (distance !== undefined
+    && !(typeof distance === "number" && Number.isFinite(distance) && distance >= 0))
+    return { valid: false, error: "Invalid distance" };
+
+  if (ageRange !== undefined) {
+    if (!Array.isArray(ageRange) || ageRange.length !== 2)
+      return { valid: false, error: "Invalid age range" };
+    const [min, max] = ageRange;
+    const isAge = (n: unknown): n is number =>
+      typeof n === "number" && Number.isInteger(n) && n >= SEARCH_MIN_AGE && n <= SEARCH_MAX_AGE;
+    if (!isAge(min) || !isAge(max))
+      return { valid: false, error: `Ages must be whole numbers between ${SEARCH_MIN_AGE} and ${SEARCH_MAX_AGE}` };
+    if (min > max)
+      return { valid: false, error: "Minimum age is greater than maximum" };
+  }
+
+  const fameCheck = validateFameRange(fameRange);
+  if (!fameCheck.valid) return fameCheck;
+
+  if (interests !== undefined && interests !== "similar" && interests !== "custom")
+    return { valid: false, error: "Invalid interests mode" };
+
+  if (customInterests !== undefined
+    && !(Array.isArray(customInterests)
+      && customInterests.length <= MAX_SEARCH_INTERESTS
+      && customInterests.every((i) => typeof i === "string")))
+    return { valid: false, error: "Invalid interests" };
+
+  return { valid: true };
+}

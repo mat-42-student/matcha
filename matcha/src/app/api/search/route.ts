@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
 import { searchCompatibleUsers } from "@/lib/db/search";
-import { validateFameRange } from "@/lib/validators/serverValidator";
+import { validateSearchCriteria } from "@/lib/validators/serverValidator";
+import { SearchCriteria } from "@/lib/types";
 
 export async function POST(req: Request) {
   try {
@@ -17,13 +18,18 @@ export async function POST(req: Request) {
     if (!me)
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
-    const body = await req.json();
-    console.log("body: ", body)
-    const { distance, ageRange, fameRange, interests, customInterests } = body;
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
-    const fameCheck = validateFameRange(fameRange);
-    if (!fameCheck.valid)
-      return NextResponse.json({ error: fameCheck.error }, { status: 400 });
+    const check = validateSearchCriteria(body);
+    if (!check.valid)
+      return NextResponse.json({ error: check.error }, { status: 400 });
+
+    const { distance, ageRange, fameRange, interests, customInterests } = body as SearchCriteria;
 
     const users = await searchCompatibleUsers(
       me,

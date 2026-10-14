@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { PublicUser, SearchCriteria } from "@/lib/types";
 import SearchForm from "@/components/forms/SearchForm";
 import Browse from "@/components/browse/Browse";
@@ -22,7 +23,11 @@ export default function Search() {
       body: JSON.stringify(criteria),
     });
     const data = await res.json();
-    console.log("users: ", data.users)
+    if (!res.ok) {
+      toast.error(data.error ?? "Search failed");
+      setResults([]);
+      return;
+    }
     setResults(data.users);
   }
 

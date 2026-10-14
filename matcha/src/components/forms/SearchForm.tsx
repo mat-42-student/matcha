@@ -52,6 +52,16 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
         : null;
   const fameInvalid = fameError !== null;
 
+  const isBadAge = (n: number) => !(Number.isInteger(n) && n >= 18 && n <= 100);
+  const ageError = !useAge
+    ? null
+    : isBadAge(ageRange[0]) || isBadAge(ageRange[1])
+      ? "Ages must be whole numbers between 18 and 100"
+      : ageRange[0] > ageRange[1]
+        ? "Minimum age must be lower than maximum"
+        : null;
+  const ageInvalid = ageError !== null;
+
   function fameLabel() {
     const { min, max } = fameRange;
     if (!useFame || (min === undefined && max === undefined)) return "All";
@@ -62,7 +72,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (fameInvalid) return;
+    if (fameInvalid || ageInvalid) return;
     const criteria: SearchCriteria = {};
     if (useDistance) criteria.distance = distance;
     if (useAge) criteria.ageRange = ageRange;
@@ -142,20 +152,23 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
           max={ageRange[1]}
           value={ageRange[0]}
           onChange={(e) => setAgeRange([+e.target.value, ageRange[1]])}
-          className="border rounded p-2 w-20"
+          className={`border rounded p-2 w-20 ${ageInvalid ? "border-red-500" : ""}`}
           disabled={!useAge}
         />
         <span>-</span>
         <input
           type="number"
           min={ageRange[0]}
-          max={99}
+          max={100}
           value={ageRange[1]}
           onChange={(e) => setAgeRange([ageRange[0], +e.target.value])}
-          className="border rounded p-2 w-20"
+          className={`border rounded p-2 w-20 ${ageInvalid ? "border-red-500" : ""}`}
           disabled={!useAge}
         />
       </div>
+      {ageError && (
+        <p className="text-sm text-red-600 -mt-4">{ageError}</p>
+      )}
 
       {/* Interests */}
       <div>
@@ -248,7 +261,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
       {/* Submit */}
       <button
         type="submit"
-        disabled={fameInvalid}
+        disabled={fameInvalid || ageInvalid}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Search
