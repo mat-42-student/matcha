@@ -19,4 +19,10 @@ fclean: vdown clean
 
 clean: down
 
-.PHONY: all build run re clean fclean
+lint:
+	docker compose run --rm --no-deps matcha_server sh -c "npm install && npm run lint"
+
+typecheck:
+	docker compose run --rm --no-deps matcha_server sh -c "npm install && npm run typecheck"
+
+.PHONY: all build run re clean fclean lint typecheck
