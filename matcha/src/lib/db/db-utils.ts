@@ -64,16 +64,20 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-export async function addFame(score: number, userId: string) {
+/**
+ * Inside a transaction (client given), errors are rethrown so the caller rolls back
+ */
+export async function addFame(score: number, userId: string, client?: PoolClient) {
   try {
     const query = `
       UPDATE users
       SET fame = LEAST(100, GREATEST(0, fame + $1))
       WHERE id = $2;`;
-    const res = await pool.query(query, [score, userId]);
+    const res = await executeQuery(query, [score, userId], client);
     return res.rowCount === 1;
   }
   catch (err) {
+    if (client) throw err;
     console.error("Error updating fame:", err);
     return false;
   }

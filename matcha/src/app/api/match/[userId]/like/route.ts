@@ -88,8 +88,12 @@ export async function POST(
     }
 
     const res = await likeUser(me.id, userId);
+    if (!res) {
+      // relation changed concurrently (already liked, matched or blocked)
+      return NextResponse.json({ success: false, newStatus: await getMatchStatus(me.id, userId) });
+    }
     if (res === "match") notifyRelationChange(me, userId, "match", "match");
-    else if (res === "like") notifyRelationChange(me, userId, "like", "isLiked");
+    else notifyRelationChange(me, userId, "like", "isLiked");
 
     return NextResponse.json({ success: true, newStatus: res });
   } catch (err) {

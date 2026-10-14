@@ -273,6 +273,9 @@ ALTER TABLE "matches" ADD FOREIGN KEY ("user1_id") REFERENCES "users" ("id");
 
 ALTER TABLE "matches" ADD FOREIGN KEY ("user2_id") REFERENCES "users" ("id");
 
+-- One relation row per pair of users, whatever the direction
+CREATE UNIQUE INDEX matches_pair_idx ON "matches" (LEAST("user1_id", "user2_id"), GREATEST("user1_id", "user2_id"));
+
 ALTER TABLE "views" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 ALTER TABLE "views" ADD FOREIGN KEY ("seen_by") REFERENCES "users" ("id");

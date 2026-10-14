@@ -18,10 +18,10 @@ export async function createNotification(
   // Handle cleanup rules before insertion
   if (type === "like" || type === "match") {
     // Like/match should replace prior view or unlike notifications between the same users.
-    await deleteNotificationsBetweenUsers(targetId, senderId, ["unlike", "view"]);
+    await deleteNotificationsBetweenUsers(targetId, senderId, ["unlike", "view"], client);
   } else if (type === "unlike") {
     // Remove all notifications between both users
-    await deleteAllNotificationsBetweenUsers(targetId, senderId);
+    await deleteAllNotificationsBetweenUsers(targetId, senderId, client);
   } else if (type === "message") {
     // Keep a single message notification per conversation: the latest one
     await executeQuery(
@@ -91,7 +91,8 @@ export async function deleteNotificationByIdForUser(
 export async function deleteNotificationsBetweenUsers(
   userA: string,
   userB: string,
-  types: NotificationType[]
+  types: NotificationType[],
+  client?: PoolClient
 ): Promise<void> {
   const query = `
     DELETE FROM notifications
@@ -100,7 +101,7 @@ export async function deleteNotificationsBetweenUsers(
       AND type = ANY($3::notification_type[]);
   `;
 
-  await executeQuery(query, [userA, userB, types]);
+  await executeQuery(query, [userA, userB, types], client);
 }
 
 /**
@@ -108,7 +109,8 @@ export async function deleteNotificationsBetweenUsers(
  */
 export async function deleteAllNotificationsBetweenUsers(
   userA: string,
-  userB: string
+  userB: string,
+  client?: PoolClient
 ): Promise<void> {
   const query = `
     DELETE FROM notifications
@@ -116,5 +118,5 @@ export async function deleteAllNotificationsBetweenUsers(
        OR (target_id = $2 AND sender_id = $1);
   `;
 
-  await executeQuery(query, [userA, userB]);
+  await executeQuery(query, [userA, userB], client);
 }
