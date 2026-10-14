@@ -121,7 +121,7 @@ export async function initSocket(httpServer: HttpServer) {
       sockets.delete(socket);
       if (sockets.size === 0){
         connectedUsers.delete(userId);
-        updateLastLogin(userId);
+        updateLastLogin(userId).catch((err) => console.error("Failed to update last login:", err));
       } 
     }
     console.log(`\x1b[31mUser ${socket.data.user.first_name} disconnected\x1b[0m`);

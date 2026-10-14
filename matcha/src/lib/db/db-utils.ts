@@ -8,15 +8,20 @@ declare global {
   var cachedPool: Pool | undefined;
 }
 
-export const pool =
-  global.cachedPool ||
-  new Pool({
+function createPool(): Pool {
+  const newPool = new Pool({
     user: process.env.POSTGRES_USER,
     host: process.env.POSTGRES_HOST,
     database: process.env.POSTGRES_DB,
     password: process.env.POSTGRES_PASSWORD,
     port: parseInt(process.env.POSTGRES_PORT || '5432'),
   });
+  // An idle client losing its connection emits "error" on the pool: without a listener it crashes the process
+  newPool.on("error", (err) => console.error("Idle database client error:", err));
+  return newPool;
+}
+
+export const pool = global.cachedPool || createPool();
 
   if (process.env.NODE_ENV !== "production") {
     global.cachedPool = pool;

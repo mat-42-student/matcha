@@ -48,7 +48,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 **Suppression / changement de photo principale cassés** : `params` lu de façon synchrone (supprimé en Next 16).
   - [matcha/src/app/api/me/pictures/[id]/route.ts](matcha/src/app/api/me/pictures/[id]/route.ts), [matcha/src/app/api/me/pictures/[id]/main/route.ts](matcha/src/app/api/me/pictures/[id]/main/route.ts)
   - Corrigé : `await context.params` ; `setMainPicture` / `deleteUserPicture` en transaction, 404 si la photo n'appartient pas à l'utilisateur (avant, un id étranger retirait la photo principale) ; promotion de la plus ancienne photo restante à la suppression de la principale.
-- [ ] 🟢 **Une erreur DB dans un handler socket peut crasher le serveur** : aucun try/catch dans les handlers ni dans `authUser` (promesse rejetée non gérée).
+- [x] 🟢 **Une erreur DB dans un handler socket peut crasher le serveur** : aucun try/catch dans les handlers ni dans `authUser` (promesse rejetée non gérée).
+  - Corrigé : handlers enregistrés via `on()` (try/catch), try/catch dans `authUser` et à la connexion, `updateLastLogin` du disconnect catché, listener `error` sur le pool `pg` (une connexion inactive coupée ne tue plus le process).
 - [ ] 🟢 **`likeUser` incohérent** : doublons possibles (pas d'index unique sur la paire), re-like après match insère une nouvelle ligne, nettoyage des notifs hors transaction (`deleteNotificationsBetweenUsers` n'utilise pas le `client`), `addFame` après le COMMIT.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts), [matcha/src/lib/db/notifications.ts](matcha/src/lib/db/notifications.ts)
 - [ ] 🟢 `unlikeUser` envoie une notif « unlike » même pour un simple like (le sujet ne demande la notif que pour un user connecté). Le cas « sans like préalable » est corrigé.
