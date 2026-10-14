@@ -2,23 +2,13 @@
 
 import { NextResponse } from "next/server";
 import { getUserInterests, updateUserInterests } from "@/lib/db/interests";
-import { getSessionUser } from "@/lib/db/session";
-import { cookies } from "next/headers";
+import { requireUser } from "@/lib/auth";
 
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value || null;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const user = await getSessionUser(sessionId);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
-    }
+    const user = await requireUser();
+    if (user instanceof NextResponse) return user;
 
     const interests = await getUserInterests(user.id);
     return NextResponse.json(interests);
@@ -30,17 +20,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value || null;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const user = await getSessionUser(sessionId);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
-    }
+    const user = await requireUser();
+    if (user instanceof NextResponse) return user;
 
     const body = await req.json();
     const interestIds: number[] = Array.isArray(body.interestIds) ? body.interestIds : [];

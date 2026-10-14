@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { getMatchStatus, likeUser, unlikeUser } from "@/lib/db/likes";
 import { hasMainPicture } from "@/lib/db/pictures";
 import { sendUnreadMessagesCount } from "@/lib/socket/chat";
@@ -30,17 +29,8 @@ export async function GET(
 ) {
   try {
     const { userId } = await context.params;
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const me = await getSessionUser(sessionId);
-    if (!me) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const me = await requireUser();
+    if (me instanceof NextResponse) return me;
 
 
     const status = await getMatchStatus(me.id, userId);
@@ -57,17 +47,8 @@ export async function POST(
 ) {
   try {
     const { userId } = await context.params;
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const me = await getSessionUser(sessionId);
-    if (!me) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const me = await requireUser();
+    if (me instanceof NextResponse) return me;
 
     if (me.id === userId) return new NextResponse(null, { status: 204 });
 
@@ -112,17 +93,8 @@ export async function DELETE(
 ) {
   try {
     const { userId } = await context.params;
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const me = await getSessionUser(sessionId);
-    if (!me) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const me = await requireUser();
+    if (me instanceof NextResponse) return me;
 
     const removed = await unlikeUser(me.id, userId);
     if (!removed) {

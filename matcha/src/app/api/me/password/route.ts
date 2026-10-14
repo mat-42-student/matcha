@@ -1,23 +1,13 @@
 // matcha/src/app/api/me/password/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { changeUserPassword } from "@/lib/db/users";
 import { validatePassword } from "@/lib/validators/serverValidator";
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authentificated" }, { status: 401 });
-    }
-
-    const user = await getSessionUser(sessionId);
-    if (!user) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const user = await requireUser();
+    if (user instanceof NextResponse) return user;
 
     const { current_password, new_password } = await req.json();
     if (!current_password || !new_password) {

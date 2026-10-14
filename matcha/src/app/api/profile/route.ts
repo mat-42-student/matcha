@@ -1,23 +1,15 @@
 // app/api/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { isUsernameUsed, updateUser, type User } from "@/lib/db/users";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { validateProfileField } from "@/lib/validators/serverValidator";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const user = await requireUser();
+    if (user instanceof NextResponse) return user;
 
-    const sessionId = req.cookies.get("session_id")?.value || null;
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authentificated" }, { status: 401 });
-    }
-
-    const user = await getSessionUser(sessionId);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
-    }
-
+    const body = await req.json().catch(() => null);
     if (typeof body !== "object" || body === null || Array.isArray(body)) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }

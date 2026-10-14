@@ -1,7 +1,6 @@
 // app/api/users/[userId]/allpics/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { getAllPicturesButMain } from "@/lib/db/pictures";
 import { isValidUuid } from "@/lib/validators/serverValidator";
 
@@ -16,17 +15,8 @@ export async function GET(
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const me = await getSessionUser(sessionId);
-    if (!me) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const me = await requireUser();
+    if (me instanceof NextResponse) return me;
 
     const { userId } = await context.params;
     if (!isValidUuid(userId)) {

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { blockUser } from "@/lib/db/matches";
 
 export async function POST(
@@ -9,17 +8,8 @@ export async function POST(
 ) {
   try {
     const { userId } = await context.params;
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const me = await getSessionUser(sessionId);
-    if (!me) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const me = await requireUser();
+    if (me instanceof NextResponse) return me;
 
     if (me.id === userId) {
       return NextResponse.json({ error: "You cannot block yourself" }, { status: 400 });

@@ -1,7 +1,7 @@
 // matcha/src/app/api/e-mail/change-request/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
 import { isEmailUsed } from "@/lib/db/users";
 import { isValidEmail } from "@/lib/validators/serverValidator";
@@ -10,15 +10,8 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionId = req.cookies.get("session_id")?.value || null;
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const user = await getSessionUser(sessionId);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
-    }
+    const user = await requireUser();
+    if (user instanceof NextResponse) return user;
 
     const body = await req.json().catch(() => null);
     if (typeof body?.new_email !== "string" || !body.new_email.trim()) {

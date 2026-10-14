@@ -1,8 +1,7 @@
 // matcha/src/app/api/match/[userId]/views/route.ts
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { recordProfileView } from "@/lib/db/views";
-import { cookies } from "next/headers";
 import { send, toSocketUser } from "@/lib/socket/socket";
 import { NotifPayload } from "@/lib/types";
 
@@ -16,17 +15,8 @@ export async function POST(
 ) {
   try {
     const { userId } = await context.params;
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const viewer = await getSessionUser(sessionId);
-    if (!viewer) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const viewer = await requireUser();
+    if (viewer instanceof NextResponse) return viewer;
 
     if (viewer.id === userId) {
       return NextResponse.json({ error: "You cannot view your own profile" }, { status: 400 });

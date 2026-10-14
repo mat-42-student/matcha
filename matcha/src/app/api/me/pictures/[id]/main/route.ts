@@ -1,7 +1,6 @@
 // matcha/src/app/api/me/pictures/[id]/main/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getSessionUser } from "@/lib/db/session";
+import { requireUser } from "@/lib/auth";
 import { setMainPicture } from "@/lib/db/pictures";
 
 export async function PUT(
@@ -9,17 +8,8 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("session_id")?.value || null;
-
-    if (!sessionId) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    const user = await getSessionUser(sessionId);
-    if (!user) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const user = await requireUser();
+    if (user instanceof NextResponse) return user;
 
     const { id } = await context.params;
     if (!/^\d{1,9}$/.test(id)) {
