@@ -1,7 +1,7 @@
 // matcha/src/lib/db/likes.ts
 import { executeQuery } from "./db-utils";
 import { PublicUser } from "@/lib/types";
-import { createNotification } from "./notifications";
+import { createNotification, deleteNotificationsBetweenUsers } from "./notifications";
 import { pool, addFame } from "./db-utils";
 
 /**
@@ -125,11 +125,12 @@ export async function likeUser(meId: string, targetId: string): Promise<"like" |
 
 /**
  * Remove my like (or our match) towards targetId.
- * Blocks are left untouched. Returns false if there was nothing to unlike.
+ * Blocks are left untouched. Returns the removed status, or null if there was nothing to unlike.
+ * Only an unmatch notifies the target; a simple unlike just withdraws the "like" notification.
  */
-export async function unlikeUser(meId: string, targetId: string): Promise<boolean> {
+export async function unlikeUser(meId: string, targetId: string): Promise<"like" | "match" | null> {
   const client = await pool.connect();
-  let removed = false;
+  let removed: "like" | "match" | null = null;
 
   try {
     await client.query("BEGIN");
@@ -140,15 +141,18 @@ export async function unlikeUser(meId: string, targetId: string): Promise<boolea
       WHERE (user1_id = $1 AND user2_id = $2 AND status = 'like')
          OR (((user1_id = $1 AND user2_id = $2)
            OR (user1_id = $2 AND user2_id = $1)) AND status = 'match')
+      RETURNING status
     `;
-    const res = await executeQuery(query, [meId, targetId], client);
-    removed = (res.rowCount ?? 0) > 0;
+    const res = await executeQuery<{ status: "like" | "match" }>(query, [meId, targetId], client);
+    removed = res.rows[0]?.status ?? null;
 
-    // Crée la notification de "unlike" et diminue la "fame" du user qui s'est fait unliker
-    if (removed) {
+    if (removed === "match") {
       await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
-      await addFame(-5, targetId, client);
+    } else if (removed === "like") {
+      await deleteNotificationsBetweenUsers(targetId, meId, ["like"], client);
     }
+    // Diminue la "fame" du user qui s'est fait unliker
+    if (removed) await addFame(-5, targetId, client);
 
     await client.query("COMMIT");
   } catch (err) {

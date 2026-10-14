@@ -27,6 +27,7 @@ interface SocketContextType {
   notifications: Notification[];
   refreshNotifications: () => Promise<void>;
   removeNotification: (notificationId: number) => Promise<void>;
+  clearNotifications: () => Promise<void>;
   clearUnreadForUser: (userId: string) => void;
   onlineUsers: string[];
 }
@@ -43,6 +44,7 @@ const SocketContext = createContext<SocketContextType>({
   notifications: [],
   refreshNotifications: async () => {},
   removeNotification: async () => {},
+  clearNotifications: async () => {},
   clearUnreadForUser: () => {},
   onlineUsers: [],
 });
@@ -90,6 +92,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       console.error("Error deleting notification:", err);
       throw err;
     }
+  }, []);
+
+  const clearNotifications = useCallback(async () => {
+    const res = await fetch(`/api/me/notifications`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to delete notifications");
+    setNotifications([]);
   }, []);
 
   const handleNotif = useCallback(async (payload: NotifPayload) => {
@@ -215,6 +223,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         notifications,
         refreshNotifications: fetchNotifications,
         removeNotification,
+        clearNotifications,
         onlineUsers,
       }}
     >

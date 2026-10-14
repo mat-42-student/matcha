@@ -67,7 +67,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 **`likeUser` incohérent** : doublons possibles (pas d'index unique sur la paire), re-like après match insère une nouvelle ligne, nettoyage des notifs hors transaction (`deleteNotificationsBetweenUsers` n'utilise pas le `client`), `addFame` après le COMMIT.
   - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts), [matcha/src/lib/db/notifications.ts](matcha/src/lib/db/notifications.ts)
   - Corrigé : index unique `matches_pair_idx` sur la paire non ordonnée ; `likeUser` verrouille la ligne de la paire (`FOR UPDATE`) et ne fait rien si déjà liké / matché / bloqué (renvoie `null`), `INSERT … ON CONFLICT DO NOTHING` + relecture en cas de like simultané ; nettoyage des notifs et `addFame` dans la transaction (aussi pour `unlikeUser`).
-- [ ] 🟢 `unlikeUser` envoie une notif « unlike » même pour un simple like (le sujet ne demande la notif que pour un user connecté). Le cas « sans like préalable » est corrigé.
+- [x] 🟢 `unlikeUser` envoie une notif « unlike » même pour un simple like (le sujet ne demande la notif que pour un user connecté). Le cas « sans like préalable » est corrigé.
+  - Corrigé : `unlikeUser` renvoie le statut supprimé (`RETURNING status`) ; notif « unlike » + toast seulement pour un unmatch ; pour un simple like, la notif « liked you » est retirée et seul `relation-changed` est envoyé (mise à jour silencieuse de l'UI). Fame −5 dans les deux cas.
 - [ ] 🟢 Notifs de visite envoyées même si l'un des deux a bloqué l'autre ([matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts)).
 - [ ] 🟢 `/api/users/location` : aucune validation, pas de try/catch (coordonnée invalide → CHECK SQL → 500).
 - [ ] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).

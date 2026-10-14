@@ -12,8 +12,9 @@ import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
 
 export default function NotificationBell() {
-  const { notifications, removeNotification } = useSocket();
+  const { notifications, removeNotification, clearNotifications } = useSocket();
   const [open, setOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [exitingIds, setExitingIds] = useState<Set<number>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,18 @@ export default function NotificationBell() {
       toast.error("Impossible de supprimer cette notification");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await clearNotifications();
+      setOpen(false);
+    } catch {
+      toast.error("Impossible de supprimer les notifications");
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -133,9 +146,14 @@ export default function NotificationBell() {
           )}
         </div>
         {notifications.length > 0 && (
-          <div className="text-center text-sm text-pink-700 py-2 hover:bg-pink-100 cursor-pointer transition-colors">
-            Voir tout
-          </div>
+          <button
+            type="button"
+            onClick={handleClearAll}
+            disabled={clearing}
+            className="w-full text-center text-sm text-pink-700 py-2 hover:bg-pink-100 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Tout effacer
+          </button>
         )}
       </div>
     )}

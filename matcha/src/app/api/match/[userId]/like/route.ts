@@ -124,15 +124,22 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    if (!(await unlikeUser(me.id, userId))) {
+    const removed = await unlikeUser(me.id, userId);
+    if (!removed) {
       const status = await getMatchStatus(me.id, userId);
       return NextResponse.json({ success: false, newStatus: status });
     }
-    notifyRelationChange(me, userId, "unlike", "none");
-    await Promise.all([
-      sendUnreadMessagesCount(me.id),
-      sendUnreadMessagesCount(userId),
-    ]);
+    if (removed === "match") {
+      // Only an unmatch is notified (subject: "unliked by a connected user")
+      notifyRelationChange(me, userId, "unlike", "none");
+      await Promise.all([
+        sendUnreadMessagesCount(me.id),
+        sendUnreadMessagesCount(userId),
+      ]);
+    } else {
+      // Silent: the target's UI and notification list still need to drop the like
+      send<RelationChangedPayload>(userId, "relation-changed", { userId: me.id, likeStatus: "none" });
+    }
 
     return NextResponse.json({ success: true, newStatus: 'none' });
   } catch (err) {

@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
-import { getNotificationsByUser } from "@/lib/db/notifications";
+import { deleteAllNotificationsByUser, getNotificationsByUser } from "@/lib/db/notifications";
 
 export async function GET() {
   try {
@@ -22,6 +22,28 @@ export async function GET() {
     return NextResponse.json(notifications);
   } catch (err) {
     console.error("Error in GET /me/notifications:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value || null;
+
+    if (!sessionId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const user = await getSessionUser(sessionId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+
+    await deleteAllNotificationsByUser(user.id);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Error in DELETE /me/notifications:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
