@@ -83,42 +83,44 @@ export default function NotificationBell() {
             <div className="p-4 text-gray-500 text-center">Aucune notification</div>
           ) : (
             notifications.map((notif) => (
-              <Link
+              <div
                 key={notif.id}
-                href={notif.type === "message" ? "/chat" : `/likes?tab=${notificationTypeToTab(notif.type)}`}
-                onClick={() => setOpen(false)}
-                className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out cursor-pointer ${
+                className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out ${
                   exitingIds.has(notif.id) ? "opacity-0 -translate-x-2 scale-[0.98]" : "opacity-100 translate-x-0 scale-100"
                 }`}
               >
-                {notif.sender_picture ? (
-                  <Image
-                    src={notif.sender_picture}
-                    alt={notif.sender_username || "User"}
-                    width={36}
-                    height={36}
-                    className="rounded-full"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-pink-300 flex items-center justify-center text-white font-bold">
-                    {notif.sender_username?.[0]?.toUpperCase() ?? "?"}
+                {/* The delete button stays outside the link: a click on it must not navigate */}
+                <Link
+                  href={notif.type === "message" ? "/chat" : `/likes?tab=${notificationTypeToTab(notif.type)}`}
+                  onClick={() => setOpen(false)}
+                  className="flex flex-1 items-start gap-3 cursor-pointer"
+                >
+                  {notif.sender_picture ? (
+                    <Image
+                      src={notif.sender_picture}
+                      alt={notif.sender_username || "User"}
+                      width={36}
+                      height={36}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-pink-300 flex items-center justify-center text-white font-bold">
+                      {notif.sender_username?.[0]?.toUpperCase() ?? "?"}
+                    </div>
+                  )}
+                  <div className="flex-1 flex flex-col">
+                    <p className="text-sm text-gray-800">{notif.message}</p>
+                    <span className="text-xs text-gray-400">
+                      {formatDistanceToNow(new Date(notif.created_at), {
+                        addSuffix: true,
+                        locale: fr,
+                      })}
+                    </span>
                   </div>
-                )}
-                <div className="flex-1 flex flex-col">
-                  <p className="text-sm text-gray-800">{notif.message}</p>
-                  <span className="text-xs text-gray-400">
-                    {formatDistanceToNow(new Date(notif.created_at), {
-                      addSuffix: true,
-                      locale: fr,
-                    })}
-                  </span>
-                </div>
+                </Link>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(notif.id);
-                  }}
+                  onClick={() => handleDelete(notif.id)}
                   disabled={deletingId === notif.id}
                   className="p-1.5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Supprimer la notification"
@@ -126,7 +128,7 @@ export default function NotificationBell() {
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </Link>
+              </div>
             ))
           )}
         </div>
