@@ -30,8 +30,7 @@ export const pool = global.cachedPool || createPool();
 
 export async function executeQuery<T extends QueryResultRow>(
   queryString: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  values: any[] = [],
+  values: unknown[] = [],
   client?: PoolClient
 ): Promise<QueryResult<T>> {
   const dbClient = client || (await pool.connect());

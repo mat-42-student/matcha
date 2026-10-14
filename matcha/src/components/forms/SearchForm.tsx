@@ -29,8 +29,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
         const res = await fetch("/api/interests");
         if (!res.ok) throw new Error("Failed to fetch interests");
         const data = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const names = data.map((i: any) => i.name);
+        const names = data.map((i: { name: string }) => i.name);
         setAllInterests(names);
       } catch (err) {
         console.error(err);
