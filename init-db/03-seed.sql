@@ -37,6 +37,7 @@ FROM users
 WHERE email = 'a@mail.com';
 
 INSERT INTO users (
+    username,
     first_name,
     last_name,
     email,
@@ -52,6 +53,7 @@ INSERT INTO users (
     fame
 )
 VALUES (
+    'jduponte',
     'Jeanne',
     'Duponte',
     'b@mail.com',
