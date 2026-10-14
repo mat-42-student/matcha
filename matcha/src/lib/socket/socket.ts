@@ -89,6 +89,8 @@ export async function initSocket(httpServer: HttpServer) {
       methods: ["GET", "POST"],
       credentials: true,
     },
+    // Leave non-socket.io upgrades (Next HMR) alone instead of closing them after 1s
+    destroyUpgrade: false,
   });
 
   globalThis.matchaSocketServer = io;
