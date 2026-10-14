@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { getUserByEmail } from "@/lib/db/users";
-import { createEmailToken } from "@/lib/db/emails";
+import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
 
 export async function POST(req: NextRequest) {
 	try {
@@ -15,11 +15,10 @@ export async function POST(req: NextRequest) {
 		const token = crypto.randomBytes(32).toString("hex");
 		const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
 
+		await deleteEmailTokensForUserByType(user.id, "password_reset");
 		await createEmailToken(user.id, "password_reset", token, expiresAt);
 
 		const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset/${token}`;
-
-		console.log("my token is " + token);
 
 		const transporter = nodemailer.createTransport({
 			host: process.env.SMTP_HOST,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEmailTokenByToken, deleteEmailTokenByToken } from "@/lib/db/emails";
+import { getEmailTokenByToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
 import { updateUserPassword } from "@/lib/db/users";
+import { deleteSessionsForUser } from "@/lib/db/session";
 import { validatePassword } from "@/lib/validators/serverValidator";
 import bcrypt from "bcryptjs";
 
@@ -31,7 +32,8 @@ export async function POST(req: NextRequest) {
 		const hashed = await bcrypt.hash(password, 10);
 		await updateUserPassword(tokenData.user_id, hashed);
 
-		await deleteEmailTokenByToken(token);
+		await deleteEmailTokensForUserByType(tokenData.user_id, "password_reset");
+		await deleteSessionsForUser(tokenData.user_id);
 
 		return NextResponse.json({ success: true });
 	} catch (err) {

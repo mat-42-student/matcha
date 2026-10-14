@@ -75,7 +75,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : route morte (seul appelant `components/geoloc/Geoloc.tsx`, monté nulle part) supprimée avec `updateUserLocationBySession`. La localisation passe par `/api/profile` (`ProfileGeoloc`), déjà validée par `validateProfileField`.
 - [x] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
   - Corrigé : `validateSearchCriteria` (serverValidator) valide tout le body (objet, `distance` ≥ 0, `ageRange` = 2 entiers 18–100 avec min ≤ max, `fameRange`, `interests` ∈ similar/custom, `customInterests` = tableau de strings) → 400 ; JSON invalide → 400. Côté client : toast d'erreur au lieu de `setResults(undefined)`, validation des âges dans `SearchForm` comme pour la fame.
-- [ ] 🟢 **Tokens email** : token de reset loggé en clair ([password-request/route.ts](matcha/src/app/api/e-mail/password-request/route.ts) l. 22) ; anciens tokens jamais invalidés ; un reset ne supprime pas les sessions existantes.
+- [x] 🟢 **Tokens email** : token de reset loggé en clair ([password-request/route.ts](matcha/src/app/api/e-mail/password-request/route.ts) l. 22) ; anciens tokens jamais invalidés ; un reset ne supprime pas les sessions existantes.
+  - Corrigé : `console.log` du token supprimé ; une nouvelle demande de reset supprime les anciens tokens `password_reset` du user (comme `change-request` le fait déjà pour `change`) ; un reset réussi supprime tous les tokens `password_reset` du user et toutes ses sessions (`deleteSessionsForUser`).
 - [ ] 🟢 `/api/users/[userId]/pics` et `/allpics` sans authentification (ni contrôle de blocage).
 - [x] 🟢 `/api/me/interests` renvoie `err.message` au client.
 - [ ] 🟢 `setMainPicture` et `deleteUserPicture` : plusieurs requêtes sans transaction.

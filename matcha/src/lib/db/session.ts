@@ -18,6 +18,10 @@ export async function deleteSession(sessionId: string) {
   await executeQuery(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
 }
 
+export async function deleteSessionsForUser(userId: string) {
+  await executeQuery(`DELETE FROM sessions WHERE user_id = $1`, [userId]);
+}
+
 export async function getSessionUser(sessionId: string): Promise<PublicUser | null> {
   if (!sessionId) return null;
 
