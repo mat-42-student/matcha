@@ -108,14 +108,6 @@ export async function isUsernameUsed(username: string, excludeId?: string): Prom
 }
 
 /**
- * List all users
- */
-// export async function listUsers(): Promise<User[]> {
-//   const result = await executeQuery<User>('SELECT * FROM users ORDER BY created_at DESC');
-//   return result.rows;
-// }
-
-/**
  * Try to log user
  */
 export async function loginUser(identifier: string, password: string): Promise<User | null> {
@@ -131,16 +123,6 @@ export async function loginUser(identifier: string, password: string): Promise<U
   if (!match) return null;
 
   return user;
-}
-
-/**
- * Fetch total number of pages based on PROFILES_LIMIT
- */
-export async function fetchTotalPages(): Promise<number> {
-  const min_users: number = parseInt(process.env.PROFILES_LIMIT ?? "20");
-  const result = await executeQuery<{ total: string }>('SELECT count(*) AS total FROM users');
-  const totalUsers = parseInt(result.rows[0].total, 10);
-  return Math.ceil(totalUsers / min_users);
 }
 
 /**

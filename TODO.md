@@ -96,7 +96,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 
 ## 4. Hygiène
 
-- [ ] 🟢 Code mort : [matcha/src/app/api/users/route.ts](matcha/src/app/api/users/route.ts), [matcha/src/lib/socket/utils.ts](matcha/src/lib/socket/utils.ts), `deleteMessage`, `getMessagesForUser`, `fetchTotalPages`, `addInterest` / `deleteInterest`, `listUsers` commenté, import `redirect` inutilisé dans `profileCompletion.ts`.
+- [x] 🟢 Code mort : [matcha/src/app/api/users/route.ts](matcha/src/app/api/users/route.ts), [matcha/src/lib/socket/utils.ts](matcha/src/lib/socket/utils.ts), `deleteMessage`, `getMessagesForUser`, `fetchTotalPages`, `addInterest` / `deleteInterest`, `listUsers` commenté, import `redirect` inutilisé dans `profileCompletion.ts`.
 - [ ] 🟢 18 `console.log` de debug (`"errors"` dans signup, `"body: "` dans search, `picture.id` dans pics…).
 - [ ] 🟢 `executeQuery` logge les paramètres en cas d'erreur (hashes, buffers d'images).
 - [ ] 🟢 Géoloc IP via un service tiers appelé depuis le navigateur ([Geoloc.tsx](matcha/src/components/geoloc/Geoloc.tsx)) : un bloqueur de pub → erreur console. La faire côté serveur avec `X-Real-IP` (déjà transmis par nginx). La demande de géoloc se déclenche aussi à chaque chargement.

@@ -101,20 +101,3 @@ export async function getConversation(me: string, user: string): Promise<ChatMes
   await executeQuery(markReadQuery, [user, me]);
   return result.rows;
 }
-
-
-export async function getMessagesForUser(userId: string): Promise<ChatMessage[]> {
-  const query = `
-    SELECT * FROM chat
-    WHERE recipient_id = $1
-    ORDER BY created_at DESC;
-  `;
-  const result = await executeQuery<ChatMessage>(query, [userId]);
-  return result.rows;
-}
-
-export async function deleteMessage(id: number): Promise<boolean> {
-  const query = `DELETE FROM chat WHERE id = $1`;
-  const result = await executeQuery(query, [id]);
-  return (result.rowCount ?? 0) > 0;
-}

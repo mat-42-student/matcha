@@ -82,31 +82,3 @@ export async function updateUserInterests(userId: string, interestIds: number[])
   const result = await executeQuery(query, [userId, ...cleanIds]);
   return (result.rowCount ?? 0) > 0;
 }
-
-/**
- * Add a new global interest (admin use only)
- */
-export async function addInterest(name: string): Promise<Interest> {
-  const cleanName = name.trim();
-  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ' -]{2,50}$/.test(cleanName)) {
-    throw new Error("Invalid interest name");
-  }
-
-  const query = `
-    INSERT INTO interests (name)
-    VALUES ($1)
-    RETURNING *;
-  `;
-  const result = await executeQuery<Interest>(query, [cleanName]);
-  return result.rows[0];
-}
-
-/**
- * Delete a global interest (admin use only)
- */
-export async function deleteInterest(id: number): Promise<boolean> {
-  if (!Number.isFinite(id)) throw new Error("Invalid ID");
-  const query = `DELETE FROM interests WHERE id = $1;`;
-  const result = await executeQuery(query, [id]);
-  return (result.rowCount ?? 0) > 0;
-}
