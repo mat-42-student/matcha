@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export const Input = React.forwardRef<HTMLInputElement, any>(
+export const Input = React.forwardRef<HTMLInputElement, React.ComponentPropsWithoutRef<"input">>(
 	({ className = "", ...props }, ref) => (
 		<input
 			ref={ref}

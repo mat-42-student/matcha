@@ -25,12 +25,12 @@ export interface User {
  * Utilitaire pour construire une requête INSERT générique
  */
 async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): Promise<User> {
-  const fields = Object.keys(user)
-    .filter((f) => allowedFields.includes(f as keyof User));
-  
+  const fields = (Object.keys(user) as (keyof User)[])
+    .filter((f) => allowedFields.includes(f));
+
   const columns = fields.map((f) => `"${f}"`).join(", ");
   const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
-  const values = fields.map((f) => (user as any)[f] ?? null);
+  const values = fields.map((f) => user[f] ?? null);
 
   const query = `INSERT INTO users (${columns}) VALUES (${placeholders}) RETURNING *`;
   const result = await executeQuery<User>(query, values);
@@ -60,11 +60,11 @@ export async function updateUser(
     "gender","sex_pref","bio","birthdate","latitude","longitude"
   ];
 
-  const fields = Object.keys(updates).filter((f) => allowedFields.includes(f as keyof User));
+  const fields = (Object.keys(updates) as (keyof User)[]).filter((f) => allowedFields.includes(f));
   if (fields.length === 0) return null;
 
   const setClauses = fields.map((f, i) => `"${f}" = $${i + 1}`).join(", ");
-  const values = fields.map((f) => (updates as any)[f]);
+  const values = fields.map((f) => updates[f]);
 
   const query = `UPDATE users SET ${setClauses} WHERE id = $${fields.length + 1} RETURNING *`;
   const result = await executeQuery<User>(query, [...values, id]);

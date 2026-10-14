@@ -33,7 +33,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in DELETE /me/notifications/[notificationId]:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

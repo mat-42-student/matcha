@@ -6,6 +6,12 @@ export function Card({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export function CardContent({ children, className = "" }: any) {
+export function CardContent({
+	children,
+	className = "",
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) {
 	return <div className={className}>{children}</div>;
 }

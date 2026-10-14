@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileGeoloc from "@/components/profile/ProfileGeoloc";
@@ -8,13 +8,20 @@ import ProfileInterests from "@/components/profile/ProfileInterests";
 import ProfilePictures from "@/components/profile/ProfilePicture";
 import ProfileCompletionBar from "./ProfileCompletionBar";
 import ProfileMissingElements from "./ProfileMissingElements";
+import type { PublicUser } from "@/lib/types";
 
+// my_profile row, with the location fields the geolocation tab can set
+type ProfileUser = Omit<PublicUser, "latitude" | "longitude"> & {
+  latitude: number | null;
+  longitude: number | null;
+  country?: string;
+};
 
 export default function ProfileTabs({
   user: initialUser,
   completion: initialCompletion,
 }: {
-  user: any;
+  user: ProfileUser;
   completion: {
     percentage: number;
     missingRequired: string[];
@@ -33,8 +40,8 @@ export default function ProfileTabs({
   }, []);
 
   const handleUserUpdate = useCallback(
-    (updates: Partial<typeof user>) => {
-      setUser((prev : typeof user) => ({ ...prev, ...updates }));
+    (updates: Partial<ProfileUser>) => {
+      setUser((prev) => ({ ...prev, ...updates }));
       refreshCompletion();
     },
     // dependency (do not update handleUserUpdate in componenents unless refreshCompletion changes)
@@ -84,7 +91,7 @@ export default function ProfileTabs({
         </TabsContent>
 
         <TabsContent value="interests">
-          <ProfileInterests user={user} onUserUpdate={handleUserUpdate} />
+          <ProfileInterests onUserUpdate={handleUserUpdate} />
         </TabsContent>
       </Tabs>
     </div>

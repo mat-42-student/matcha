@@ -2,7 +2,7 @@
 
 import { Server, Socket } from "socket.io";
 import type { Server as HttpServer } from "http";
-// @ts-expect-error
+// @ts-expect-error -- cookie comes with socket.io and ships without type declarations
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
 import { ChatMsgEvent, NotifPayload, PublicUser, SocketUser } from "@/lib/types";
@@ -13,9 +13,7 @@ import { markConversationAsRead } from "../db/chat";
 type SocketRegistry = Map<string, Set<Socket>>;
 
 declare global {
-  // eslint-disable-next-line no-var
   var matchaSocketRegistry: SocketRegistry | undefined;
-  // eslint-disable-next-line no-var
   var matchaSocketServer: Server | undefined;
 }
 

@@ -4,15 +4,19 @@ import { useState, useMemo } from "react";
 import { Edit2, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { validateProfileField } from "@/lib/validators/clientValidator";
+import type { PublicUser } from "@/lib/types";
+
+type FormField = "first_name" | "last_name" | "email" | "gender" | "sex_pref" | "bio";
+type FormData = Record<FormField, string>;
 
 export default function ProfileForm({
   user,
   onUserUpdate,
 }: {
-  user: any;
-  onUserUpdate?: (updates: Partial<any>) => void;
+  user: Pick<PublicUser, FormField>;
+  onUserUpdate?: (updates: Partial<FormData>) => void;
 }) {
-  const initialData = useMemo(
+  const initialData = useMemo<FormData>(
     () => ({
       first_name: user.first_name || "",
       last_name: user.last_name || "",
@@ -26,7 +30,7 @@ export default function ProfileForm({
 
   const [formData, setFormData] = useState(initialData);
   const [prevInitialData, setPrevInitialData] = useState(initialData);
-  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<FormField | null>(null);
 
   // 🔄 Update local form if user prop changes (adjusted during render, not in an effect)
   if (initialData !== prevInitialData) {
@@ -34,8 +38,8 @@ export default function ProfileForm({
     setFormData(initialData);
   }
 
-  const saveField = async (field: string) => {
-    const value = (formData as any)[field];
+  const saveField = async (field: FormField) => {
+    const value = formData[field];
 
     const { valid, error } = validateProfileField(field, value);
     if (!valid) {
@@ -105,7 +109,7 @@ export default function ProfileForm({
 
   const renderRow = (
     label: string,
-    name: string,
+    name: FormField,
     type: "text" | "textarea" | "select" = "text"
   ) => {
     const isEditing = editingField === name;
@@ -119,14 +123,14 @@ export default function ProfileForm({
             type === "textarea" ? (
               <textarea
                 name={name}
-                value={(formData as any)[name]}
+                value={formData[name]}
                 onChange={handleChange}
                 className="ml-2 w-full rounded border px-4 py-2 text-gray-900 border-pink-300 ring-2 ring-pink-300"
               />
             ) : type === "select" ? (
               <select
                 name={name}
-                value={(formData as any)[name]}
+                value={formData[name]}
                 onChange={handleChange}
                 className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 text-gray-900"
               >
@@ -150,7 +154,7 @@ export default function ProfileForm({
               <input
                 name={name}
                 type={type}
-                value={(formData as any)[name]}
+                value={formData[name]}
                 onChange={handleChange}
                 className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 text-gray-900"
               />
@@ -171,7 +175,7 @@ export default function ProfileForm({
                   : formData.sex_pref === "B"
                   ? "Both"
                   : "-"
-                : (formData as any)[name] || "-"}
+                : formData[name] || "-"}
             </span>
           )}
         </div>

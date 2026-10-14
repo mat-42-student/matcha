@@ -20,7 +20,7 @@ export async function GET() {
 
     const notifications = await getNotificationsByUser(user.id);
     return NextResponse.json(notifications);
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in GET /me/notifications:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -22,7 +22,7 @@ export async function GET() {
 
     const interests = await getUserInterests(user.id);
     return NextResponse.json(interests);
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in GET /me/interests:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -51,11 +51,8 @@ export async function POST(req: Request) {
 
     await updateUserInterests(user.id, interestIds);
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in POST /me/interests:", err);
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

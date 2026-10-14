@@ -78,7 +78,7 @@ export function ProfilePicturesModal({
                 setPictures((prev) => [newPic, ...prev]);
                 e.target.value = "";
                 toast.success("Photo added !");
-                onUpdated && onUpdated();
+                onUpdated?.();
             } else {
                 const data = await res.json().catch(() => null);
                 toast.error(data?.error || "Error during picture upload");
@@ -95,7 +95,7 @@ export function ProfilePicturesModal({
         if (res.ok) {
         toast.success("Picture deleted !");
         await fetchPics();
-        onUpdated && onUpdated();
+        onUpdated?.();
         } else {
         const data = await res.json().catch(() => null);
         toast.error(data?.error || "Error during suppression !");
@@ -115,7 +115,7 @@ export function ProfilePicturesModal({
         if (res.ok) {
         toast.success("Main picture updated !");
         await fetchPics();
-        onUpdated && onUpdated();
+        onUpdated?.();
         } else {
         const data = await res.json().catch(() => null);
         toast.error(data?.error || "Error during update !");

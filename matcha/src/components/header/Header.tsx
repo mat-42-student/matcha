@@ -6,16 +6,18 @@ import MenuDesktop from "./MenuDesktop";
 import MenuMobile from "./MenuMobile";
 import NotificationBell from "./NotificationBell";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 export function Header() {
   const { me, setMe } = useMe();
+  const router = useRouter();
 
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST", credentials: "include" });
     setMe(null);
     toast.success("Bye 👋");
-    window.location.href = "/auth";
+    router.push("/auth");
   }
 
   return (

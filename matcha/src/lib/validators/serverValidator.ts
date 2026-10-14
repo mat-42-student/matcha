@@ -77,7 +77,7 @@ export interface ValidationResult {
 
 export function validateProfileField(
   field: string,
-  value: any
+  value: unknown
 ): ValidationResult {
   if (value === null || value === undefined) {
     return { valid: false, error: "Empty field" };
@@ -125,20 +125,21 @@ export function validateProfileField(
     }
 
     case "gender": {
-      if (!["M", "F"].includes(value))
+      if (value !== "M" && value !== "F")
         return { valid: false, error: "Must be 'M' or 'F'" };
       return { valid: true };
     }
 
     case "sex_pref": {
-      if (!["M", "F", "B"].includes(value))
+      if (value !== "M" && value !== "F" && value !== "B")
         return { valid: false, error: "Must be 'M', 'F' or 'B'" };
       return { valid: true };
     }
 
     case "bio": {
-      const str = String(value);
-      if (str.length > 500)
+      if (typeof value !== "string")
+        return { valid: false, error: "Invalid bio" };
+      if (value.length > 500)
         return { valid: false, error: "Bio is too long (max 500 characters)" };
       return { valid: true };
     }

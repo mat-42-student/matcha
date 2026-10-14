@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
           setStatus("error");
           setMessage(data.error || "Erreur inconnue ❌");
         }
-      } catch (err) {
+      } catch {
         setStatus("error");
         setMessage("Erreur réseau ❌");
       }

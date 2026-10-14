@@ -1,6 +1,6 @@
 // app/api/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { updateUser } from "@/lib/db/users";
+import { updateUser, type User } from "@/lib/db/users";
 import { getSessionUser } from "@/lib/db/session";
 import { validateProfileField } from "@/lib/validators/serverValidator";
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
 
-    const updates: Record<string, any> = {};
+    const updates: Record<string, unknown> = {};
     for (const [field, value] of Object.entries(body)) {
       const { valid, error } = validateProfileField(field, value);
       if (!valid) {
@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No update given" }, { status: 400 });
     }
 
-    const updated = await updateUser(user.id, updates);
+    // every field went through validateProfileField, which rejects anything updateUser does not expect
+    const updated = await updateUser(user.id, updates as Partial<User>);
 
     return NextResponse.json({ success: true, user: updated });
   } catch (e) {

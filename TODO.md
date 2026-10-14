@@ -37,7 +37,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
     - Props → state (`UsersStore`, `ProfileForm`) : resynchro pendant le rendu ; `FilterBar` : effet inutile supprimé.
     - Fetch au montage : `BrowseFromUrl` remplace `MainContent` ×1 et `Liked`/`LikeMe`/`Matches`/`Visitors` (supprimés) ; flag `cancelled` dans les effets de fetch.
     - `LikeTabs` : onglet lu dans l'URL (`?tab=`). `ChatWindow` : `key` par conversation. `useGeolocation().requestLocation()` renvoie la position (plus d'effet dans `ProfileGeoloc`).
-- [ ] 🟡 **Nettoyage du lint** (44 problèmes restants, objectif zéro erreur / warning) :
+- [x] 🟡 **Nettoyage du lint** (44 problèmes restants, objectif zéro erreur / warning) :
+  - Corrigé (`make lint` : 0 problème) : `any` remplacés par les vrais types (`PublicUser`, `unknown` + narrowing dans `validateProfileField`, `keyof User` dans `users.ts`) ; `ui/tabs` passe par un contexte typé au lieu de `cloneElement` ; `ProfileInterests` remonte des noms d'intérêts (et non des ids) dans `user.interests` ; logout via `router.push`.
   - `no-explicit-any` (31 erreurs) : surtout [ProfileForm.tsx](matcha/src/components/profile/ProfileForm.tsx) (×7) et [ui/tabs.tsx](matcha/src/components/ui/tabs.tsx) (×6) ; aussi `ui/input`, `ui/textarea`, `ui/cards`, `ProfileInterests`, `ProfileTabs`, `ProfileGeoloc`, `ProfilePicturesModal`, routes `me/interests`, `me/notifications`, `profile`, `lib/db/users.ts`, `lib/gps.ts`, `profileCompletion.ts`, `serverValidator.ts`.
   - `no-unused-vars` (7) : `api/users/route.ts`, `verify-email/page.tsx`, `ProfileInterests`, `ProfileTabs`, `profileCompletion.ts` (cf. §4 code mort).
   - `no-unused-expressions` (4) : `cond && fn()` dans [ProfileInterests.tsx](matcha/src/components/profile/ProfileInterests.tsx) (l. 63), [ProfilePicturesModal.tsx](matcha/src/components/profile/ProfilePicturesModal.tsx) (l. 69, 86, 106).
@@ -70,7 +71,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 `/api/search` : body non validé (`ageRange` mal typé → 500).
 - [ ] 🟢 **Tokens email** : token de reset loggé en clair ([password-request/route.ts](matcha/src/app/api/e-mail/password-request/route.ts) l. 22) ; anciens tokens jamais invalidés ; un reset ne supprime pas les sessions existantes.
 - [ ] 🟢 `/api/users/[userId]/pics` et `/allpics` sans authentification (ni contrôle de blocage).
-- [ ] 🟢 `/api/me/interests` renvoie `err.message` au client.
+- [x] 🟢 `/api/me/interests` renvoie `err.message` au client.
 - [ ] 🟢 `setMainPicture` et `deleteUserPicture` : plusieurs requêtes sans transaction.
 
 ## 3. Architecture

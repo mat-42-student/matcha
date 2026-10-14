@@ -6,18 +6,20 @@ import { useState } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import toast from "react-hot-toast";
 
+type LocationData = {
+  city: string;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 interface ProfileGeolocProps {
   city?: string | null;
   country?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  onChange?: (data: {
-    city: string;
-    country: string;
-    latitude: number | null;
-    longitude: number | null;
-  }) => void;
-  onUserUpdate?: (updates: Partial<any>) => void;
+  onChange?: (data: LocationData) => void;
+  onUserUpdate?: (updates: LocationData) => void;
 }
 
 export default function ProfileGeoloc({
@@ -40,12 +42,7 @@ export default function ProfileGeoloc({
   const { requestLocation, loading } = useGeolocation();
 
   // 💾 Save & notify parent
-  const saveAndUpdate = async (newData: {
-    city: string;
-    country: string;
-    latitude: number | null;
-    longitude: number | null;
-  }) => {
+  const saveAndUpdate = async (newData: LocationData) => {
     const safeData = {
       city: newData.city ?? "",
       country: newData.country ?? "",

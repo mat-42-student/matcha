@@ -3,13 +3,18 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import type { PublicUser } from "@/lib/types";
 
 interface Interest {
   id: number;
   name: string;
 }
 
-export default function ProfileInterests({ user, onUserUpdate }: { user: any, onUserUpdate?: (updates: Partial<any>) => void }) {
+export default function ProfileInterests({
+  onUserUpdate,
+}: {
+  onUserUpdate?: (updates: Pick<PublicUser, "interests">) => void;
+}) {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,13 +59,13 @@ export default function ProfileInterests({ user, onUserUpdate }: { user: any, on
         body: JSON.stringify({ interestIds: selected }),
       });
 
-      const data = await res.json();
-
-
       if (res.ok) {
         toast.success("Interests updated !");
         setHasChanges(false);
-        onUserUpdate && onUserUpdate({ interests: selected });
+        // user.interests holds names, not ids
+        onUserUpdate?.({
+          interests: interests.filter((i) => selected.includes(i.id)).map((i) => i.name),
+        });
       } else {
         toast.error("Error during saving");
       }
