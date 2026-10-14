@@ -41,18 +41,47 @@ export async function getPictures(userId: string) {
   return result.rows;
 }
 
+// Hides pictures of $1 from viewer $2 when either user blocked the other
+const NO_BLOCK_BETWEEN = `
+  NOT EXISTS (
+    SELECT 1 FROM matches
+    WHERE ((user1_id = $1 AND user2_id = $2)
+        OR (user1_id = $2 AND user2_id = $1))
+      AND status = 'block'
+  )
+`;
+
 /**
- * get all pictures from a user exept main.
+ * get all pictures from a user exept main, as seen by another user.
+ * Returns nothing if either user blocked the other.
  * @param userId - user's ID
+ * @param viewerId - ID of the user requesting the pictures
  */
-export async function getAllPicturesButMain(userId: string) {
+export async function getAllPicturesButMain(userId: string, viewerId: string) {
   const query = `
     SELECT id, mime_type, encode(data, 'base64') AS data
     FROM pictures
-    WHERE user_id = $1 AND NOT is_main;
+    WHERE user_id = $1 AND NOT is_main
+      AND ${NO_BLOCK_BETWEEN};
   `;
-  const result = await executeQuery(query, [userId]);
+  const result = await executeQuery(query, [userId, viewerId]);
   return result.rows;
+}
+
+/**
+ * Main picture of a user as seen by another user.
+ * Returns null if there is none or if either user blocked the other.
+ */
+export async function getVisibleMainPicture(userId: string, viewerId: string) {
+  const query = `
+    SELECT id, mime_type, encode(data, 'base64') AS data
+    FROM pictures
+    WHERE user_id = $1 AND is_main = TRUE
+      AND ${NO_BLOCK_BETWEEN}
+    LIMIT 1;
+  `;
+  const result = await executeQuery(query, [userId, viewerId]);
+  return result.rows[0] || null;
 }
 
 

@@ -11,6 +11,10 @@ export function isValidUsername(username: string): boolean {
   return /^[A-Za-z0-9_]{3,20}$/.test(username);
 }
 
+export function isValidUuid(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 function isStrongPassword(password: string): boolean {
   return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
 }
