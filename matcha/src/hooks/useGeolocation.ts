@@ -3,48 +3,54 @@
 
 import { useState } from "react";
 
+export type GeoLocation = {
+  latitude: number;
+  longitude: number;
+  city: string;
+  country: string;
+};
+
+async function locateFromBrowser(position: GeolocationPosition): Promise<GeoLocation> {
+  const { latitude, longitude } = position.coords;
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+  );
+  const data = await res.json();
+  const city = data.address.city || data.address.town || data.address.village || "";
+  const country = data.address.country || "";
+  return { latitude, longitude, city, country };
+}
+
+async function locateFromIp(): Promise<GeoLocation> {
+  const res = await fetch(`https://ipwhois.app/json/`);
+  const data = await res.json();
+  if (!data.success) throw new Error("IP lookup failed");
+  const { latitude, longitude, city, country } = data;
+  return { latitude, longitude, city: city ?? "", country: country ?? "" };
+}
+
+function getBrowserPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) =>
+    navigator.geolocation.getCurrentPosition(resolve, reject)
+  );
+}
+
 export function useGeolocation() {
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState<{
-    latitude?: number;
-    longitude?: number;
-    city?: string;
-    country?: string;
-  }>({});
-  const [error, setError] = useState<string | null>(null);
 
-  async function locateFromBrowser(position: GeolocationPosition) {
-    const { latitude, longitude } = position.coords;
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-    );
-    const data = await res.json();
-    const city = data.address.city || data.address.town || data.address.village;
-    const country = data.address.country;
-    setLocation({ latitude, longitude, city, country });
-  }
-
-  async function locateFromIp() {
-    const res = await fetch(`https://ipwhois.app/json/`);
-    const data = await res.json();
-    if (!data.success) throw new Error("IP lookup failed");
-    const { latitude, longitude, city, country } = data;
-    setLocation({ latitude, longitude, city, country });
-  }
-
-  function requestLocation() {
+  // Resolves with the browser position, or an IP based approximation if it is refused or fails
+  async function requestLocation(): Promise<GeoLocation> {
     setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        await locateFromBrowser(pos);
-        setLoading(false);
-      },
-      async () => {
-        await locateFromIp();
-        setLoading(false);
+    try {
+      try {
+        return await locateFromBrowser(await getBrowserPosition());
+      } catch {
+        return await locateFromIp();
       }
-    );
+    } finally {
+      setLoading(false);
+    }
   }
 
-  return { requestLocation, location, loading, error };
+  return { requestLocation, loading };
 }

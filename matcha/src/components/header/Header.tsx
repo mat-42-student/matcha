@@ -6,6 +6,7 @@ import MenuDesktop from "./MenuDesktop";
 import MenuMobile from "./MenuMobile";
 import NotificationBell from "./NotificationBell";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export function Header() {
   const { me, setMe } = useMe();
@@ -13,6 +14,7 @@ export function Header() {
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST", credentials: "include" });
     setMe(null);
+    toast.success("Bye 👋");
     window.location.href = "/auth";
   }
 

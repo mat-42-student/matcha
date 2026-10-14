@@ -12,7 +12,8 @@ export default function MainChat() {
   return (
     <div className="flex h-full">
       <ChatSidebar onSelectUser={setSelectedUser} />
-      <ChatWindow selectedUser={selectedUser} />
+      {/* key: a new conversation starts with a fresh window instead of clearing the old one */}
+      <ChatWindow key={selectedUser?.id} selectedUser={selectedUser} />
     </div>
   );
 }

@@ -1,25 +1,34 @@
-// matcha/src/app/likes/page.tsx
+// matcha/src/components/like/LikeTabs.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import Liked from "@/components/like/Liked";
-import LikeMe from "@/components/like/LikeMe";
-import Matches from "@/components/like/Matches";
-import Visitors from "@/components/like/Visitors";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import BrowseFromUrl from "@/components/browse/BrowseFromUrl";
 import LButton from "./LButton";
 import { LikeTabsTypes } from "@/lib/types";
 
-export default function LikeTabs() {
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<LikeTabsTypes>("visitors");
+const TAB_URLS: Record<LikeTabsTypes, string> = {
+  visitors: "/api/match/getViews",
+  liked: "/api/match/getLikes",
+  likeMe: "/api/match/getLikeMe",
+  matches: "/api/match/getMatches",
+};
 
-  useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam && ["visitors", "liked", "likeMe", "matches"].includes(tabParam)) {
-      setActiveTab(tabParam as LikeTabsTypes);
-    }
-  }, [searchParams]);
+function isLikeTab(tab: string | null): tab is LikeTabsTypes {
+  return tab !== null && Object.hasOwn(TAB_URLS, tab);
+}
+
+export default function LikeTabs() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // The active tab lives in the url (?tab=...) so notification links can open a given tab
+  const tabParam = searchParams.get("tab");
+  const activeTab: LikeTabsTypes = isLikeTab(tabParam) ? tabParam : "visitors";
+
+  function setActiveTab(tab: LikeTabsTypes) {
+    router.replace(`${pathname}?tab=${tab}`, { scroll: false });
+  }
 
   return (
     <div className="max-w-3xl mx-auto mt-8">
@@ -28,14 +37,11 @@ export default function LikeTabs() {
         <LButton tab="liked" activeTab={activeTab} setActiveTab={setActiveTab}>People I like</LButton>
         <LButton tab="likeMe" activeTab={activeTab} setActiveTab={setActiveTab}>People who likes me</LButton>
         <LButton tab="matches" activeTab={activeTab} setActiveTab={setActiveTab}>Matches</LButton>
-
       </div>
 
-      <div>
-        {activeTab === "visitors" && <Visitors />}
-        {activeTab === "liked" && <Liked />}
-        {activeTab === "likeMe" && <LikeMe />}
-        {activeTab === "matches" && <Matches />}
+      <div className="p-4">
+        {/* key: remount on tab change so filters and pagination start fresh */}
+        <BrowseFromUrl key={activeTab} url={TAB_URLS[activeTab]} />
       </div>
     </div>
   );

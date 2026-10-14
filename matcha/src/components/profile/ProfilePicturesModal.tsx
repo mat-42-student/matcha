@@ -5,6 +5,20 @@ import Image from "next/image";
 import { X, Star, Trash2, Upload } from "lucide-react";
 import toast from 'react-hot-toast';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from "@/lib/validators/imageValidator";
+import { Picture } from "@/lib/types";
+
+type MyPicture = Picture & { is_main: boolean };
+
+async function loadPictures(): Promise<MyPicture[]> {
+    try {
+        const res = await fetch(`/api/me/pictures`);
+        if (!res.ok || res.status === 204) return [];
+        return await res.json();
+    } catch (err) {
+        console.error("Erreur lors du chargement des photos:", err);
+        return [];
+    }
+}
 
 export function ProfilePicturesModal({
   userId,
@@ -15,26 +29,24 @@ export function ProfilePicturesModal({
   onClose: () => void;
   onUpdated?: () => void;
 }) {
-    const [pictures, setPictures] = useState<any[]>([]);
+    const [pictures, setPictures] = useState<MyPicture[]>([]);
 
     const fetchPics = async () => {
-        try {
-        const res = await fetch(`/api/me/pictures`);
-        if (!res.ok || res.status === 204) {
-            setPictures([]);
-            return;
-        }
-
-        const data = await res.json();
-        setPictures(data);
-        } catch (err) {
-        console.error("Erreur lors du chargement des photos:", err);
-        setPictures([]);
-        }
+        setPictures(await loadPictures());
     };
 
     useEffect(() => {
-        fetchPics();
+        // Ignore the response if the modal closed in the meantime
+        let cancelled = false;
+
+        (async () => {
+            const pics = await loadPictures();
+            if (!cancelled) setPictures(pics);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
     }, [userId]);
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

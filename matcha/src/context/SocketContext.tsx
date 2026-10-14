@@ -17,7 +17,6 @@ interface Notification {
 
 interface SocketContextType {
   socket: Socket | null;
-  chatMsg: Payload | null;
   like: Payload | null;
   unlike: Payload | null;
   match: Payload | null;
@@ -34,7 +33,6 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
-  chatMsg: null,
   like: null,
   unlike: null,
   match: null,
@@ -52,7 +50,6 @@ const SocketContext = createContext<SocketContextType>({
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { me } = useMe();
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [chatMsg, setChatMsg] = useState<Payload | null>(null);
   const [like, setLike] = useState<Payload | null>(null);
   const [unlike, setUnlike] = useState<Payload | null>(null);
   const [match, setMatch] = useState<Payload | null>(null);
@@ -60,11 +57,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [chatUsers, setChatUsers] = useState<PublicUser[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
-  const [chatUsersLoaded, setChatUsersLoaded] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  // Depend on the id only: updating the profile must not reconnect the socket
+  const meId = me?.id;
 
   const fetchNotifications = useCallback(async () => {
-    if (!me) return;
+    if (!meId) return;
     try {
       const res = await fetch(`/api/me/notifications`, {
         cache: "no-store",
@@ -75,7 +73,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Error fetching notifications:", err);
     }
-  }, [me]);
+  }, [meId]);
 
   const removeNotification = useCallback(async (notificationId: number) => {
     try {
@@ -136,11 +134,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  useEffect(() => {
-    if (!chatUsersLoaded) return;
+  const handleChatUsers = useCallback((users: PublicUser[]) => {
+    setChatUsers(users);
 
-    const activeChatIds = new Set(chatUsers.map((user) => user.id));
-
+    // Drop unread counters of users we can no longer chat with
+    const activeChatIds = new Set(users.map((user) => user.id));
     setUnreadMessages((prev) => {
       const next = new Map<string, number>();
       for (const [userId, count] of prev.entries()) {
@@ -150,32 +148,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }, [chatUsers, chatUsersLoaded]);
+  }, []);
 
   useEffect(() => {
-    if (!socket || !me || !relationChanged) return;
-
-    if (
-      relationChanged.likeStatus === "match" ||
-      relationChanged.likeStatus === "none" ||
-      relationChanged.likeStatus === "block"
-    ) {
-      socket.emit("get-chat-users");
-      fetchNotifications();
-    }
-  }, [socket, me, relationChanged, fetchNotifications]);
-
-  useEffect(() => {
-    if (!me) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setNotifications([]);
-        setOnlineUsers([]);
-        toast.success("Bye 👋");
-      }
-      return;
-    }
+    if (!meId) return;
 
     const s = io(window.location.origin, {
       path: "/socket.io",
@@ -186,31 +162,43 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       reconnectionDelay: 1000,
     });
 
-    setSocket(s);
-
+    // Expose the socket once connected (same object on reconnect, so no extra render)
+    // and (re)load notifications, which also catches up on the ones missed while disconnected
+    s.on("connect", () => {
+      setSocket(s);
+      fetchNotifications();
+    });
     s.on("notif", handleNotif);
     s.on("like", setLike);
     s.on("match", setMatch);
     s.on("unlike", setUnlike);
-    s.on("relation-changed", setRelationChanged);
-    s.on("chat-msg", setChatMsg);
-    s.on("chat-unread-count", handleChatUnreadMessages);
-    s.on("chat-users", (users: PublicUser[]) => {
-      setChatUsers(users);
-      setChatUsersLoaded(true);
+    s.on("relation-changed", (payload: RelationChangedPayload) => {
+      setRelationChanged(payload);
+      if (
+        payload.likeStatus === "match" ||
+        payload.likeStatus === "none" ||
+        payload.likeStatus === "block"
+      ) {
+        s.emit("get-chat-users");
+        fetchNotifications();
+      }
     });
+    s.on("chat-unread-count", handleChatUnreadMessages);
+    s.on("chat-users", handleChatUsers);
 
     s.on("online-users", (ids: string[]) => {
       setOnlineUsers(ids);
     });
 
-    fetchNotifications();
-
+    // Runs on logout (meId becomes undefined) and on unmount
     return () => {
       s.removeAllListeners();
       s.disconnect();
+      setSocket(null);
+      setNotifications([]);
+      setOnlineUsers([]);
     };
-  }, [me, fetchNotifications, handleNotif, handleChatUnreadMessages]);
+  }, [meId, fetchNotifications, handleNotif, handleChatUnreadMessages, handleChatUsers]);
 
   return (
     <SocketContext.Provider
@@ -220,7 +208,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         unlike,
         match,
         relationChanged,
-        chatMsg,
         chatUsers,
         unreadMessages,
         setUnreadMessages,

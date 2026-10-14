@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
-import { PublicUser, ChatMsgEvent, MAX_MESSAGE_LENGTH } from "@/lib/types";
+import { PublicUser, ChatMsgEvent, MAX_MESSAGE_LENGTH, Payload } from "@/lib/types";
 import ChatCardUser from "../card-user/ChatCardUser";
 import { useMe } from "@/context/UserContext";
 
@@ -22,8 +22,10 @@ export default function ChatWindow({
 }: {
   selectedUser: PublicUser | null;
 }) {
-  const { socket, chatMsg } = useSocket();
+  const { socket } = useSocket();
   const { me } = useMe();
+  const meId = me?.id;
+  const selectedUserId = selectedUser?.id;
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -63,48 +65,53 @@ export default function ChatWindow({
   }, [socket, selectedUser?.id]);
 
   useEffect(() => {
-    if (!chatMsg || !selectedUser) return;
-    const isForCurrentChat =
-      chatMsg.from.id === selectedUser.id || chatMsg.to.id === selectedUser.id;
+    if (!socket || !selectedUserId) return;
 
-    if (isForCurrentChat) {
+    function handleChatMsg(chatMsg: Payload) {
+      const isForCurrentChat =
+        chatMsg.from.id === selectedUserId || chatMsg.to.id === selectedUserId;
+      if (!isForCurrentChat) return;
+
       setMessages((prev) => [
         ...prev,
         {
-          from: chatMsg.from.id === me?.id ? "me" : "you",
+          from: chatMsg.from.id === meId ? "me" : "you",
           text: chatMsg.msg,
         },
       ]);
     }
-  }, [chatMsg, selectedUser, me]);
+
+    socket.on("chat-msg", handleChatMsg);
+    return () => {
+      socket.off("chat-msg", handleChatMsg);
+    };
+  }, [socket, selectedUserId, meId]);
 
   useEffect(() => {
-    function transformMessages(raw: RawMessage[]): Message[] {
-      return raw.map((m) => ({
-        from: m.sender_id === me?.id ? "me" : "you",
-        text: m.message,
-      }));
-    }
-
-    async function fetchMessages(): Promise<RawMessage[]> {
-      if (!selectedUser) return [];
-      try {
-        const res = await fetch(`/api/chat/${selectedUser?.id}`, {
-          method: "GET",
-          credentials: "include" });
-        return await res.json();
-      } catch {
-        return [];
-      }
-    }
-
-    setMessages([]);
+    if (!selectedUserId) return;
+    // Ignore the response if the window unmounted in the meantime
+    let cancelled = false;
 
     (async () => {
-      const fetchedMessages = await fetchMessages();
-      setMessages(transformMessages(fetchedMessages));
+      try {
+        const res = await fetch(`/api/chat/${selectedUserId}`, {
+          method: "GET",
+          credentials: "include" });
+        const raw: RawMessage[] = await res.json();
+        if (cancelled) return;
+        setMessages(raw.map((m): Message => ({
+          from: m.sender_id === meId ? "me" : "you",
+          text: m.message,
+        })));
+      } catch (err) {
+        console.error("Could not retrieve messages:", err);
+      }
     })();
-  }, [selectedUser, me]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedUserId, meId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

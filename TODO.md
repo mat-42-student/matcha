@@ -31,16 +31,15 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 **Notification « message reçu » jamais créée** en DB (type présent dans l'enum, jamais émis).
 - [x] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
   - Corrigé : `eslint@9` + `eslint-config-next@16.4.0` en devDependencies, config flat native, `make lint` / `make typecheck` (fonctionnent site éteint).
-- [ ] 🟡 **Erreurs de hooks React** (`make lint`) : risque de rendus en cascade / données périmées → warnings console. À traiter en priorité.
-  - `react-hooks/set-state-in-effect` (17 erreurs) : `setState` appelé directement dans un `useEffect` (souvent un fetch initial ou une resynchro de prop → state).
-    - [SocketContext.tsx](matcha/src/context/SocketContext.tsx) (l. 144, 164, 172), [UsersStore.tsx](matcha/src/context/UsersStore.tsx) (l. 32)
-    - [ChatWindow.tsx](matcha/src/components/chat/ChatWindow.tsx) (l. 71, 101), [FilterBar.tsx](matcha/src/components/browse/FilterBar.tsx) (l. 58), [MainContent.tsx](matcha/src/components/browse/MainContent.tsx) (l. 28)
-    - `components/like/` : [LikeMe.tsx](matcha/src/components/like/LikeMe.tsx), [Liked.tsx](matcha/src/components/like/Liked.tsx), [Matches.tsx](matcha/src/components/like/Matches.tsx), [Visitors.tsx](matcha/src/components/like/Visitors.tsx) (l. 27, même pattern ×4 → factoriser), [LikeTabs.tsx](matcha/src/components/like/LikeTabs.tsx) (l. 20)
-    - `components/profile/` : [ProfileForm.tsx](matcha/src/components/profile/ProfileForm.tsx) (l. 32), [ProfileGeoloc.tsx](matcha/src/components/profile/ProfileGeoloc.tsx) (l. 119), [ProfilePicture.tsx](matcha/src/components/profile/ProfilePicture.tsx) (l. 37), [ProfilePicturesModal.tsx](matcha/src/components/profile/ProfilePicturesModal.tsx) (l. 37)
-  - `react-hooks/exhaustive-deps` (3 warnings) : dépendances manquantes → [Geoloc.tsx](matcha/src/components/geoloc/Geoloc.tsx) (l. 60), [ProfileGeoloc.tsx](matcha/src/components/profile/ProfileGeoloc.tsx) (l. 126), [SocketContext.tsx](matcha/src/context/SocketContext.tsx) (l. 213, `socket`).
-- [ ] 🟡 **Nettoyage du lint** (le reste des 66 problèmes, objectif zéro erreur / warning) :
+- [x] 🟡 **Erreurs de hooks React** (`make lint`) : 17 `set-state-in-effect` + 3 `exhaustive-deps`.
+  - Corrigé :
+    - `SocketContext` : les setState passent dans les handlers du socket (`connect`, `relation-changed`, `chat-users`) ; reset au logout dans le cleanup ; dépend de `me.id` (une mise à jour du profil ne reconnecte plus le socket) ; `chatMsg` retiré du contexte, `ChatWindow` écoute `chat-msg` lui-même.
+    - Props → state (`UsersStore`, `ProfileForm`) : resynchro pendant le rendu ; `FilterBar` : effet inutile supprimé.
+    - Fetch au montage : `BrowseFromUrl` remplace `MainContent` ×1 et `Liked`/`LikeMe`/`Matches`/`Visitors` (supprimés) ; flag `cancelled` dans les effets de fetch.
+    - `LikeTabs` : onglet lu dans l'URL (`?tab=`). `ChatWindow` : `key` par conversation. `useGeolocation().requestLocation()` renvoie la position (plus d'effet dans `ProfileGeoloc`).
+- [ ] 🟡 **Nettoyage du lint** (44 problèmes restants, objectif zéro erreur / warning) :
   - `no-explicit-any` (31 erreurs) : surtout [ProfileForm.tsx](matcha/src/components/profile/ProfileForm.tsx) (×7) et [ui/tabs.tsx](matcha/src/components/ui/tabs.tsx) (×6) ; aussi `ui/input`, `ui/textarea`, `ui/cards`, `ProfileInterests`, `ProfileTabs`, `ProfileGeoloc`, `ProfilePicturesModal`, routes `me/interests`, `me/notifications`, `profile`, `lib/db/users.ts`, `lib/gps.ts`, `profileCompletion.ts`, `serverValidator.ts`.
-  - `no-unused-vars` (7) : `api/users/route.ts`, `verify-email/page.tsx`, `ProfileInterests`, `ProfileTabs`, `useGeolocation`, `profileCompletion.ts` (cf. §4 code mort).
+  - `no-unused-vars` (7) : `api/users/route.ts`, `verify-email/page.tsx`, `ProfileInterests`, `ProfileTabs`, `profileCompletion.ts` (cf. §4 code mort).
   - `no-unused-expressions` (4) : `cond && fn()` dans [ProfileInterests.tsx](matcha/src/components/profile/ProfileInterests.tsx) (l. 63), [ProfilePicturesModal.tsx](matcha/src/components/profile/ProfilePicturesModal.tsx) (l. 69, 86, 106).
   - `no-location-assign-relative-destination` : [Header.tsx](matcha/src/components/header/Header.tsx) (l. 16) → router Next.
   - [socket.ts](matcha/src/lib/socket/socket.ts) : `@ts-expect-error` sans description sur l'import `cookie` (l. 5), deux `eslint-disable no-var` devenus inutiles (l. 16, 18).

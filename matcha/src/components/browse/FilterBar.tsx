@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PublicUser } from "@/lib/types";
 
 export type FilterValues = {
@@ -52,11 +52,8 @@ export function filterUsers(users: PublicUser[], filters: FilterValues) {
 
 export default function FilterSidebar({ values, onChange }: FilterBarProps) {
   const [isOpen, setIsOpen] = useState(true);
+  // values only change through this component (apply / reset), which already updates the draft
   const [draftValues, setDraftValues] = useState(values);
-
-  useEffect(() => {
-    setDraftValues(values);
-  }, [values]);
 
   function updateValue<K extends keyof FilterValues>(
     key: K,

@@ -1,7 +1,7 @@
 // src/context/UsersStore.tsx
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { LikeStatus, PublicUser } from "@/lib/types";
 
 type UsersStoreType = {
@@ -27,10 +27,13 @@ export function UsersStoreProvider({
 }) {
 
   const [users, setUsers] = useState(initialUsers);
+  const [prevInitialUsers, setPrevInitialUsers] = useState(initialUsers);
 
-  useEffect(() => {
+  // Reset the store when the parent provides a new list (adjusted during render, not in an effect)
+  if (initialUsers !== prevInitialUsers) {
+    setPrevInitialUsers(initialUsers);
     setUsers(initialUsers);
-  }, [initialUsers]);
+  }
 
   const updateUser = useCallback((u: PublicUser) => {
     setUsers(prev => prev.map(user => (user.id === u.id ? u : user)));

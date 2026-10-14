@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import toast from "react-hot-toast";
 
@@ -37,7 +37,7 @@ export default function ProfileGeoloc({
     longitude: initialLon ?? null,
   });
 
-  const { requestLocation, location, loading } = useGeolocation();
+  const { requestLocation, loading } = useGeolocation();
 
   // 💾 Save & notify parent
   const saveAndUpdate = async (newData: {
@@ -77,7 +77,8 @@ export default function ProfileGeoloc({
   // 🧭 Handle geolocation
   const handleGeoloc = async () => {
     try {
-      await requestLocation();
+      const location = await requestLocation();
+      await saveAndUpdate(location);
     } catch (err) {
       console.error(err);
       toast.error("Unable to get your location.");
@@ -112,18 +113,6 @@ export default function ProfileGeoloc({
       toast.error("City lookup failed");
     }
   };
-
-  // 🔄 Update when geolocation changes
-  useEffect(() => {
-    if (useGeoloc && location.latitude != null && location.longitude != null) {
-      saveAndUpdate({
-        city: location.city ?? "",
-        country: location.country ?? "",
-        latitude: location.latitude,
-        longitude: location.longitude,
-      });
-    }
-  }, [location, useGeoloc]);
 
   return (
     <div className="py-4 border-b text-gray-900">

@@ -1,6 +1,6 @@
 // matcha/src/components/profile/ProfileForm.tsx
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Edit2, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { validateProfileField } from "@/lib/validators/clientValidator";
@@ -25,12 +25,14 @@ export default function ProfileForm({
   );
 
   const [formData, setFormData] = useState(initialData);
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  // 🔄 Update local form if user prop changes
-  useEffect(() => {
+  // 🔄 Update local form if user prop changes (adjusted during render, not in an effect)
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
     setFormData(initialData);
-  }, [initialData]);
+  }
 
   const saveField = async (field: string) => {
     const value = (formData as any)[field];
