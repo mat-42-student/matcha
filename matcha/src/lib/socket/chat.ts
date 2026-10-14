@@ -1,6 +1,8 @@
-import { ChatMsgEvent, MAX_MESSAGE_LENGTH, Payload, SocketUser, UnreadMessages } from "@/lib/types";
+import { ChatMsgEvent, MAX_MESSAGE_LENGTH, NotifPayload, Payload, SocketUser, UnreadMessages } from "@/lib/types";
 import { isUserActivelyChattingWith, send } from "./socket";
 import { markConversationAsRead, storeMessage, getOnlineMatchedUsers, getUnreadCountByUsers, getChatPartner } from "../db/chat";
+import { createNotification } from "../db/notifications";
+import { getUserById } from "../db/users";
 
 export async function handleChatMessage(sender: SocketUser, event: ChatMsgEvent) {
   if (typeof event?.to !== "string" || typeof event?.msg !== "string") return;
@@ -19,6 +21,10 @@ export async function handleChatMessage(sender: SocketUser, event: ChatMsgEvent)
 
   if (isUserActivelyChattingWith(recipient.id, sender.id)) {
     await markConversationAsRead(sender.id, recipient.id);
+  } else {
+    const senderName = (await getUserById(sender.id))?.username || "Someone";
+    await createNotification(recipient.id, sender.id, "message", `${senderName} sent you a message`);
+    send<NotifPayload>(recipient.id, "notif", { from: sender, msg: "message" });
   }
 
   await sendUnreadMessagesCount(recipient.id);

@@ -29,7 +29,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - [matcha/src/app/api/match/[userId]/like/route.ts](matcha/src/app/api/match/[userId]/like/route.ts)
   - Corrigé : 403 sans photo principale (`hasMainPicture`) ou en cas de block dans un sens ou l'autre ; un re-like d'un like/match existant renvoie le statut courant sans rien insérer. Toast d'erreur dans `LikeButton`.
 - [ ] 🟢/🟡 **« Signaler comme fake account » absent.**
-- [ ] 🟢 **Notification « message reçu » jamais créée** en DB (type présent dans l'enum, jamais émis).
+- [x] 🟢 **Notification « message reçu » jamais créée** en DB (type présent dans l'enum, jamais émis).
+  - Corrigé : `handleChatMessage` crée la notif `message` en DB et émet `notif` au destinataire, sauf s'il a déjà la conversation ouverte ; une seule notif `message` par expéditeur (la plus récente remplace l'ancienne) ; un clic dans la cloche ouvre `/chat`.
 - [x] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
   - Corrigé : `eslint@9` + `eslint-config-next@16.4.0` en devDependencies, config flat native, `make lint` / `make typecheck` (fonctionnent site éteint).
 - [x] 🟡 **Erreurs de hooks React** (`make lint`) : 17 `set-state-in-effect` + 3 `exhaustive-deps`.
@@ -78,7 +79,7 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 ## 3. Architecture
 
 - [ ] 🟡/🔴 **Table `matches` fourre-tout** (`like` / `match` / `block` dans un `status`) : on ne sait pas qui a bloqué qui, un block écrase un match, pas de contrainte d'unicité. Passer à `likes(from, to)` + `blocks(blocker, blocked)`, match = like réciproque. Impacte `likes.ts`, `matches.ts`, `chat.ts`, `views.ts`, les vues SQL et `compatible_users_from`.
-- [ ] 🟡 **Notifications temps réel déclenchées par le client** : like / unlike / match désormais émis par la route `like` (les events socket `notif` / `relation-changed` côté client ont été supprimés). Reste : le block n'envoie rien en temps réel, et les notifs « message » (cf. §1).
+- [ ] 🟡 **Notifications temps réel déclenchées par le client** : like / unlike / match désormais émis par la route `like` (les events socket `notif` / `relation-changed` côté client ont été supprimés). Les notifs « message » sont émises par le serveur socket. Reste : le block n'envoie rien en temps réel.
 - [ ] 🟢 **Bloc d'auth copié-collé dans ~30 routes** (messages FR/EN mélangés) → helper `requireUser()`.
 - [ ] 🟡 **Logique métier dans `db-utils.ts`** (score, Haversine) → la sortir dans un module dédié. `completeUserInfos` fait **une requête par user** (`getMatchStatus`) → 500 requêtes par recherche. Filtre de distance fait en JS après chargement complet alors que `earthdistance` est installé.
 - [ ] 🟡 (optionnel) Images en `bytea` renvoyées en base64 dans du JSON, un fetch par carte : servir en binaire avec `Content-Type` et cache.

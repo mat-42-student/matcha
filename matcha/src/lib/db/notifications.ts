@@ -22,6 +22,13 @@ export async function createNotification(
   } else if (type === "unlike") {
     // Remove all notifications between both users
     await deleteAllNotificationsBetweenUsers(targetId, senderId);
+  } else if (type === "message") {
+    // Keep a single message notification per conversation: the latest one
+    await executeQuery(
+      `DELETE FROM notifications WHERE target_id = $1 AND sender_id = $2 AND type = 'message';`,
+      [targetId, senderId],
+      client
+    );
   }
 
   // Create the new notification

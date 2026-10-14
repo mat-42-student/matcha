@@ -85,7 +85,7 @@ export default function NotificationBell() {
             notifications.map((notif) => (
               <Link
                 key={notif.id}
-                href={`/likes?tab=${notificationTypeToTab(notif.type)}`}
+                href={notif.type === "message" ? "/chat" : `/likes?tab=${notificationTypeToTab(notif.type)}`}
                 onClick={() => setOpen(false)}
                 className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out cursor-pointer ${
                   exitingIds.has(notif.id) ? "opacity-0 -translate-x-2 scale-[0.98]" : "opacity-100 translate-x-0 scale-100"
