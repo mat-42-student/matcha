@@ -225,6 +225,8 @@ AS $$
     u.id <> me.id
     -- only complete profiles (keep in sync with lib/profileCompletion.ts)
     AND u.gender IS NOT NULL
+    -- NULL sex_pref = profile not completed yet (not bisexual: 'B' is an explicit choice)
+    AND u.sex_pref IS NOT NULL
     AND u.latitude IS NOT NULL
     AND u.longitude IS NOT NULL
     AND json_array_length(u.interests) >= 3
