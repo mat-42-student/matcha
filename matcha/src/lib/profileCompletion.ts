@@ -22,7 +22,6 @@ export async function analyzeProfileCompletion(user: PublicUser | null): Promise
   const missingOptional: string[] = [];
 
   if (!user.gender) missingRequired.push("Gender not specified");
-  if (!user.sex_pref) missingRequired.push("Orientation not specified");
   if (!user.latitude || !user.longitude)
     missingRequired.push("Location missing");
   // required criteria are mirrored in compatible_users_from (init-db/01-matcha.sql)
@@ -35,10 +34,9 @@ export async function analyzeProfileCompletion(user: PublicUser | null): Promise
   if (!Array.isArray(user.interests) || user.interests.length < 5)
     missingOptional.push("Fewer than 5 interests");
 
-  const totalCriteria = 7;
+  const totalCriteria = 6;
   const filledCriteria = [
     !!user.gender,
-    !!user.sex_pref,
     !!user.bio,
     !!user.latitude && !!user.longitude,
     Array.isArray(pictures) && pictureCount >= 1,

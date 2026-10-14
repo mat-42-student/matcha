@@ -52,10 +52,10 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : tranche min/max (bornes optionnelles) sur le score brut affiché sur les cartes, validée côté client et serveur (`validateFameRange`).
 - [x] 🟢 Orientation non renseignée (`sex_pref` / `gender` NULL) exclue des suggestions au lieu d'être traitée comme bisexuelle (`COALESCE` dans `compatible_users_from`).
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 220)
-  - Choix assumé : NULL = profil incomplet, `B` = bisexuel (choix explicite). L'orientation est requise (`profileCompletion.ts`) pour accéder à browse/search/likes/chat et ne peut plus repasser à NULL (validator `M`/`F`/`B`). Exclusion rendue explicite (`u.sex_pref IS NOT NULL`) dans `compatible_users_from`. ⚠️ À justifier en correction : le sujet dit « orientation non renseignée = bisexuel ».
+  - Corrigé : `sex_pref` est `NOT NULL DEFAULT 'B'` (un nouvel inscrit est bisexuel tant qu'il n'a pas choisi) ; l'orientation n'est plus un critère « requis » dans `profileCompletion.ts` (6 critères au lieu de 7). `gender` reste requis (sans genre, impossible de calculer la compatibilité).
 - [x] 🟢 **Empêcher l'affichage des comptes incomplets** dans les suggestions et la recherche. Ex. `b@mail.com` sans photo : la carte s'affiche mais la modale ne s'ouvre pas (`open && mainPic` dans [CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) l. 86), alors que la visite est enregistrée et notifiée.
   - Filtrer en SQL dans `compatible_users_from` (utilisée par [matcha/src/lib/db/search.ts](matcha/src/lib/db/search.ts)) : au minimum une photo principale (`is_main`) et une localisation.
-  - Les critères « requis » existent déjà côté JS dans [matcha/src/lib/profileCompletion.ts](matcha/src/lib/profileCompletion.ts) (genre, orientation, localisation, ≥ 1 photo, ≥ 3 tags) : décider lesquels appliquer et les garder alignés. `sex_pref` est exigé (choix assumé, cf. item ci-dessus).
+  - Les critères « requis » existent déjà côté JS dans [matcha/src/lib/profileCompletion.ts](matcha/src/lib/profileCompletion.ts) (genre, orientation, localisation, ≥ 1 photo, ≥ 3 tags) : décider lesquels appliquer et les garder alignés. `sex_pref` n'est plus nullable (défaut `B`, cf. item ci-dessus).
 
 ## 2. Bugs
 
