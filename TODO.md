@@ -80,7 +80,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 `/api/users/[userId]/pics` et `/allpics` sans authentification (ni contrôle de blocage).
   - Corrigé : session requise (401) ; `userId` validé (`isValidUuid`, 400 au lieu d'une 500 Postgres) ; `getVisibleMainPicture` / `getAllPicturesButMain(userId, viewerId)` filtrent en SQL si un block existe dans un sens ou l'autre → 204 (comme « pas de photo », pas de fuite). `console.log(picture.id)` retiré, 500 en JSON.
 - [x] 🟢 `/api/me/interests` renvoie `err.message` au client.
-- [ ] 🟢 `setMainPicture` et `deleteUserPicture` : plusieurs requêtes sans transaction.
+- [x] 🟢 `setMainPicture` et `deleteUserPicture` : plusieurs requêtes sans transaction.
+  - Corrigé : transactions déjà en place (fix `params`) mais requêtes concurrentes non sérialisées (2 « set main » → violation de l'index unique → 500 ; suppression de la principale + d'une autre → plus de photo principale ; uploads simultanés → > 5 photos ou 2 principales). `lockUserPictures` (`SELECT … FROM users … FOR UPDATE`) en tête de `setMainPicture`, `deleteUserPicture` et `addUserPicture` (désormais transactionnel : re-compte sous verrou → `null` si plein, `is_main` calculé dans l'INSERT). `MAX_PICTURES` exporté et utilisé par la route.
 
 ## 3. Architecture
 

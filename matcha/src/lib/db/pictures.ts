@@ -1,7 +1,18 @@
 // matcha/src/lib/db/pictures.ts
 
 import { executeQuery, pool } from "./db-utils";
-import { QueryResultRow } from "pg";
+import { PoolClient, QueryResultRow } from "pg";
+
+export const MAX_PICTURES = 5;
+
+/**
+ * Serializes picture writes of a user (upload / delete / set main) by locking
+ * their users row until the end of the transaction, so concurrent requests
+ * cannot leave the user with two main pictures, none, or more than MAX_PICTURES.
+ */
+async function lockUserPictures(client: PoolClient, userId: string) {
+  await executeQuery(`SELECT 1 FROM users WHERE id = $1 FOR UPDATE`, [userId], client);
+}
 
 /**
  * Add a new picture for a user.
@@ -98,9 +109,10 @@ export async function setMainPicture(userId: string, pictureId: string): Promise
 
   try {
     await client.query("BEGIN");
+    await lockUserPictures(client, userId);
 
     const owned = await executeQuery(
-      `SELECT 1 FROM pictures WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+      `SELECT 1 FROM pictures WHERE id = $1 AND user_id = $2`,
       [pictureId, userId],
       client
     );
@@ -144,8 +156,9 @@ export async function deleteUserPicture(userId: string, pictureId: string): Prom
 
   try {
     await client.query("BEGIN");
+    await lockUserPictures(client, userId);
 
-    const deleted = await executeQuery<{ is_main: boolean }>(
+    const deleted =await executeQuery<{ is_main: boolean }>(
       `DELETE FROM pictures WHERE id = $1 AND user_id = $2 RETURNING is_main`,
       [pictureId, userId],
       client
@@ -218,29 +231,41 @@ export async function addUserPicture(
   userId: string,
   fileBuffer: Buffer,
   mimeType: string
-) {
-  // Check if the user already has a main picture
-  const existingMainQuery = `
-    SELECT id FROM pictures
-    WHERE user_id = $1 AND is_main = TRUE;
-  `;
-  const existingMain = await executeQuery<QueryResultRow>(existingMainQuery, [userId]);
-  const isMain = existingMain.rows.length === 0;
+): Promise<QueryResultRow | null> {
+  const client = await pool.connect();
 
-  // Insert the new picture
-  const insertQuery = `
-    INSERT INTO pictures (user_id, data, mime_type, is_main)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, mime_type, encode(data, 'base64') AS data, is_main;
-  `;
-  const inserted = await executeQuery<QueryResultRow>(insertQuery, [
-    userId,
-    fileBuffer,
-    mimeType,
-    isMain,
-  ]);
+  try {
+    await client.query("BEGIN");
+    await lockUserPictures(client, userId);
 
-  return inserted.rows[0];
+    const count = await executeQuery<{ count: number }>(
+      `SELECT COUNT(*)::int AS count FROM pictures WHERE user_id = $1`,
+      [userId],
+      client
+    );
+    if (count.rows[0].count >= MAX_PICTURES) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    // The first picture (or the first one after the main was removed) becomes main
+    const inserted = await executeQuery<QueryResultRow>(
+      `INSERT INTO pictures (user_id, data, mime_type, is_main)
+       VALUES ($1, $2, $3,
+         NOT EXISTS (SELECT 1 FROM pictures WHERE user_id = $1 AND is_main))
+       RETURNING id, mime_type, encode(data, 'base64') AS data, is_main`,
+      [userId, fileBuffer, mimeType],
+      client
+    );
+
+    await client.query("COMMIT");
+    return inserted.rows[0];
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 

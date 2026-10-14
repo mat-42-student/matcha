@@ -6,6 +6,7 @@ import {
   getUserPictures,
   addUserPicture,
   countUserPictures,
+  MAX_PICTURES,
 } from "@/lib/db/pictures";
 import { MAX_IMAGE_SIZE, detectImageMimeType } from "@/lib/validators/imageValidator";
 
@@ -56,13 +57,13 @@ export async function POST(req: Request) {
         { status: 413 }
       );
 
-    const pictureCount = await countUserPictures(user.id);
-    if (pictureCount >= 5) {
-      return NextResponse.json(
-        { error: "You cannot upload more than 5 pictures." },
-        { status: 400 }
-      );
-    }
+    const tooMany = () => NextResponse.json(
+      { error: `You cannot upload more than ${MAX_PICTURES} pictures.` },
+      { status: 400 }
+    );
+    // early exit before reading the file; addUserPicture re-checks under lock
+    if ((await countUserPictures(user.id)) >= MAX_PICTURES)
+      return tooMany();
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const mimeType = detectImageMimeType(buffer);
@@ -73,6 +74,8 @@ export async function POST(req: Request) {
       );
 
     const picture = await addUserPicture(user.id, buffer, mimeType);
+    if (!picture)
+      return tooMany();
 
     return NextResponse.json(picture, { status: 201 });
   } catch (err) {
