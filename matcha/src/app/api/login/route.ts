@@ -3,6 +3,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createSession } from "@/lib/db/session";
 import { loginUser } from "@/lib/db/users";
+import { locateUserByIp } from "@/lib/geoip";
 
 export async function POST(req: NextRequest) {
 	try {
@@ -20,6 +21,11 @@ export async function POST(req: NextRequest) {
 		}
 
 		const sessionId = await createSession(user.id);
+
+		// no location set yet: fall back to the IP one, without blocking the login on failure
+		if (user.latitude == null || user.longitude == null) {
+			await locateUserByIp(user.id, req.headers).catch((err) => console.error("Error IP location:", err));
+		}
 
 		const res = NextResponse.json({
 			success: true,

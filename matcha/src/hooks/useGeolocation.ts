@@ -21,12 +21,11 @@ async function locateFromBrowser(position: GeolocationPosition): Promise<GeoLoca
   return { latitude, longitude, city, country };
 }
 
+// done by the server from the request IP (no third party call from the browser)
 async function locateFromIp(): Promise<GeoLocation> {
-  const res = await fetch(`https://ipwhois.app/json/`);
-  const data = await res.json();
-  if (!data.success) throw new Error("IP lookup failed");
-  const { latitude, longitude, city, country } = data;
-  return { latitude, longitude, city: city ?? "", country: country ?? "" };
+  const res = await fetch("/api/me/location");
+  if (!res.ok) throw new Error("IP lookup failed");
+  return res.json();
 }
 
 function getBrowserPosition(): Promise<GeolocationPosition> {
