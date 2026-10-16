@@ -84,7 +84,10 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 `/api/me/interests` renvoie `err.message` au client.
 - [x] 🟢 `setMainPicture` et `deleteUserPicture` : plusieurs requêtes sans transaction.
   - Corrigé : transactions déjà en place (fix `params`) mais requêtes concurrentes non sérialisées (2 « set main » → violation de l'index unique → 500 ; suppression de la principale + d'une autre → plus de photo principale ; uploads simultanés → > 5 photos ou 2 principales). `lockUserPictures` (`SELECT … FROM users … FOR UPDATE`) en tête de `setMainPicture`, `deleteUserPicture` et `addUserPicture` (désormais transactionnel : re-compte sous verrou → `null` si plein, `is_main` calculé dans l'INSERT). `MAX_PICTURES` exporté et utilisé par la route.
-- [ ] 🟢 `POST /api/login` : `req.formData()` non protégé → un body qui n'est pas du form-data (ex. JSON) donne une 500 au lieu d'une 400 ([login/route.ts](matcha/src/app/api/login/route.ts)).
+- [x] 🟢 `POST /api/login` : `req.formData()` non protégé → un body qui n'est pas du form-data (ex. JSON) donne une 500 au lieu d'une 400 ([login/route.ts](matcha/src/app/api/login/route.ts)).
+  - Corrigé : `req.formData().catch(() => null)` (comme `me/pictures`) ; champs vérifiés avec `typeof === "string"` au lieu de `as string` (un champ envoyé comme fichier donnait aussi une 500) → 400 « Missing fields ».
+- [x] 🟢 `POST /api/signup` : même problème (`req.formData()` non protégé, champs castés `as string`) ([signup/route.ts](matcha/src/app/api/signup/route.ts)).
+  - Corrigé : même traitement ; un champ absent ou non textuel devient `""` et est rejeté par `validateSignupData` → 400 avec le détail des erreurs par champ.
 
 ## 3. Architecture
 

@@ -10,13 +10,18 @@ import nodemailer from 'nodemailer';
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const username = formData.get('username') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const first_name = formData.get('first_name') as string;
-    const last_name = formData.get('last_name') as string;
-    const birthdate = formData.get('birthdate') as string;
+    const formData = await req.formData().catch(() => null);
+    // missing or non-text fields become "" and are rejected by validateSignupData
+    const field = (name: string) => {
+      const value = formData?.get(name);
+      return typeof value === 'string' ? value : '';
+    };
+    const username = field('username');
+    const email = field('email');
+    const password = field('password');
+    const first_name = field('first_name');
+    const last_name = field('last_name');
+    const birthdate = field('birthdate');
 
     const { valid, errors } = validateSignupData({
       username,

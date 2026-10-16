@@ -6,11 +6,11 @@ import { loginUser } from "@/lib/db/users";
 
 export async function POST(req: NextRequest) {
 	try {
-		const formData = await req.formData();
-		const identifier = formData.get("identifier") as string;
-		const password = formData.get("password") as string;
+		const formData = await req.formData().catch(() => null);
+		const identifier = formData?.get("identifier");
+		const password = formData?.get("password");
 
-		if (!identifier || !password) {
+		if (typeof identifier !== "string" || typeof password !== "string" || !identifier || !password) {
 			return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 		}
 
