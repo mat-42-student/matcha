@@ -113,6 +113,11 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟢 Docker : mode dev uniquement (`npm install && tsx watch` à chaque démarrage), `node:alpine` non épinglé, port Postgres exposé.
 - [ ] 🟢 `productionBrowserSourceMaps: true` dans `next.config.ts`.
 
+## 5. UI
+
+- [ ] 🟡 **Refonte de l'UI du menu du profil utilisateur.**
+  - [matcha/src/components/profile/ProfileTabs.tsx](matcha/src/components/profile/ProfileTabs.tsx)
+
 ## Ordre conseillé
 
 1. Les 🟢 de la section 1 + bugs `params` et try/catch sockets (éliminer les risques de note 0).
