@@ -28,7 +28,7 @@ VALUES (
     'M',
     'B',
     'Passionné de développement et de bases de données.',
-    50.5
+    50
 );
 
 INSERT INTO user_interests (user_id, interest_id)
