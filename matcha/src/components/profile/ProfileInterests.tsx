@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import { Check, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { PublicUser } from "@/lib/types";
 
@@ -10,6 +10,8 @@ interface Interest {
   name: string;
 }
 
+const MIN_INTERESTS = 3;
+
 export default function ProfileInterests({
   onUserUpdate,
 }: {
@@ -17,8 +19,13 @@ export default function ProfileInterests({
 }) {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  // last selection confirmed by the server, restored if a save fails
+  const savedRef = useRef<number[]>([]);
+  // latest selection waiting to be sent, while a request is in flight
+  const pendingRef = useRef<number[] | null>(null);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -31,10 +38,11 @@ export default function ProfileInterests({
         if (!allRes.ok || !userRes.ok) throw new Error("Network error");
 
         const allInterests = await allRes.json();
-        const userInterests = await userRes.json();
+        const userInterests: Interest[] = await userRes.json();
 
         setInterests(allInterests);
-        setSelected(userInterests.map((i: Interest) => i.id));
+        savedRef.current = userInterests.map((i) => i.id);
+        setSelected(savedRef.current);
       } catch (error) {
         console.error(error);
         toast.error("Interests loading failed");
@@ -43,43 +51,74 @@ export default function ProfileInterests({
     fetchData();
   }, []);
 
-  const toggleInterest = (id: number) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-    setHasChanges(true);
+  // One request at a time: clicks made meanwhile are merged into a single next
+  // request carrying the latest selection, so responses can never arrive out of order.
+  const flush = async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    setStatus("saving");
+
+    let failed = false;
+    while (pendingRef.current) {
+      const ids = pendingRef.current;
+      pendingRef.current = null;
+      try {
+        const res = await fetch("/api/me/interests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ interestIds: ids }),
+        });
+        if (!res.ok) throw new Error("Saving failed");
+        savedRef.current = ids;
+      } catch (error) {
+        console.error(error);
+        failed = true;
+        pendingRef.current = null;
+      }
+    }
+
+    inFlightRef.current = false;
+    if (failed) {
+      toast.error("Your interests could not be saved");
+      setSelected(savedRef.current);
+      setStatus("idle");
+    } else {
+      setStatus("saved");
+    }
+    // user.interests holds names, not ids
+    onUserUpdate?.({
+      interests: interests.filter((i) => savedRef.current.includes(i.id)).map((i) => i.name),
+    });
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/me/interests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interestIds: selected }),
-      });
-
-      if (res.ok) {
-        toast.success("Interests updated !");
-        setHasChanges(false);
-        // user.interests holds names, not ids
-        onUserUpdate?.({
-          interests: interests.filter((i) => selected.includes(i.id)).map((i) => i.name),
-        });
-      } else {
-        toast.error("Error during saving");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Network error");
-    } finally {
-      setLoading(false);
-    }
+  const toggleInterest = (id: number) => {
+    const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id];
+    setSelected(next);
+    pendingRef.current = next;
+    flush();
   };
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
-      <h2 className="text-lg font-semibold mb-4">My interest</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-lg font-semibold">My interests</h2>
+        <span className="flex items-center gap-1 text-sm text-gray-500" aria-live="polite">
+          {status === "saving" && (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Saving...
+            </>
+          )}
+          {status === "saved" && (
+            <>
+              <Check size={14} className="text-green-600" /> Saved
+            </>
+          )}
+        </span>
+      </div>
+      <p className={`text-sm mb-4 ${selected.length < MIN_INTERESTS ? "text-pink-600" : "text-gray-500"}`}>
+        {selected.length} selected
+        {selected.length < MIN_INTERESTS && ` · pick at least ${MIN_INTERESTS}`}
+      </p>
 
       {/* interests list */}
       <div className="flex flex-wrap gap-2">
@@ -88,6 +127,8 @@ export default function ProfileInterests({
           return (
             <button
               key={interest.id}
+              type="button"
+              aria-pressed={active}
               onClick={() => toggleInterest(interest.id)}
               className={`px-3 py-1 rounded-full border transition ${
                 active
@@ -100,18 +141,6 @@ export default function ProfileInterests({
           );
         })}
       </div>
-
-      {hasChanges && (
-        <div className="mt-4">
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-pink-500 hover:bg-pink-600 text-white rounded-full"
-          >
-            {loading ? "saving..." : "Confirm"}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

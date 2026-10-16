@@ -135,7 +135,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [ ] 🟡 **Refonte de l'UI du menu du profil utilisateur.**
   - [matcha/src/components/profile/ProfileTabs.tsx](matcha/src/components/profile/ProfileTabs.tsx)
   - [x] Onglet Profil : formulaire classique ([ProfileForm.tsx](matcha/src/components/profile/ProfileForm.tsx)) au lieu du crayon / coche champ par champ. Tous les champs sont éditables, un bouton Save (désactivé sans modification) + Cancel, erreurs affichées sous chaque champ, un seul `POST /api/profile` pour les champs modifiés. L'email passe d'abord par `change-request` : si on annule la confirmation ou si la demande échoue, rien n'est enregistré. `clientValidator` aligné sur le serveur (bio ≤ 500, noms validés après `trim`).
-  - [ ] Onglets Geolocation et Interests.
+  - [x] Onglet Interests : sauvegarde à chaque clic, sans bouton Confirm. Une seule requête à la fois côté client (les clics faits pendant l'envoi partent ensemble dans la requête suivante), retour à l'état enregistré + toast en cas d'échec, indicateur « Saving... / Saved » et rappel du minimum de 3 intérêts. `updateUserInterests` en transaction avec verrou sur le user (avant : `DELETE` puis `INSERT` sur des connexions différentes, un id inconnu supprimait tous les intérêts puis donnait une 500) ; ids dédoublonnés, id inconnu ou mal typé → 400.
+  - [ ] Onglet Geolocation.
 
 ## Ordre conseillé
 
