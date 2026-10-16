@@ -15,35 +15,12 @@ async function lockUserPictures(client: PoolClient, userId: string) {
 }
 
 /**
- * Add a new picture for a user.
- * @param userId - user's ID
- * @param data - picture binary datas
- * @param mimeType - MIME typre
- * @param isMain - define if the picture is the main one
- */
-export async function addPicture(
-  userId: string,
-  data: Buffer,
-  mimeType: string,
-  isMain = false
-) {
-  const query = `
-    INSERT INTO pictures (user_id, data, mime_type, is_main)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, mime_type, encode(data, 'base64') as data, is_main;
-  `;
-
-  const result = await executeQuery(query, [userId, data, mimeType, isMain]);
-  return result.rows[0];
-}
-
-/**
  * Get all picture from a user.
  * @param userId - user's ID
  */
 export async function getPictures(userId: string) {
   const query = `
-    SELECT id, mime_type, encode(data, 'base64') as data, is_main
+    SELECT id, is_main
     FROM pictures
     WHERE user_id = $1;
   `;
@@ -70,10 +47,11 @@ const NO_BLOCK_BETWEEN = `
  */
 export async function getAllPicturesButMain(userId: string, viewerId: string) {
   const query = `
-    SELECT id, mime_type, encode(data, 'base64') AS data
+    SELECT id
     FROM pictures
     WHERE user_id = $1 AND NOT is_main
-      AND ${NO_BLOCK_BETWEEN};
+      AND ${NO_BLOCK_BETWEEN}
+    ORDER BY id;
   `;
   const result = await executeQuery(query, [userId, viewerId]);
   return result.rows;
@@ -85,7 +63,7 @@ export async function getAllPicturesButMain(userId: string, viewerId: string) {
  */
 export async function getVisibleMainPicture(userId: string, viewerId: string) {
   const query = `
-    SELECT id, mime_type, encode(data, 'base64') AS data
+    SELECT id
     FROM pictures
     WHERE user_id = $1 AND is_main = TRUE
       AND ${NO_BLOCK_BETWEEN}
@@ -95,7 +73,28 @@ export async function getVisibleMainPicture(userId: string, viewerId: string) {
   return result.rows[0] || null;
 }
 
-
+/**
+ * Binary content of a picture, as seen by a user: their own pictures, or
+ * someone else's when neither user blocked the other. Null otherwise.
+ */
+export async function getVisiblePictureData(pictureId: string, viewerId: string) {
+  const query = `
+    SELECT p.mime_type, p.data
+    FROM pictures p
+    WHERE p.id = $1
+      AND (p.user_id = $2 OR NOT EXISTS (
+        SELECT 1 FROM matches
+        WHERE ((user1_id = p.user_id AND user2_id = $2)
+            OR (user1_id = $2 AND user2_id = p.user_id))
+          AND status = 'block'
+      ));
+  `;
+  const result = await executeQuery<{ mime_type: string | null; data: Buffer | null }>(
+    query,
+    [pictureId, viewerId]
+  );
+  return result.rows[0] || null;
+}
 
 /**
  * Set the main picture for a user.
@@ -191,11 +190,11 @@ export async function deleteUserPicture(userId: string, pictureId: string): Prom
 /**
  * Retrieves the main profile picture for a given user.
  * @param userId - The user's ID.
- * @returns The main picture (mime_type and data) or null if none exists.
+ * @returns The main picture id or null if none exists.
  */
 export async function getMainPicture(userId: string) {
   const query = `
-    SELECT id, mime_type, encode(data, 'base64') AS data
+    SELECT id
     FROM pictures
     WHERE user_id = $1 AND is_main = TRUE
     LIMIT 1;
@@ -218,9 +217,10 @@ export async function hasMainPicture(userId: string): Promise<boolean> {
 
 export async function getUserPictures(userId: string) {
   const query = `
-    SELECT id, mime_type, encode(data, 'base64') AS data, is_main
+    SELECT id, is_main
     FROM pictures
-    WHERE user_id = $1;
+    WHERE user_id = $1
+    ORDER BY id;
   `;
   const result = await executeQuery<QueryResultRow>(query, [userId]);
   return result.rows;
@@ -253,7 +253,7 @@ export async function addUserPicture(
       `INSERT INTO pictures (user_id, data, mime_type, is_main)
        VALUES ($1, $2, $3,
          NOT EXISTS (SELECT 1 FROM pictures WHERE user_id = $1 AND is_main))
-       RETURNING id, mime_type, encode(data, 'base64') AS data, is_main`,
+       RETURNING id, is_main`,
       [userId, fileBuffer, mimeType],
       client
     );

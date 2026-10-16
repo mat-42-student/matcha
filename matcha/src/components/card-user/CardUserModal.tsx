@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { Picture, PublicUser } from "@/lib/types";
+import { pictureUrl } from "@/lib/pictureUrl";
 import Image from "next/image";
 import LikeButton from "./LikeButton";
 import { useUsersStore } from "@/context/UsersStore";
@@ -13,39 +14,33 @@ export default function CardUserModal({
   user,
   onClose,
 }: {
-  mainPic: Picture;
+  mainPic: string;
   user: PublicUser;
   onClose: () => void;
 }) {
   const { updateUser } = useUsersStore();
-  const [pics, setPics] = useState<Picture[]>([mainPic]);
+  const [pics, setPics] = useState<string[]>([mainPic]);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    async function fetchAllPics() {
+    // Ignore the response if the modal closed in the meantime
+    let cancelled = false;
+
+    async function loadPics() {
       try {
         const res = await fetch(`/api/users/${user.id}/allpics`);
-        if (!res.ok || res.status === 204) return [];
-
-        const picsJson: Picture[] = await res.json();
-
-        return picsJson.map((pic) => ({
-          ...pic,
-          data: `data:${pic.mime_type};base64,${pic.data}`,
-        }));
+        if (!res.ok || res.status === 204) return;
+        const extraPics: Picture[] = await res.json();
+        if (!cancelled) setPics([mainPic, ...extraPics.map((pic) => pictureUrl(pic.id))]);
       } catch (err) {
         console.error("Could not retrieve all pictures:", err);
-        return [];
       }
     }
 
-    async function loadPics() {
-      const extraPics = await fetchAllPics();
-      setPics([mainPic, ...extraPics]);
-      setCurrent(0);
-    }
-
     loadPics();
+    return () => {
+      cancelled = true;
+    };
   }, [user.id, mainPic]);
 
   function nextPic() {
@@ -108,7 +103,7 @@ export default function CardUserModal({
               width={0}
               height={0}
               style={{ width: "auto", height: "auto" }}
-              src={pics[current].data}
+              src={pics[current]}
               alt={`photo ${current + 1}`}
               className="rounded-lg shadow-md w-full object-cover my-2"
             />

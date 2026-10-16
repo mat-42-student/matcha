@@ -3,11 +3,12 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getVisibleMainPicture } from "@/lib/db/pictures";
 import { isValidUuid } from "@/lib/validators/serverValidator";
+import { redirectToPicture } from "@/lib/pictureUrl";
 
 /**
- * GET main picture of a user.
- * Returns JSON: { mime_type, data } where data is base64 encoded.
- * 204 if there is none or if either user blocked the other.
+ * GET main picture of a user, usable directly as an <img> src.
+ * Redirects to /api/pictures/:id, or to the default avatar if there is none
+ * or if either user blocked the other.
  */
 export async function GET(
   req: Request,
@@ -23,18 +24,7 @@ export async function GET(
     }
 
     const picture = await getVisibleMainPicture(userId, me.id);
-
-    // If no main picture found → 204 No Content
-    if (!picture) {
-      return new NextResponse(null, { status: 204 });
-    }
-
-    // Return JSON with base64 data
-    return NextResponse.json({
-      id: picture.id,
-      mime_type: picture.mime_type ?? "image/jpeg",
-      data: picture.data,
-    });
+    return redirectToPicture(picture?.id);
   } catch (err) {
     console.error("Error fetching main picture:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

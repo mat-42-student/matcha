@@ -1,60 +1,29 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
 import { Edit2 } from "lucide-react";
 import { ProfilePicturesModal } from "./ProfilePicturesModal";
+import { DEFAULT_AVATAR } from "@/lib/pictureUrl";
 
 interface ProfilePictureProps {
   userId: string;
   onUpdated?: () => void; // ✅ callback externe
 }
 
-// Returns the main picture as a data url, or null if the user has none
-async function loadMainPic(): Promise<string | null> {
-  const res = await fetch(`/api/me/pictures/main`);
-  if (res.status === 204) return null;
-  if (!res.ok) throw new Error("Failed to fetch");
-  const data = await res.json();
-  return data?.data ? `data:${data.mime_type};base64,${data.data}` : null;
-}
-
 export default function ProfilePicture({ userId, onUpdated }: ProfilePictureProps) {
-  const [mainPic, setMainPic] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasError, setHasError] = useState(false);
+  // Bumped after each change so the browser asks again which picture is main
+  const [version, setVersion] = useState(0);
 
-  useEffect(() => {
-    // Ignore the response if the component unmounted in the meantime
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const src = await loadMainPic();
-        if (!cancelled) setMainPic(src);
-      } catch (err) {
-        console.error("Erreur lors du chargement de la photo :", err);
-        if (!cancelled) setHasError(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  const handleUpdated = useCallback(async () => {
+  const handleUpdated = useCallback(() => {
     onUpdated?.();
-    try {
-      setMainPic(await loadMainPic());
-      setHasError(false);
-    } catch (err) {
-      console.error("Erreur lors du chargement de la photo :", err);
-      setHasError(true);
-    }
+    setVersion((v) => v + 1);
+    setHasError(false);
   }, [onUpdated]);
 
-  const imageSrc = !hasError && mainPic ? mainPic : "/avatars/default.svg";
+  const imageSrc = hasError ? DEFAULT_AVATAR : `/api/me/pictures/main?v=${version}`;
 
   return (
     <div
@@ -66,6 +35,7 @@ export default function ProfilePicture({ userId, onUpdated }: ProfilePictureProp
         src={imageSrc}
         alt="Profile picture"
         fill
+        unoptimized
         className="object-cover rounded-full border-4 border-pink-300 shadow-lg cursor-pointer transition"
         onClick={() => setIsModalOpen(true)}
         onError={() => setHasError(true)}

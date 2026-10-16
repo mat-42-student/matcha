@@ -43,10 +43,10 @@ export type PublicUser = {
   last_login: string | Date;
 };
 
+// Content served by /api/pictures/:id
 export type Picture = {
-  id: string;
-  mime_type: string;
-  data: string;
+  id: number;
+  is_main?: boolean;
 }
 
 export type SearchCriteria = {

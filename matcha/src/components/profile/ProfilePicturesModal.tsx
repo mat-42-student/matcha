@@ -6,8 +6,9 @@ import { X, Star, Trash2, Upload } from "lucide-react";
 import toast from 'react-hot-toast';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from "@/lib/validators/imageValidator";
 import { Picture } from "@/lib/types";
+import { pictureUrl } from "@/lib/pictureUrl";
 
-type MyPicture = Picture & { is_main: boolean };
+type MyPicture = Required<Picture>;
 
 async function loadPictures(): Promise<MyPicture[]> {
     try {
@@ -89,7 +90,7 @@ export function ProfilePicturesModal({
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
     try {
         const res = await fetch(`/api/me/pictures/${id}`, { method: "DELETE" });
         if (res.ok) {
@@ -106,7 +107,7 @@ export function ProfilePicturesModal({
     }
     };
 
-    const handleSetMain = async (id: string) => {
+    const handleSetMain = async (id: number) => {
     try {
         const res = await fetch(`/api/me/pictures/${id}/main`, {
         method: "PUT",
@@ -156,9 +157,10 @@ export function ProfilePicturesModal({
                     }`}
                 >
                 <Image
-                    src={`data:${pic.mime_type};base64,${pic.data}`}
+                    src={pictureUrl(pic.id)}
                     alt="photo"
                     fill
+                    unoptimized
                     className="object-cover"
                     priority
                 />

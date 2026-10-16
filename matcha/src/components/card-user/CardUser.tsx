@@ -1,8 +1,8 @@
 // src/components/card-user/CardUser.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { PublicUser, Picture, COLOR } from "@/lib/types";
+import { useState } from "react";
+import { PublicUser, COLOR } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
@@ -10,25 +10,8 @@ import { useUsersStore } from "@/context/UsersStore";
 
 export default function CardUser({ user }: { user: PublicUser }) {
   const { updateUser } = useUsersStore();
-  const [mainPic, setMainPic] = useState<Picture | null>();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    async function fetchMainPic() {
-      try {
-        const res = await fetch(`/api/users/${user.id}/pics/`);
-        if (!res.ok || res.status === 204) return;
-        const picJson: Picture = await res.json();
-        const cleanBase64 = picJson.data ? picJson.data.trim() : "";
-setMainPic({
-  ...picJson,
-  data: `data:${picJson.mime_type};base64,${cleanBase64}`,
-});      } catch (err) {
-        console.error("Could not retrieve main picture:", err);
-      }
-    }
-    fetchMainPic();
-  }, [user.id]);
+  const mainPic = `/api/users/${user.id}/pics`;
 
   async function handleCardClick() {
     setOpen(true);
@@ -59,21 +42,16 @@ setMainPic({
         </div>
 
         <div className="flex justify-center">
-          {mainPic ? (
-            <Image
-              unoptimized
-              width={0}
-              height={0}
-              style={{ width: "auto", height: "auto" }}
-              className="max-h-48 rounded shadow-md"
-              src={mainPic.data}
-              alt="profile picture"
-            />
-          ) : (
-            <div className="w-32 h-32 bg-gray-200 flex items-center justify-center rounded shadow-md">
-              <span className="text-gray-500 text-sm">No photo</span>
-            </div>
-          )}
+          <Image
+            unoptimized
+            width={0}
+            height={0}
+            style={{ width: "auto", height: "auto" }}
+            className="max-h-48 rounded shadow-md"
+            src={mainPic}
+            alt="profile picture"
+            loading="lazy"
+          />
         </div>
 
         <div className="text-gray-800 mb-2 mt-auto flex justify-between">
@@ -84,7 +62,7 @@ setMainPic({
         <Interests interests={user.interests} />
       </div>
 
-      {open && mainPic &&(
+      {open && (
         <CardUserModal
           user={user}
           mainPic={mainPic}
