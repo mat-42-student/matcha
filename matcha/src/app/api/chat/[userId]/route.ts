@@ -1,10 +1,12 @@
 // matcha/src/app/api/chat/[userId]/route.ts
 import { NextResponse } from "next/server";
-import { getConversation } from "@/lib/db/chat";
+import { getChatPartner, getConversation } from "@/lib/db/chat";
 import { requireUser } from "@/lib/auth";
 import { send } from "@/lib/socket/socket";
+import { isValidUuid } from "@/lib/validators/serverValidator";
 
 // Get all mesages between the authenticated user and userId
+// Only while matched and not blocked: the history is no longer readable after an unmatch or a block
 export async function GET(
   req: Request,
   context: { params: Promise<{ userId: string }> }
@@ -14,14 +16,18 @@ export async function GET(
     if (me instanceof NextResponse) return me;
 
     const { userId } = await context.params;
-    const conversation = await getConversation(me.id, userId);
-    if (conversation.length === 0) {
-      return new NextResponse(null, { status: 204 });
+    if (!isValidUuid(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
     }
+    if (!(await getChatPartner(me.id, userId))) {
+      return NextResponse.json({ error: "You can only chat with your matches" }, { status: 403 });
+    }
+
+    const conversation = await getConversation(me.id, userId);
     send(me.id, "chat-unread-count", [{ sender_id: userId, unread_count: 0 }]);
     return NextResponse.json(conversation);
   } catch (err) {
     console.error("Error fetching conversation:", err);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -97,6 +97,11 @@ export default function ChatWindow({
         const res = await fetch(`/api/chat/${selectedUserId}`, {
           method: "GET",
           credentials: "include" });
+        // 403: no longer matched (unmatch or block), the history is not readable anymore
+        if (!res.ok) {
+          if (!cancelled) setMessages([]);
+          return;
+        }
         const raw: RawMessage[] = await res.json();
         if (cancelled) return;
         setMessages(raw.map((m): Message => ({
