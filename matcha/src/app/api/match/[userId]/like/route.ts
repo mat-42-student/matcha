@@ -5,6 +5,7 @@ import { hasMainPicture } from "@/lib/db/pictures";
 import { sendUnreadMessagesCount } from "@/lib/socket/chat";
 import { send, toSocketUser } from "@/lib/socket/socket";
 import { LikeStatus, NotifPayload, RelationChangedPayload } from "@/lib/types";
+import { isValidUuid } from "@/lib/validators/serverValidator";
 
 /**
  * Tell the target user, in real time, that the session user changed their relation
@@ -32,6 +33,9 @@ export async function GET(
     const me = await requireUser();
     if (me instanceof NextResponse) return me;
 
+    if (!isValidUuid(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
 
     const status = await getMatchStatus(me.id, userId);
     return NextResponse.json({ status });
@@ -49,6 +53,10 @@ export async function POST(
     const { userId } = await context.params;
     const me = await requireUser();
     if (me instanceof NextResponse) return me;
+
+    if (!isValidUuid(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
 
     if (me.id === userId) return new NextResponse(null, { status: 204 });
 
@@ -95,6 +103,10 @@ export async function DELETE(
     const { userId } = await context.params;
     const me = await requireUser();
     if (me instanceof NextResponse) return me;
+
+    if (!isValidUuid(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
 
     const removed = await unlikeUser(me.id, userId);
     if (!removed) {

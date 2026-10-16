@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { recordProfileView } from "@/lib/db/views";
 import { send, toSocketUser } from "@/lib/socket/socket";
 import { NotifPayload } from "@/lib/types";
+import { isValidUuid } from "@/lib/validators/serverValidator";
 
 /**
  * POST /api/match/[userId]/views
@@ -17,6 +18,10 @@ export async function POST(
     const { userId } = await context.params;
     const viewer = await requireUser();
     if (viewer instanceof NextResponse) return viewer;
+
+    if (!isValidUuid(userId)) {
+      return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+    }
 
     if (viewer.id === userId) {
       return NextResponse.json({ error: "You cannot view your own profile" }, { status: 400 });

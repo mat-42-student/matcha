@@ -12,11 +12,11 @@ import { createNotification } from "@/lib/db/notifications";
  * - Return true if a new line was created
  */
 export async function recordProfileView(viewedUserId: string, viewerUserId: string): Promise<boolean> {
-  // Insert or update the view, unless a block exists between both users
+  // Insert or update the view, unless the user does not exist or a block exists between both users
   const insertQuery = `
     INSERT INTO views (user_id, seen_by)
-    SELECT $1::uuid, $2::uuid
-    WHERE NOT is_blocked($1, $2)
+    SELECT id, $2::uuid FROM users
+    WHERE id = $1 AND NOT is_blocked($1, $2)
     ON CONFLICT (user_id, seen_by)
     DO UPDATE SET created_at = CURRENT_TIMESTAMP
     RETURNING (xmax = 0) AS inserted;
