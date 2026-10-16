@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { blockUser } from "@/lib/db/matches";
+import { blockUser } from "@/lib/db/blocks";
 
 export async function POST(
   req: Request,

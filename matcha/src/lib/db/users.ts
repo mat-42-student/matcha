@@ -1,5 +1,6 @@
 // matcha/src/lib/db/users.ts
 import bcrypt from 'bcryptjs';
+import { PoolClient } from 'pg';
 import { executeQuery } from "./db-utils";
 import { PublicUser } from '../types';
 
@@ -206,4 +207,22 @@ export async function updateLastLogin(userId: string): Promise<boolean> {
   `;
   const result = await executeQuery(query, [userId]);
   return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Serializes like / unlike / block between two users until the end of the transaction.
+ * Rows are locked in id order so that two transactions on the same pair cannot deadlock.
+ * FOR NO KEY UPDATE does not block inserts referencing these users (chat, views…).
+ * Returns the users found: fewer than 2 rows means one of them does not exist.
+ */
+export async function lockUserPair(client: PoolClient, userA: string, userB: string) {
+  const result = await executeQuery<{ id: string; username: string }>(
+    `SELECT id, username FROM users
+     WHERE id = ANY($1::uuid[])
+     ORDER BY id
+     FOR NO KEY UPDATE`,
+    [[userA, userB]],
+    client
+  );
+  return result.rows;
 }

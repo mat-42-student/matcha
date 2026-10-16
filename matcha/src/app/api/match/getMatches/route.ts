@@ -1,7 +1,7 @@
 // matcha/src/app/api/match/getMatches/route.ts
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { getMatchesForUser } from "@/lib/db/matches";
+import { getMatchesForUser } from "@/lib/db/likes";
 import { completeUserInfos } from "@/lib/db/db-utils";
 
 export async function GET() {

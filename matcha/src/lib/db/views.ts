@@ -16,12 +16,7 @@ export async function recordProfileView(viewedUserId: string, viewerUserId: stri
   const insertQuery = `
     INSERT INTO views (user_id, seen_by)
     SELECT $1::uuid, $2::uuid
-    WHERE NOT EXISTS (
-      SELECT 1 FROM matches
-      WHERE ((user1_id = $1 AND user2_id = $2)
-          OR (user1_id = $2 AND user2_id = $1))
-        AND status = 'block'
-    )
+    WHERE NOT is_blocked($1, $2)
     ON CONFLICT (user_id, seen_by)
     DO UPDATE SET created_at = CURRENT_TIMESTAMP
     RETURNING (xmax = 0) AS inserted;
@@ -53,16 +48,7 @@ export async function getViewsForUser(meId: string,): Promise<PublicUser[]> {
     FROM views v
     JOIN users_with_interests u ON u.id = v.seen_by
     WHERE v.user_id = $1
-      AND NOT EXISTS (
-        SELECT 1
-        FROM matches m
-        WHERE (
-          (m.user1_id = $1 AND m.user2_id = u.id)
-          OR
-          (m.user1_id = u.id AND m.user2_id = $1)
-        )
-        AND m.status = 'block'
-      )
+      AND NOT is_blocked($1, u.id)
     ORDER BY v.created_at DESC;
   `;
   const result = await executeQuery<PublicUser>(query, [meId]);

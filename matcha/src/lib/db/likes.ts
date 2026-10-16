@@ -1,54 +1,25 @@
 // matcha/src/lib/db/likes.ts
 import { executeQuery } from "./db-utils";
-import { PublicUser } from "@/lib/types";
+import { LikeStatus, PublicUser } from "@/lib/types";
 import { createNotification, deleteNotificationsBetweenUsers } from "./notifications";
 import { pool, addFame } from "./db-utils";
+import { lockUserPair } from "./users";
 
 /**
- * Get the like/match status between two users
+ * Get the like/match status between two users, seen from userA
  */
-export async function getMatchStatus(userA: string, userB: string): Promise<'match' | 'like' | 'isLiked' | 'block' | 'none'> {
-  const query = `
-    SELECT CASE
-      WHEN EXISTS (
-        SELECT 1 FROM matches 
-        WHERE ((user1_id = $1 AND user2_id = $2)
-          OR  (user1_id = $2 AND user2_id = $1))
-          AND status = 'match'
-      )
-      THEN 'match'
-
-      WHEN EXISTS (
-        SELECT 1 FROM matches 
-        WHERE ((user1_id = $1 AND user2_id = $2)
-          OR  (user1_id = $2 AND user2_id = $1))
-          AND status = 'block'
-      )
-      THEN 'block'
-
-      WHEN EXISTS (
-        SELECT 1 FROM matches 
-        WHERE user1_id = $1 AND user2_id = $2 AND status = 'like'
-      )
-      THEN 'like'
-
-      WHEN EXISTS (
-        SELECT 1 FROM matches 
-        WHERE user1_id = $2 AND user2_id = $1 AND status = 'like'
-      )
-      THEN 'isLiked'
-
-      ELSE 'none'
-    END AS status;
-  `;
-  const result = await executeQuery(query, [userA, userB]);
-  return result.rows[0]?.status;
+export async function getMatchStatus(userA: string, userB: string): Promise<LikeStatus> {
+  const result = await executeQuery<{ status: LikeStatus }>(
+    `SELECT like_status($1, $2) AS status`,
+    [userA, userB]
+  );
+  return result.rows[0].status;
 }
 
 /**
  * Like a user (creates a match if reciprocated)
- * Relation row, notifications and fame are written in a single transaction.
- * Returns the new status, or null if nothing changed (self, already liked/matched, blocked).
+ * Like, notifications and fame are written in a single transaction.
+ * Returns the new status, or null if nothing changed (self, unknown user, already liked, blocked).
  */
 export async function likeUser(meId: string, targetId: string): Promise<"like" | "match" | null> {
   if (meId === targetId) return null; // cannot like self
@@ -58,51 +29,33 @@ export async function likeUser(meId: string, targetId: string): Promise<"like" |
   try {
     await client.query("BEGIN");
 
-    let result: "like" | "match" | null = null;
-    // Two attempts: if a concurrent request inserted the pair row first, read it again
-    for (let attempt = 0; attempt < 2 && !result; attempt++) {
-      // Lock the pair row (one row per pair, enforced by matches_pair_idx)
-      const existing = await executeQuery<{ user1_id: string; status: string }>(
-        `SELECT user1_id, status FROM matches
-         WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)
-         FOR UPDATE`,
+    // Without the lock, two simultaneous likes would both miss the reciprocal one: no match
+    const users = await lockUserPair(client, meId, targetId);
+    let inserted = 0;
+    if (users.length === 2) {
+      const res = await executeQuery(
+        `INSERT INTO likes (liker_id, liked_id)
+         SELECT $1::uuid, $2::uuid
+         WHERE NOT is_blocked($1, $2)
+         ON CONFLICT DO NOTHING`,
         [meId, targetId],
         client
       );
-      const row = existing.rows[0];
-
-      if (row) {
-        // Only a like from the target can change: already liked by me, matched or blocked → no-op
-        if (row.status !== "like" || row.user1_id !== targetId) break;
-        await executeQuery(
-          `UPDATE matches SET status = 'match' WHERE user1_id = $1 AND user2_id = $2`,
-          [targetId, meId],
-          client
-        );
-        result = "match";
-      } else {
-        const inserted = await executeQuery(
-          `INSERT INTO matches (user1_id, user2_id, status)
-           VALUES ($1, $2, 'like')
-           ON CONFLICT DO NOTHING`,
-          [meId, targetId],
-          client
-        );
-        if ((inserted.rowCount ?? 0) > 0) result = "like";
-      }
+      inserted = res.rowCount ?? 0;
     }
-
-    if (!result) {
+    if (inserted === 0) {
       await client.query("ROLLBACK");
       return null;
     }
 
-    const names = await executeQuery<{ id: string; username: string }>(
-      `SELECT id, username FROM users WHERE id = ANY($1::uuid[])`,
-      [[meId, targetId]],
+    const reciprocal = await executeQuery(
+      `SELECT 1 FROM likes WHERE liker_id = $1 AND liked_id = $2`,
+      [targetId, meId],
       client
     );
-    const nameOf = (id: string) => names.rows.find((u) => u.id === id)?.username || "Someone";
+    const result = reciprocal.rowCount === 1 ? "match" : "like";
+
+    const nameOf = (id: string) => users.find((u) => u.id === id)?.username || "Someone";
 
     if (result === "match") {
       await createNotification(targetId, meId, "match", `You matched with ${nameOf(meId)}!`, client);
@@ -124,8 +77,9 @@ export async function likeUser(meId: string, targetId: string): Promise<"like" |
 
 
 /**
- * Remove my like (or our match) towards targetId.
- * Blocks are left untouched. Returns the removed status, or null if there was nothing to unlike.
+ * Remove my like towards targetId. On a match, both likes are removed:
+ * the relation is broken and has to be rebuilt from scratch.
+ * Returns the removed status, or null if I did not like targetId.
  * Only an unmatch notifies the target; a simple unlike just withdraws the "like" notification.
  */
 export async function unlikeUser(meId: string, targetId: string): Promise<"like" | "match" | null> {
@@ -135,16 +89,20 @@ export async function unlikeUser(meId: string, targetId: string): Promise<"like"
   try {
     await client.query("BEGIN");
 
-    // Supprime mon like ou notre match (jamais un block)
-    const query = `
-      DELETE FROM matches
-      WHERE (user1_id = $1 AND user2_id = $2 AND status = 'like')
-         OR (((user1_id = $1 AND user2_id = $2)
-           OR (user1_id = $2 AND user2_id = $1)) AND status = 'match')
-      RETURNING status
-    `;
-    const res = await executeQuery<{ status: "like" | "match" }>(query, [meId, targetId], client);
-    removed = res.rows[0]?.status ?? null;
+    await lockUserPair(client, meId, targetId);
+    const mine = await executeQuery(
+      `DELETE FROM likes WHERE liker_id = $1 AND liked_id = $2`,
+      [meId, targetId],
+      client
+    );
+    if (mine.rowCount === 1) {
+      const theirs = await executeQuery(
+        `DELETE FROM likes WHERE liker_id = $1 AND liked_id = $2`,
+        [targetId, meId],
+        client
+      );
+      removed = theirs.rowCount === 1 ? "match" : "like";
+    }
 
     if (removed === "match") {
       await createNotification(targetId, meId, "unlike", "Someone unliked you", client);
@@ -180,6 +138,17 @@ export async function getUsersILike(meId: string): Promise<PublicUser[]> {
     SELECT u.*
     FROM users_me_like u
     WHERE u.me = $1
+  `;
+  const result = await executeQuery<PublicUser>(query, [meId]);
+  return result.rows;
+}
+
+export async function getMatchesForUser(meId: string): Promise<PublicUser[]> {
+  const query = `
+    SELECT uwi.*
+    FROM user_matches m
+    JOIN users_with_interests uwi ON uwi.id = m.matched_id
+    WHERE m.user_id = $1;
   `;
   const result = await executeQuery<PublicUser>(query, [meId]);
   return result.rows;

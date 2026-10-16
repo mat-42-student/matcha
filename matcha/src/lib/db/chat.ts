@@ -12,12 +12,9 @@ export interface ChatMessage {
 export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]> {
   const query = `
     SELECT uwi.*
-    FROM users_with_interests uwi
-    JOIN matches m
-      ON (uwi.id = m.user1_id OR uwi.id = m.user2_id)
-    WHERE $1 IN (m.user1_id, m.user2_id)
-      AND uwi.id != $1
-      AND status = 'match';
+    FROM user_matches m
+    JOIN users_with_interests uwi ON uwi.id = m.matched_id
+    WHERE m.user_id = $1;
   `
   const result = await executeQuery<PublicUser>(query, [user]);
   return result.rows;
@@ -33,15 +30,9 @@ export async function getChatPartner(me: string, other: string): Promise<SocketU
     WHERE u.id = $2
       AND u.id != $1
       AND EXISTS (
-        SELECT 1 FROM matches
-        WHERE ((user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1))
-          AND status = 'match'
+        SELECT 1 FROM user_matches WHERE user_id = $1 AND matched_id = $2
       )
-      AND NOT EXISTS (
-        SELECT 1 FROM matches
-        WHERE ((user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1))
-          AND status = 'block'
-      );
+      AND NOT is_blocked($1, $2);
   `;
   const result = await executeQuery<SocketUser>(query, [me, other]);
   return result.rows[0] ?? null;
@@ -51,14 +42,10 @@ export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessa
   const query = `
     SELECT c.sender_id, COUNT(*)::int AS unread_count
     FROM chat c
-    JOIN matches m
-      ON (
-        (m.user1_id = c.sender_id AND m.user2_id = c.recipient_id)
-        OR (m.user1_id = c.recipient_id AND m.user2_id = c.sender_id)
-      )
+    JOIN user_matches m
+      ON m.user_id = c.recipient_id AND m.matched_id = c.sender_id
     WHERE c.recipient_id = $1
       AND c.is_read = false
-      AND m.status = 'match'
     GROUP BY c.sender_id;
   `;
   const result = await executeQuery<UnreadMessages>(query, [userId]);

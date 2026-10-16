@@ -1,7 +1,7 @@
 // app/api/users/[userId]/report/route.ts
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { reportUser } from "@/lib/db/matches";
+import { reportUser } from "@/lib/db/blocks";
 import { isValidUuid } from "@/lib/validators/serverValidator";
 
 /**
