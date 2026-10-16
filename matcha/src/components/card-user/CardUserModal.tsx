@@ -7,7 +7,6 @@ import { pictureUrl } from "@/lib/pictureUrl";
 import Image from "next/image";
 import LikeButton from "./LikeButton";
 import { useUsersStore } from "@/context/UsersStore";
-import { useSocket } from "@/context/SocketContext";
 import toast from "react-hot-toast";
 
 export default function CardUserModal({
@@ -20,7 +19,6 @@ export default function CardUserModal({
   onClose: () => void;
 }) {
   const { updateUser } = useUsersStore();
-  const { refreshNotifications } = useSocket();
   const [pics, setPics] = useState<string[]>([mainPic]);
   const [current, setCurrent] = useState(0);
 
@@ -64,7 +62,6 @@ export default function CardUserModal({
     toast.success("User reported");
     const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
     updateUser(updatedUser);
-    refreshNotifications();
     onClose();
   }
 
@@ -74,8 +71,6 @@ export default function CardUserModal({
     if (res.ok) {
       const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
       updateUser(updatedUser);
-      // The block removed the notifications exchanged with this user
-      refreshNotifications();
     }
     onClose();
   }

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { reportUser } from "@/lib/db/blocks";
+import { sendBlock } from "@/lib/socket/socket";
 import { isValidUuid } from "@/lib/validators/serverValidator";
 
 /**
@@ -28,6 +29,7 @@ export async function POST(
     if (!found) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    sendBlock(me.id, userId);
 
     return NextResponse.json({ reported: true });
   } catch (err) {

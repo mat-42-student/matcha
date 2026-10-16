@@ -5,7 +5,7 @@ import type { Server as HttpServer } from "http";
 // @ts-expect-error -- cookie comes with socket.io and ships without type declarations
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
-import { ChatMsgEvent, NotifPayload, PublicUser, SocketUser } from "@/lib/types";
+import { ChatMsgEvent, NotifPayload, PublicUser, RelationChangedPayload, SocketUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { updateLastLogin } from "../db/users";
 import { markConversationAsRead } from "../db/chat";
@@ -67,6 +67,15 @@ export function send<T>(userId: string, action: string, data: T) {
   for (const socket of targetSockets) {
     socket.emit(action, data);
   }
+}
+
+/***
+ * Push a block to every tab of both users, silently: their clients drop the relation,
+ * then reload the chat list and the notifications (removed by the block)
+ */
+export function sendBlock(blockerId: string, blockedId: string) {
+  send<RelationChangedPayload>(blockedId, "relation-changed", { userId: blockerId, likeStatus: "block" });
+  send<RelationChangedPayload>(blockerId, "relation-changed", { userId: blockedId, likeStatus: "block" });
 }
 
 export function isUserActivelyChattingWith(userId: string, otherUserId: string) {

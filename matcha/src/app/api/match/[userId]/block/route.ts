@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { blockUser, unblockUser } from "@/lib/db/blocks";
+import { sendBlock } from "@/lib/socket/socket";
 import { isValidUuid } from "@/lib/validators/serverValidator";
 
 export async function POST(
@@ -20,6 +21,7 @@ export async function POST(
     }
 
     const success = await blockUser(me.id, userId);
+    if (success) sendBlock(me.id, userId);
 
     return NextResponse.json({ success });
   } catch (err) {
