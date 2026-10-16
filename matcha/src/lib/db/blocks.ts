@@ -3,11 +3,13 @@ import { PoolClient } from "pg";
 import { executeQuery, pool } from "@/lib/db/db-utils";
 import { addFame } from "@/lib/db/db-utils";
 import { lockUserPair } from "@/lib/db/users";
+import { deleteAllNotificationsBetweenUsers } from "@/lib/db/notifications";
 import { BlockedUser } from "@/lib/types";
 
 /**
  * Block inside the caller's transaction, with the pair already locked (lockUserPair).
  * Likes in both directions are removed: no more match, so no more chat.
+ * Notifications exchanged by the pair are removed too.
  * Returns false if the target was already blocked by currentUserId.
  */
 async function insertBlock(client: PoolClient, currentUserId: string, targetUserId: string): Promise<boolean> {
@@ -27,6 +29,9 @@ async function insertBlock(client: PoolClient, currentUserId: string, targetUser
     [currentUserId, targetUserId],
     client
   );
+
+  // The relation is over: drop the "liked you" / "viewed your profile"... left in both bells
+  await deleteAllNotificationsBetweenUsers(currentUserId, targetUserId, client);
 
   // Decrease fame score
   await addFame(-5, targetUserId, client);
