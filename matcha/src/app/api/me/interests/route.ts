@@ -23,14 +23,15 @@ export async function POST(req: Request) {
     const user = await requireUser();
     if (user instanceof NextResponse) return user;
 
-    const body = await req.json();
-    const interestIds: number[] = Array.isArray(body.interestIds) ? body.interestIds : [];
-
-    if (!Array.isArray(interestIds) || interestIds.some((id) => typeof id !== "number")) {
+    const body = await req.json().catch(() => null);
+    const interestIds: unknown = body?.interestIds;
+    if (!Array.isArray(interestIds) || interestIds.some((id) => !Number.isInteger(id) || id <= 0)) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
-    await updateUserInterests(user.id, interestIds);
+    if (!await updateUserInterests(user.id, interestIds)) {
+      return NextResponse.json({ error: "Unknown interest" }, { status: 400 });
+    }
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Error in POST /me/interests:", err);

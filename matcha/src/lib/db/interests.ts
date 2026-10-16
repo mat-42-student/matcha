@@ -1,6 +1,6 @@
 // matcha/src/lib/db/interests.ts
 
-import { executeQuery } from "./db-utils";
+import { executeQuery, pool } from "./db-utils";
 
 export interface Interest {
   id: number;
@@ -43,42 +43,43 @@ export async function getUserInterests(userId: string): Promise<Interest[]> {
 }
 
 /**
- * Update user interests atomically:
- * - delete all existing interests
- * - insert the new ones (validated)
+ * Replaces the interests of a user in one transaction. The users row is locked
+ * so that concurrent updates (one per click on the profile) are applied one
+ * after the other instead of mixing their DELETE / INSERT.
+ * @returns false if an id does not exist (nothing is changed).
  */
 export async function updateUserInterests(userId: string, interestIds: number[]): Promise<boolean> {
-  if (!userId) throw new Error("Missing userId");
-  if (!Array.isArray(interestIds)) throw new Error("interestIds must be an array");
+  const ids = [...new Set(interestIds)];
+  const client = await pool.connect();
 
-  // Clean the list (positive integers only)
-  const cleanIds = interestIds
-    .filter((id) => typeof id === "number" && Number.isFinite(id) && id > 0)
-    .map((id) => Math.floor(id));
+  try {
+    await client.query("BEGIN");
+    await executeQuery(`SELECT 1 FROM users WHERE id = $1 FOR NO KEY UPDATE`, [userId], client);
 
-  // Remove old interests
-  await executeQuery(`DELETE FROM user_interests WHERE user_id = $1;`, [userId]);
+    const existing = await executeQuery(
+      `SELECT id FROM interests WHERE id = ANY($1::int[])`,
+      [ids],
+      client
+    );
+    if ((existing.rowCount ?? 0) !== ids.length) {
+      await client.query("ROLLBACK");
+      return false;
+    }
 
-  // Nothing to insert → OK
-  if (cleanIds.length === 0) return true;
+    await executeQuery(`DELETE FROM user_interests WHERE user_id = $1`, [userId], client);
+    await executeQuery(
+      `INSERT INTO user_interests (user_id, interest_id)
+       SELECT $1, unnest($2::int[])`,
+      [userId, ids],
+      client
+    );
 
-  // Check that all provided interest IDs exist
-  const existing = await executeQuery<{ id: number }>(
-    `SELECT id FROM interests WHERE id = ANY($1::int[])`,
-    [cleanIds]
-  );
-  const existingIds = existing.rows.map((r) => r.id);
-  if (existingIds.length !== cleanIds.length) {
-    throw new Error("One or more invalid interest IDs provided");
+    await client.query("COMMIT");
+    return true;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
-
-  // Build the insert query safely
-  const values = cleanIds.map((id, i) => `($1, $${i + 2})`).join(", ");
-  const query = `
-    INSERT INTO user_interests (user_id, interest_id)
-    VALUES ${values};
-  `;
-
-  const result = await executeQuery(query, [userId, ...cleanIds]);
-  return (result.rowCount ?? 0) > 0;
 }
