@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import type { BlockedUser } from "@/lib/types";
 
-export default function ProfileBlocked() {
+export default function BlockedUsers() {
   const [blocked, setBlocked] = useState<BlockedUser[] | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 

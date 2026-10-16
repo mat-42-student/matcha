@@ -5,7 +5,7 @@ import { LikeTabsTypes } from "@/lib/types";
 
 type LButtonProps = {
   tab: LikeTabsTypes;
-  activeTab: LikeTabsTypes;
+  activeTab: LikeTabsTypes | null;
   setActiveTab: (tab: LikeTabsTypes) => void;
   children: React.ReactNode;
 };

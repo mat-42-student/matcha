@@ -6,7 +6,6 @@ import ProfileForm from "@/components/profile/ProfileForm";
 import ProfileGeoloc from "@/components/profile/ProfileGeoloc";
 import ProfileInterests from "@/components/profile/ProfileInterests";
 import ProfilePictures from "@/components/profile/ProfilePicture";
-import ProfileBlocked from "@/components/profile/ProfileBlocked";
 import ProfileCompletionBar from "./ProfileCompletionBar";
 import ProfileMissingElements from "./ProfileMissingElements";
 import type { PublicUser } from "@/lib/types";
@@ -71,11 +70,10 @@ export default function ProfileTabs({
       />
 
       <Tabs defaultValue="info" className="w-full mt-4">
-        <TabsList className="flex flex-wrap gap-2 justify-around bg-pink-50 p-2 rounded-2xl sm:rounded-full">
+        <TabsList className="flex gap-2 justify-around bg-pink-50 p-2 rounded-full">
           <TabsTrigger value="info">Profil</TabsTrigger>
           <TabsTrigger value="geoloc">Geolocation</TabsTrigger>
           <TabsTrigger value="interests">Interests</TabsTrigger>
-          <TabsTrigger value="blocked">Blocked</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">
@@ -94,10 +92,6 @@ export default function ProfileTabs({
 
         <TabsContent value="interests">
           <ProfileInterests onUserUpdate={handleUserUpdate} />
-        </TabsContent>
-
-        <TabsContent value="blocked">
-          <ProfileBlocked />
         </TabsContent>
       </Tabs>
     </div>
