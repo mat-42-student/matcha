@@ -141,8 +141,9 @@ export async function reportUser(reporterId: string, reportedId: string): Promis
         [reportedId],
         client
       );
-      await insertBlock(client, reporterId, reportedId);
     }
+    // Always: a user unblocked after a report is blocked again (no-op if still blocked)
+    await insertBlock(client, reporterId, reportedId);
 
     await client.query("COMMIT");
     return true;

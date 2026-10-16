@@ -7,7 +7,7 @@ import { isValidUuid } from "@/lib/validators/serverValidator";
 
 /**
  * POST report a user as a fake account (also blocks them).
- * Reporting twice is a no-op.
+ * Reporting twice only counts once, but blocks again if the user was unblocked in between.
  */
 export async function POST(
   req: Request,
