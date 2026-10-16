@@ -3,6 +3,7 @@ import { PoolClient } from "pg";
 import { executeQuery, pool } from "@/lib/db/db-utils";
 import { addFame } from "@/lib/db/db-utils";
 import { lockUserPair } from "@/lib/db/users";
+import { BlockedUser } from "@/lib/types";
 
 /**
  * Block inside the caller's transaction, with the pair already locked (lockUserPair).
@@ -55,6 +56,53 @@ export async function blockUser(currentUserId: string, targetUserId: string): Pr
   } finally {
     client.release();
   }
+}
+
+/**
+ * Remove my block on targetUserId (a block from the other side is kept).
+ * Likes removed by the block are not restored. The fame lost at block time is given back,
+ * otherwise blocking / unblocking in a loop would drain the target's fame.
+ * Returns false if I did not block targetUserId.
+ */
+export async function unblockUser(currentUserId: string, targetUserId: string): Promise<boolean> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await lockUserPair(client, currentUserId, targetUserId);
+    const deleted = await executeQuery(
+      `DELETE FROM blocks WHERE blocker_id = $1 AND blocked_id = $2`,
+      [currentUserId, targetUserId],
+      client
+    );
+    const unblocked = deleted.rowCount === 1;
+    if (unblocked) await addFame(5, targetUserId, client);
+
+    await client.query("COMMIT");
+    return unblocked;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error unblocking user:", error);
+    throw new Error("Database error while unblocking user");
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Users blocked by userId, most recent first
+ */
+export async function getBlockedUsers(userId: string): Promise<BlockedUser[]> {
+  const query = `
+    SELECT u.id, u.username, u.first_name, b.created_at AS blocked_at
+    FROM blocks b
+    JOIN users u ON u.id = b.blocked_id
+    WHERE b.blocker_id = $1
+    ORDER BY b.created_at DESC;
+  `;
+  const result = await executeQuery<BlockedUser>(query, [userId]);
+  return result.rows;
 }
 
 /**

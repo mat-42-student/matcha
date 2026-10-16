@@ -43,6 +43,14 @@ export type PublicUser = {
   last_login: string | Date;
 };
 
+// Row of GET /api/me/blocks
+export type BlockedUser = {
+  id: string;
+  username: string;
+  first_name: string;
+  blocked_at: string | Date;
+};
+
 // Content served by /api/pictures/:id
 export type Picture = {
   id: number;
