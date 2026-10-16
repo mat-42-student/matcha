@@ -31,7 +31,7 @@ function isPrivateIp(ip: string): boolean {
 }
 
 // city and country must fit the users table constraints, otherwise they are left empty
-function safeText(field: "city" | "country", value: unknown): string {
+export function safePlaceName(field: "city" | "country", value: unknown): string {
   return typeof value === "string" && validateProfileField(field, value).valid ? value : "";
 }
 
@@ -51,7 +51,7 @@ export async function locateIp(ip: string | null): Promise<IpLocation | null> {
       || !validateProfileField("longitude", longitude).valid) {
       return null;
     }
-    return { latitude, longitude, city: safeText("city", data.city), country: safeText("country", data.country) };
+    return { latitude, longitude, city: safePlaceName("city", data.city), country: safePlaceName("country", data.country) };
   } catch (err) {
     console.error("IP lookup failed:", (err as Error).message);
     return null;

@@ -10,42 +10,50 @@ export type GeoLocation = {
   country: string;
 };
 
-async function locateFromBrowser(position: GeolocationPosition): Promise<GeoLocation> {
-  const { latitude, longitude } = position.coords;
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-  );
-  const data = await res.json();
-  const city = data.address.city || data.address.town || data.address.village || "";
-  const country = data.address.country || "";
-  return { latitude, longitude, city, country };
-}
-
-// done by the server from the request IP (no third party call from the browser)
-async function locateFromIp(): Promise<GeoLocation> {
-  const res = await fetch("/api/me/location");
-  if (!res.ok) throw new Error("IP lookup failed");
-  return res.json();
-}
+// Without a timeout the browser can wait indefinitely for a position;
+// a recent one (moved less than a few minutes ago) is good enough.
+const POSITION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 8000,
+  maximumAge: 10 * 60 * 1000,
+};
 
 function getBrowserPosition(): Promise<GeolocationPosition> {
-  return new Promise((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject)
-  );
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("Geolocation unsupported"));
+    navigator.geolocation.getCurrentPosition(resolve, reject, POSITION_OPTIONS);
+  });
+}
+
+// The server names the position (or locates the request IP when no position is given) and saves it
+async function saveLocation(position?: { latitude: number; longitude: number }): Promise<GeoLocation> {
+  const res = await fetch("/api/me/location", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(position ?? {}),
+  });
+  if (!res.ok) throw new Error("Location failed");
+  return res.json();
 }
 
 export function useGeolocation() {
   const [loading, setLoading] = useState(false);
 
-  // Resolves with the browser position, or an IP based approximation if it is refused or fails
-  async function requestLocation(): Promise<GeoLocation> {
+  // Saves the browser position, or an IP based approximation if it is refused or fails
+  async function requestLocation(): Promise<GeoLocation & { approximate: boolean }> {
     setLoading(true);
     try {
+      let position: GeolocationPosition | null = null;
       try {
-        return await locateFromBrowser(await getBrowserPosition());
+        position = await getBrowserPosition();
       } catch {
-        return await locateFromIp();
+        // refused, unavailable or too slow: fall back on the IP
       }
+      if (position) {
+        const { latitude, longitude } = position.coords;
+        return { ...await saveLocation({ latitude, longitude }), approximate: false };
+      }
+      return { ...await saveLocation(), approximate: true };
     } finally {
       setLoading(false);
     }
