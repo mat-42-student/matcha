@@ -6,6 +6,7 @@ import { Picture, PublicUser } from "@/lib/types";
 import Image from "next/image";
 import LikeButton from "./LikeButton";
 import { useUsersStore } from "@/context/UsersStore";
+import toast from "react-hot-toast";
 
 export default function CardUserModal({
   mainPic,
@@ -56,9 +57,17 @@ export default function CardUserModal({
   }
 
   async function reportUser() {
-    if (confirm("Do you really want to report this user ?")) {
-      await fetch(`/api/users/${user.id}/report`, { method: 'POST' });
+    if (!confirm("Report this user as a fake account ? They will also be blocked.")) return;
+    const res = await fetch(`/api/users/${user.id}/report`, { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast.error(data.error ?? "Something went wrong");
+      return;
     }
+    toast.success("User reported");
+    const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
+    updateUser(updatedUser);
+    onClose();
   }
 
   async function blockUser() {

@@ -4,6 +4,9 @@ import { QueryResultRow } from "pg";
 import { FameRange, PublicUser } from "@/lib/types";
 import { completeUserInfos } from "./db-utils";
 
+// Distinct fake-account reports after which a user is hidden from suggestions and search
+const REPORT_THRESHOLD = Number(process.env.REPORT_THRESHOLD) || 2;
+
 /**
  * Perform a user search based on filters such as distance, age, fame, and interests.
  */
@@ -17,11 +20,11 @@ export async function searchCompatibleUsers(
 ) {
   let query = `
     SELECT *
-    FROM compatible_users_from($1) AS c
+    FROM compatible_users_from($1, $2) AS c
     WHERE 1=1
   `;
 
-  const params: (string | string[] | number | number[])[] = [me.id];
+  const params: (string | string[] | number | number[])[] = [me.id, REPORT_THRESHOLD];
 
   // Age range filter
   if (ageRange) {
@@ -69,8 +72,8 @@ export async function searchCompatibleUsers(
 export async function getCompatibleUsers(userId: string): Promise<PublicUser[]> {
   const query = `
     SELECT * 
-    FROM compatible_users_from($1);
+    FROM compatible_users_from($1, $2);
   `;
-  const result = await executeQuery<QueryResultRow>(query, [userId]);
+  const result = await executeQuery<QueryResultRow>(query, [userId, REPORT_THRESHOLD]);
   return result.rows as PublicUser[];
 }

@@ -28,7 +28,9 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 **Like possible sans photo de profil** côté API (vérifié seulement en UI), et like possible vers quelqu'un qui nous a bloqué.
   - [matcha/src/app/api/match/[userId]/like/route.ts](matcha/src/app/api/match/[userId]/like/route.ts)
   - Corrigé : 403 sans photo principale (`hasMainPicture`) ou en cas de block dans un sens ou l'autre ; un re-like d'un like/match existant renvoie le statut courant sans rien insérer. Toast d'erreur dans `LikeButton`.
-- [ ] 🟢/🟡 **« Signaler comme fake account » absent.**
+- [x] 🟢/🟡 **« Signaler comme fake account » absent.**
+  - [matcha/src/app/api/users/[userId]/report/route.ts](matcha/src/app/api/users/[userId]/report/route.ts), [matcha/src/lib/db/matches.ts](matcha/src/lib/db/matches.ts) (`reportUser`)
+  - Corrigé : table `reports` (un signalement par paire) + compteur `users.report_count` ; signaler bloque aussi l'utilisateur (même transaction) ; au-delà de `REPORT_THRESHOLD` signalements distincts (`.env`, 2 par défaut), le compte disparaît des suggestions et de la recherche (`compatible_users_from`).
 - [x] 🟢 **Notification « message reçu » jamais créée** en DB (type présent dans l'enum, jamais émis).
   - Corrigé : `handleChatMessage` crée la notif `message` en DB et émet `notif` au destinataire, sauf s'il a déjà la conversation ouverte ; une seule notif `message` par expéditeur (la plus récente remplace l'ancienne) ; un clic dans la cloche ouvre `/chat`.
 - [x] 🟢 **Lint impossible** : `eslint` / `eslint-config-next` absents du `package.json`, script `next lint` supprimé en Next 16.
