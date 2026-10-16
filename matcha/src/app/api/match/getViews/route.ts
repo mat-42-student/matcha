@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getViewsForUser } from "@/lib/db/views";
-import { completeUserInfos } from "@/lib/db/db-utils";
+import { rankUsers } from "@/lib/matching";
 
 export async function GET() {
   try {
@@ -10,7 +10,7 @@ export async function GET() {
     if (me instanceof NextResponse) return me;
 
     const stalkers = await getViewsForUser(me.id);
-    const res = await completeUserInfos(me, stalkers);
+    const res = rankUsers(me, stalkers);
     return NextResponse.json(res);
   } catch (err) {
     console.error(err);

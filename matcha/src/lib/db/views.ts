@@ -40,11 +40,10 @@ export async function recordProfileView(viewedUserId: string, viewerUserId: stri
 
 /**
  * Get all users who viewed me, excluding blocked users
- * Distance is calculated in km based on latitude/longitude
  */
 export async function getViewsForUser(meId: string,): Promise<PublicUser[]> {
   const query = `
-    SELECT u.*
+    SELECT u.*, distance_km($1, u.id) AS distance, like_status($1, u.id) AS "likeStatus"
     FROM views v
     JOIN users_with_interests u ON u.id = v.seen_by
     WHERE v.user_id = $1

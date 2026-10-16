@@ -236,6 +236,18 @@ AS $$
   ) AS l;
 $$ LANGUAGE sql STABLE;
 
+-- Distance in km between two users (earthdistance), NULL if either has no location
+CREATE OR REPLACE FUNCTION distance_km(user_a UUID, user_b UUID)
+RETURNS int
+AS $$
+  SELECT round(earth_distance(
+    ll_to_earth(a.latitude, a.longitude),
+    ll_to_earth(b.latitude, b.longitude)
+  ) / 1000)::int
+  FROM users a, users b
+  WHERE a.id = user_a AND b.id = user_b;
+$$ LANGUAGE sql STABLE;
+
 -- Pending likes only: a reciprocated like is listed in user_matches
 CREATE VIEW users_me_like AS
 SELECT l.liker_id AS me, uwi.*
@@ -270,7 +282,9 @@ RETURNS TABLE (
   latitude FLOAT,
   longitude FLOAT,
   interests JSON,
-  fame INT
+  fame INT,
+  distance INT,
+  "likeStatus" TEXT
 )
 AS $$
   SELECT
@@ -285,7 +299,9 @@ AS $$
     u.latitude,
     u.longitude,
     u.interests,
-    u.fame
+    u.fame,
+    distance_km(ref_user_id, u.id),
+    like_status(ref_user_id, u.id)
   FROM users_with_interests u
   JOIN users me ON me.id = ref_user_id
   JOIN users target ON target.id = u.id

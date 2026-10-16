@@ -125,7 +125,7 @@ export async function unlikeUser(meId: string, targetId: string): Promise<"like"
 
 export async function getUsersWhoLikedMe(meId: string): Promise<PublicUser[]> {
   const query = `
-    SELECT u.*
+    SELECT u.*, distance_km($1, u.id) AS distance, like_status($1, u.id) AS "likeStatus"
     FROM users_who_like_me u
     WHERE u.me = $1
   `;
@@ -135,7 +135,7 @@ export async function getUsersWhoLikedMe(meId: string): Promise<PublicUser[]> {
 
 export async function getUsersILike(meId: string): Promise<PublicUser[]> {
   const query = `
-    SELECT u.*
+    SELECT u.*, distance_km($1, u.id) AS distance, like_status($1, u.id) AS "likeStatus"
     FROM users_me_like u
     WHERE u.me = $1
   `;
@@ -145,7 +145,7 @@ export async function getUsersILike(meId: string): Promise<PublicUser[]> {
 
 export async function getMatchesForUser(meId: string): Promise<PublicUser[]> {
   const query = `
-    SELECT uwi.*
+    SELECT uwi.*, distance_km($1, uwi.id) AS distance, like_status($1, uwi.id) AS "likeStatus"
     FROM user_matches m
     JOIN users_with_interests uwi ON uwi.id = m.matched_id
     WHERE m.user_id = $1;

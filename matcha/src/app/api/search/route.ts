@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { searchCompatibleUsers } from "@/lib/db/search";
+import { rankUsers } from "@/lib/matching";
 import { validateSearchCriteria } from "@/lib/validators/serverValidator";
 import { SearchCriteria } from "@/lib/types";
 
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
       customInterests
     );
 
-    return NextResponse.json({ users });
+    return NextResponse.json({ users: rankUsers(me, users) });
   } catch (err) {
     console.error("Error in POST /api/search:", err);
     return NextResponse.json({ error: "Search failed" }, { status: 500 });

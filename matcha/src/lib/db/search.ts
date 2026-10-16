@@ -2,7 +2,6 @@
 import { executeQuery } from "./db-utils";
 import { QueryResultRow } from "pg";
 import { FameRange, PublicUser } from "@/lib/types";
-import { completeUserInfos } from "./db-utils";
 
 // Distinct fake-account reports after which a user is hidden from suggestions and search
 const REPORT_THRESHOLD = Number(process.env.REPORT_THRESHOLD) || 2;
@@ -25,6 +24,12 @@ export async function searchCompatibleUsers(
   `;
 
   const params: (string | string[] | number | number[])[] = [me.id, REPORT_THRESHOLD];
+
+  // Distance filter (km)
+  if (distance) {
+    query += ` AND c.distance <= $${params.length + 1}`;
+    params.push(distance);
+  }
 
   // Age range filter
   if (ageRange) {
@@ -62,11 +67,8 @@ export async function searchCompatibleUsers(
     ) && $${params.length + 1}`;
     params.push(customInterests);
   }
-  const {rows} = await executeQuery<PublicUser>(query, params);
-  const users = await completeUserInfos(me, rows);
-  if (distance)
-    return users.filter( u => u.distance < distance)
-  return users;
+  const { rows } = await executeQuery<PublicUser>(query, params);
+  return rows;
 }
 
 export async function getCompatibleUsers(userId: string): Promise<PublicUser[]> {

@@ -1,8 +1,6 @@
 // matcha/src/lib/db/db-utils.ts
 
 import { Pool, QueryResultRow, QueryResult, PoolClient } from 'pg';
-import { PublicUser } from '../types';
-import { getMatchStatus } from './likes';
 
 declare global {
   var cachedPool: Pool | undefined;
@@ -52,17 +50,6 @@ export async function executeQuery<T extends QueryResultRow>(
     if (!client) dbClient.release();
   }
 }
-// Utility function to test the connection
-export async function testConnection(): Promise<boolean> {
-  try {
-    await executeQuery('SELECT NOW()');
-    console.log('Database connection successful');
-    return true;
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    return false;
-  }
-}
 
 /**
  * Inside a transaction (client given), errors are rethrown so the caller rolls back
@@ -81,44 +68,4 @@ export async function addFame(score: number, userId: string, client?: PoolClient
     console.error("Error updating fame:", err);
     return false;
   }
-}
-
-function calcDistance(refUser: PublicUser, user: PublicUser): number {
-  // Haversine
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(user.latitude - refUser.latitude);
-  const dLon = toRad(user.longitude - refUser.longitude);
-  const lat1 = toRad(refUser.latitude);
-  const lat2 = toRad(user.latitude);
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-  const distance = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-  return distance
-}
-
-function calcScore(refUser: PublicUser, user: PublicUser): number {
-  const maxDistance = 1000;
-  const distanceScore = Math.max(0, (1 - user.distance / maxDistance)) * 40;
-
-  const fameScore = Math.min(1, user.fame / 100) * 30;
-
-  const sharedInterests = user.interests.filter(i => refUser.interests.includes(i)).length;
-  const maxShared = Math.max(refUser.interests.length, 1);
-  const interestsScore = (sharedInterests / maxShared) * 30;
-
-  const totalScore = Math.round(distanceScore + fameScore + interestsScore);
-  return totalScore;
-}
-
-export async function completeUserInfos(refUser: PublicUser, users: PublicUser[]): Promise<PublicUser[]> {
-  for (const u of users) {
-    u.distance = calcDistance(refUser, u)
-    u.score = calcScore(refUser, u)
-    u.likeStatus = await getMatchStatus(refUser.id, u.id);
-  }
-  users.sort((a, b) => b.score - a.score)
-  return users
 }
