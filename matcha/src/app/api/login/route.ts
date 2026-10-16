@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
 			secure: true, // enable if https
 			sameSite: "lax",
 			path: "/",
+			maxAge: 60 * 60 * 24 * 7, // same lifetime as sessions.expires_at
 		});
 
 		return res;

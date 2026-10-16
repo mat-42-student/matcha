@@ -100,7 +100,8 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : `sendMail()` dans `lib/mail.ts` (un seul transport) ; `validatePassword` est l'unique politique (8+, majuscule, minuscule, chiffre, pas courante), réutilisée par `validateSignupData`, et `clientValidator` aligné ; le seed utilise le `pool` de `db-utils` ; `Notification` importée depuis `types.ts` ; `postcss.config.ts` (config Tailwind 3 avec `autoprefixer` non installé) supprimé.
 - [x] 🟢 **Schéma SQL** : pas de `ON DELETE CASCADE` sur la plupart des FK (`pictures`, `matches`, `views`, `chat`, `user_interests`) ; aucun index sur `matches`, `chat`, `notifications` ; `timestamp` sans timezone ; `fame` en `float` dans la table mais `INT` dans la fonction.
   - Corrigé : toutes les FK en `ON DELETE CASCADE` ; index sur `matches` (paire + `user2_id`), `chat` (conversation + non lus du destinataire), `notifications` (`target_id, created_at`), `views.seen_by`, `reports.reported_id` ; toutes les dates en `timestamptz` ; `fame` en `int NOT NULL` borné 0–100 (comme `addFame`). Nécessite `make vdown && make`.
-- [ ] 🟢 Sessions expirées jamais purgées ; cookie sans `maxAge` alors que la session DB dure 7 jours.
+- [x] 🟢 Sessions expirées jamais purgées ; cookie sans `maxAge` alors que la session DB dure 7 jours.
+  - Corrigé : `createSession` purge les sessions expirées à chaque login ; cookie `maxAge` de 7 jours, aligné sur `expires_at`.
 
 ## 4. Hygiène
 

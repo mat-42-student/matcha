@@ -6,6 +6,8 @@ import type { PublicUser } from "@/lib/types";
 export async function createSession(userId: string): Promise<string> {
   const sessionId = uuidv4();
 
+  await executeQuery(`DELETE FROM sessions WHERE expires_at <= NOW()`);
+
   await executeQuery(
     `INSERT INTO sessions (id, user_id) VALUES ($1, $2)`,
     [sessionId, userId]
