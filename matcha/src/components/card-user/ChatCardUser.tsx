@@ -19,6 +19,7 @@ export default function ChatCardUser({ user }: { user: PublicUser }) {
         className="w-25 h-25 rounded-full object-cover shadow-md border-2 border-pink-500"
         src={`/api/users/${user.id}/pics`}
         alt="profile picture"
+        loading="eager"
       />
 
       <div className="text-pink-700 font-semibold p-2 text-right">

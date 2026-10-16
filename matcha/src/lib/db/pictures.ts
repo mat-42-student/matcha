@@ -79,7 +79,7 @@ export async function getVisibleMainPicture(userId: string, viewerId: string) {
  */
 export async function getVisiblePictureData(pictureId: string, viewerId: string) {
   const query = `
-    SELECT p.mime_type, p.data
+    SELECT p.data
     FROM pictures p
     WHERE p.id = $1
       AND (p.user_id = $2 OR NOT EXISTS (
@@ -89,7 +89,7 @@ export async function getVisiblePictureData(pictureId: string, viewerId: string)
           AND status = 'block'
       ));
   `;
-  const result = await executeQuery<{ mime_type: string | null; data: Buffer | null }>(
+  const result = await executeQuery<{ data: Buffer | null }>(
     query,
     [pictureId, viewerId]
   );

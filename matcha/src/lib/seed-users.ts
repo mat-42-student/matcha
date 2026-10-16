@@ -3,6 +3,7 @@
 import { faker } from "@faker-js/faker";
 import { Pool } from 'pg';
 import { pool } from './db/db-utils';
+import { detectImageMimeType } from './validators/imageValidator';
 import bcrypt from 'bcryptjs';
 import fs from "fs";
 import path from "path";
@@ -157,9 +158,13 @@ async function downloadImage(url: string) {
   if (!res.ok) {
     throw new Error(`Failed to download ${url}`);
   }
-  const buffer = await res.arrayBuffer();
-  const mimeType = res.headers.get("content-type") ?? "image/jpeg";
-  return { buffer: Buffer.from(buffer), mimeType };
+  const buffer = Buffer.from(await res.arrayBuffer());
+  // same check as uploads: trust the content, not the remote Content-Type
+  const mimeType = detectImageMimeType(buffer);
+  if (!mimeType) {
+    throw new Error(`Not an allowed image: ${url}`);
+  }
+  return { buffer, mimeType };
 }
 
 async function insertUserPic(pool: Pool, id: string, urlPic: string) {

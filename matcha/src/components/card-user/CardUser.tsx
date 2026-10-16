@@ -50,7 +50,7 @@ export default function CardUser({ user }: { user: PublicUser }) {
             className="max-h-48 rounded shadow-md"
             src={mainPic}
             alt="profile picture"
-            loading="lazy"
+            loading="eager"
           />
         </div>
 

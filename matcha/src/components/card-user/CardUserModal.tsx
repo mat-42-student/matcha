@@ -105,6 +105,7 @@ export default function CardUserModal({
               style={{ width: "auto", height: "auto" }}
               src={pics[current]}
               alt={`photo ${current + 1}`}
+              loading="eager"
               className="rounded-lg shadow-md w-full object-cover my-2"
             />
             <div className="flex justify-between mt-2">
