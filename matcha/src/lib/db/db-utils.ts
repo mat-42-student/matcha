@@ -37,14 +37,14 @@ export async function executeQuery<T extends QueryResultRow>(
     const result = await dbClient.query<T>(queryString, values);
     return result;
   } catch (error) {
+    // values are never logged (password hashes, tokens, image buffers)
     console.error("Database query error:", {
       query: queryString,
-      values,
       error: error instanceof Error ? error.message : "Unknown error",
+      code: (error as { code?: string }).code,
     });
-    throw new Error(
-      `Query execution failed: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
+    // rethrown as is: callers rely on the pg error code (e.g. 23505 unique violation)
+    throw error;
   } finally {
     // ⚠️ On ne release que si on a créé la connexion ici
     if (!client) dbClient.release();
