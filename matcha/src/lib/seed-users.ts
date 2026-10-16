@@ -2,6 +2,7 @@
 
 import { faker } from "@faker-js/faker";
 import { Pool } from 'pg';
+import { pool } from './db/db-utils';
 import bcrypt from 'bcryptjs';
 import fs from "fs";
 import path from "path";
@@ -15,16 +16,6 @@ const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
 interface Hit {
   webformatURL: string;
-}
-
-export function getPool() {
-  return new Pool({
-    user: process.env.POSTGRES_USER,
-    host: process.env.POSTGRES_HOST,
-    database: process.env.POSTGRES_DB,
-    password: process.env.POSTGRES_PASSWORD,
-    port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  });
 }
 
 function getRandomCity() {
@@ -137,7 +128,6 @@ async function insertUserInterests(pool: Pool, userId: string) {
 }
 
 export async function seed() {
-  const pool = getPool();
   try {
     const ret = await pool.query("SELECT COUNT(*) FROM users");
     const userCount = ret.rows[0].count;
@@ -159,8 +149,6 @@ export async function seed() {
     console.log("... Done");
   } catch (err) {
     console.error("Seed error:", err);
-  } finally {
-    await pool.end();
   }
 }
 

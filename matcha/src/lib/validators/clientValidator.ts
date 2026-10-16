@@ -35,8 +35,8 @@ export function isValidUsername(username: string): boolean {
 }
 
 export function isStrongPassword(pw: string): boolean {
-  // Example policy: at least 8 chars, one letter, one digit
-  return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(pw);
+  // same rules as validatePassword (serverValidator.ts), minus the common password list
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw);
 }
 
 export function validateSignupForm(fields: {
@@ -69,7 +69,7 @@ export function validateSignupForm(fields: {
   if (!password) errors.password = 'Password is required';
   else if (!isStrongPassword(password))
     errors.password =
-      'Password must be at least 8 characters and include letters and numbers';
+      'Password must be at least 8 characters and include uppercase, lowercase and numbers';
 
   if (!first) errors.first_name = 'First name is required';
   else if (first.length > 50) errors.first_name = 'First name is too long';

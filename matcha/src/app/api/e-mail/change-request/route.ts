@@ -6,7 +6,7 @@ import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/email
 import { isEmailUsed } from "@/lib/db/users";
 import { isValidEmail } from "@/lib/validators/serverValidator";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
+import { sendMail } from "@/lib/mail";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,23 +39,12 @@ export async function POST(req: NextRequest) {
 
     // Send confirmation email
     const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/e-mail/change-confirm?token=${token}`;
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "1025"),
-      secure: false,
-    });
-
-    await transporter.sendMail({
-      from: `"Matcha" <${process.env.EMAIL_FROM}>`,
-      to: new_email,
-      subject: "Confirm your new email address",
-      html: `
-        <h1>Confirm your new email 📬</h1>
-        <p>Click the link below to confirm your new email address:</p>
-        <a href="${verifyUrl}">${verifyUrl}</a>
-        <p>This link will expire in 30 minutes.</p>
-      `,
-    });
+    await sendMail(new_email, "Confirm your new email address", `
+      <h1>Confirm your new email 📬</h1>
+      <p>Click the link below to confirm your new email address:</p>
+      <a href="${verifyUrl}">${verifyUrl}</a>
+      <p>This link will expire in 30 minutes.</p>
+    `);
 
     return NextResponse.json({ success: true });
   } catch (err) {

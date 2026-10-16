@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
+import { sendMail } from "@/lib/mail";
 import { getUserByEmail } from "@/lib/db/users";
 import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
 
@@ -20,23 +20,12 @@ export async function POST(req: NextRequest) {
 
 		const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset/${token}`;
 
-		const transporter = nodemailer.createTransport({
-			host: process.env.SMTP_HOST,
-			port: parseInt(process.env.SMTP_PORT || "1025"),
-			secure: false,
-		});
-
-		await transporter.sendMail({
-			from: `"Matcha" <${process.env.EMAIL_FROM}>`,
-			to: email,
-			subject: "Reset your password",
-			html: `
-        <h2>Reset your password 🔑</h2>
-        <p>Click below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <p>This link expires in 30 minutes.</p>
-      `,
-		});
+		await sendMail(email, "Reset your password", `
+			<h2>Reset your password 🔑</h2>
+			<p>Click below to reset your password:</p>
+			<a href="${resetUrl}">${resetUrl}</a>
+			<p>This link expires in 30 minutes.</p>
+		`);
 
 		return NextResponse.json({ success: true });
 	} catch (err) {

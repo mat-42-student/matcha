@@ -4,16 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
-import { NotifPayload, Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
-
-interface Notification {
-  id: number;
-  type: "like" | "match" | "unlike" | "message" | "view";
-  message: string;
-  sender_username?: string;
-  sender_picture?: string;
-  created_at: string;
-}
+import { Notification, NotifPayload, Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
 
 interface SocketContextType {
   socket: Socket | null;

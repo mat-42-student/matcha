@@ -1,5 +1,4 @@
 // matcha/src/lib/validators/serverValidator.ts
-// TODO mutualize password check for all forms
 
 import { isCommonPassword } from "./commonPasswords";
 
@@ -13,14 +12,6 @@ export function isValidUsername(username: string): boolean {
 
 export function isValidUuid(id: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-}
-
-function isStrongPassword(password: string): boolean {
-  return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
-}
-
-function isAcceptablePassword(password: string): boolean {
-  return isStrongPassword(password) && !isCommonPassword(password);
 }
 
 function calculateAgeISO(dateStr: string): number | null {
@@ -56,10 +47,10 @@ export function validateSignupData(data: {
   else if (!isValidEmail(email)) errors.email = "Invalid email address";
 
   if (!password) errors.password = "Password is required";
-  else if (!isAcceptablePassword(password))
-    errors.password = isCommonPassword(password)
-      ? "Password is too common"
-      : "Password must be at least 8 characters long and include both letters and numbers";
+  else {
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) errors.password = passwordErrors[0];
+  }
 
   if (!first) errors.first_name = "First name is required";
   else if (!nameRegex.test(first))
@@ -170,7 +161,8 @@ export function validateProfileField(
   }
 }
 
-export function validatePassword(password: string) {
+// single password policy, shared by signup, password change and password reset
+export function validatePassword(password: string): string[] {
   const errors: string[] = [];
 
   if (password.length < 8) errors.push("Password must be at least 8 characters long");
@@ -178,10 +170,10 @@ export function validatePassword(password: string) {
   if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
   if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number");
   if (isCommonPassword(password)) errors.push("Password is too common");
-  //if (!/[^A-Za-z0-9]/.test(password)) errors.push("Password must contain at least one special character");
 
   return errors;
 }
+
 function isFameBound(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }

@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { createUser, isEmailUsed, isUsernameUsed } from '@/lib/db/users';
 import { createEmailToken } from '@/lib/db/emails';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import { sendMail } from '@/lib/mail';
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,22 +64,11 @@ export async function POST(req: NextRequest) {
 
     const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/e-mail/verify?token=${token}`;
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "1025"),
-      secure: false,
-    });
-
-    await transporter.sendMail({
-      from: `"Matcha" <${process.env.EMAIL_FROM}>`,
-      to: email,
-      subject: "Verify your email",
-      html: `
-        <h1>Welcome to Matcha 🎉</h1>
-        <p>Click here to verify your account:</p>
-        <a href="${verifyUrl}">${verifyUrl}</a>
-      `,
-    });
+    await sendMail(email, "Verify your email", `
+      <h1>Welcome to Matcha 🎉</h1>
+      <p>Click here to verify your account:</p>
+      <a href="${verifyUrl}">${verifyUrl}</a>
+    `);
 
     return NextResponse.json({ success: true });
   } catch (error) {
