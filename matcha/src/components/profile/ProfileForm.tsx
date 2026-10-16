@@ -1,13 +1,20 @@
 // matcha/src/components/profile/ProfileForm.tsx
 "use client";
 import { useState, useMemo } from "react";
-import { Edit2, Check } from "lucide-react";
 import toast from "react-hot-toast";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { validateProfileField } from "@/lib/validators/clientValidator";
 import type { PublicUser } from "@/lib/types";
 
 type FormField = "username" | "first_name" | "last_name" | "email" | "gender" | "sex_pref" | "bio";
 type FormData = Record<FormField, string>;
+type FormErrors = Partial<Record<FormField, string>>;
+
+const FIELDS: FormField[] = ["username", "first_name", "last_name", "email", "gender", "sex_pref", "bio"];
+const BIO_MAX = 500;
+const fieldClass = "text-gray-900 border-gray-300";
 
 export default function ProfileForm({
   user,
@@ -31,7 +38,8 @@ export default function ProfileForm({
 
   const [formData, setFormData] = useState(initialData);
   const [prevInitialData, setPrevInitialData] = useState(initialData);
-  const [editingField, setEditingField] = useState<FormField | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [saving, setSaving] = useState(false);
 
   // 🔄 Update local form if user prop changes (adjusted during render, not in an effect)
   if (initialData !== prevInitialData) {
@@ -39,189 +47,241 @@ export default function ProfileForm({
     setFormData(initialData);
   }
 
-  const saveField = async (field: FormField) => {
-    const value = formData[field];
-
-    const { valid, error } = validateProfileField(field, value);
-    if (!valid) {
-      toast.error(error || "Invalid value");
-      setEditingField(field);
-      return false;
-    }
-
-    try {
-      // ⚡️ Special case: handle email change through verification flow
-      if (field === "email") {
-        if (value === user.email) {
-          toast("You entered the same email.");
-          return true;
-        }
-
-        const confirm = window.confirm(
-          "A confirmation email will be sent to your new address.\n\n" +
-          "Your email will only change once you click the confirmation link. Continue?"
-        );
-        if (!confirm) return false;
-
-        const res = await fetch("/api/e-mail/change-request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ new_email: value }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || "Email change request failed");
-        }
-
-        toast.success("A confirmation link has been sent to your new email address.");
-        // Don’t update UI yet; only after confirmation
-        return true;
-      }
-
-      // ✏️ Default profile update
-      const res = await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Failed to update ${field}`);
-      }
-
-      onUserUpdate?.({ [field]: value });
-      toast.success(`${field.replace("_", " ")} updated successfully`);
-      return true;
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : `Failed to update ${field}`);
-      setEditingField(field);
-      return false;
-    }
-  };
+  const changedFields = FIELDS.filter((f) => formData[f].trim() !== initialData[f].trim());
+  const hasChanges = changedFields.length > 0;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const renderRow = (
-    label: string,
-    name: FormField,
-    type: "text" | "textarea" | "select" = "text"
-  ) => {
-    const isEditing = editingField === name;
+  const handleCancel = () => {
+    setFormData(initialData);
+    setErrors({});
+  };
 
-    return (
-      <div className="flex items-center justify-between py-4 border-b text-gray-900">
-        <div className="flex-1 flex items-center">
-          <span className="font-medium">{label}:</span>
-
-          {isEditing ? (
-            type === "textarea" ? (
-              <textarea
-                name={name}
-                value={formData[name]}
-                onChange={handleChange}
-                className="ml-2 w-full rounded border px-4 py-2 text-gray-900 border-pink-300 ring-2 ring-pink-300"
-              />
-            ) : type === "select" ? (
-              <select
-                name={name}
-                value={formData[name]}
-                onChange={handleChange}
-                className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 text-gray-900"
-              >
-                <option value="" disabled hidden>
-                  Select...
-                </option>
-                {name === "gender" ? (
-                  <>
-                    <option value="M">Man</option>
-                    <option value="F">Woman</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="M">Men</option>
-                    <option value="F">Women</option>
-                    <option value="B">Both</option>
-                  </>
-                )}
-              </select>
-            ) : (
-              <input
-                name={name}
-                type={type}
-                value={formData[name]}
-                onChange={handleChange}
-                className="ml-2 max-w-sm rounded-full border border-pink-400 px-4 py-2 ring-2 ring-pink-400 text-gray-900"
-              />
-            )
-          ) : (
-            <span className="ml-2 text-gray-700">
-              {name === "gender"
-                ? formData.gender === "M"
-                  ? "Man"
-                  : formData.gender === "F"
-                  ? "Woman"
-                  : "-"
-                : name === "sex_pref"
-                ? formData.sex_pref === "M"
-                  ? "Men"
-                  : formData.sex_pref === "F"
-                  ? "Women"
-                  : formData.sex_pref === "B"
-                  ? "Both"
-                  : "-"
-                : formData[name] || "-"}
-            </span>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={async () => {
-            if (!isEditing && editingField && editingField !== name) {
-              toast.error("Finish editing the current field first.");
-              return;
-            }
-
-            if (isEditing) {
-              const success = await saveField(name);
-              if (success) setEditingField(null);
-            } else {
-              setEditingField(name);
-            }
-          }}
-          className={`ml-4 h-10 w-10 flex items-center justify-center rounded-full transition 
-            ${isEditing ? "bg-green-100 hover:bg-green-200" : "bg-pink-100 hover:bg-pink-200"}`}
-        >
-          {isEditing ? (
-            <Check className="text-green-600" size={20} />
-          ) : (
-            <Edit2 className="text-pink-600" size={20} />
-          )}
-        </button>
-      </div>
+  // email goes through the confirmation flow; returns false if not sent
+  const requestEmailChange = async (newEmail: string) => {
+    const confirm = window.confirm(
+      "A confirmation email will be sent to your new address.\n\n" +
+      "Your email will only change once you click the confirmation link. Continue?"
     );
+    if (!confirm) return false;
+
+    const res = await fetch("/api/e-mail/change-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ new_email: newEmail }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setErrors((prev) => ({ ...prev, email: data.error || "Email change request failed" }));
+      return false;
+    }
+    toast.success(`A confirmation link has been sent to ${newEmail}.`);
+    return true;
   };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!hasChanges || saving) return;
+
+    const values: Partial<FormData> = {};
+    const newErrors: FormErrors = {};
+    for (const field of changedFields) {
+      const value = formData[field].trim();
+      const { valid, error } = validateProfileField(field, value);
+      if (!valid) newErrors[field] = error || "Invalid value";
+      // the bio keeps its inner formatting, only names and identifiers are trimmed
+      values[field] = field === "bio" ? formData.bio : value;
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    const { email: newEmail, ...profileUpdates } = values;
+    setSaving(true);
+    try {
+      // email first: if it is cancelled or refused, nothing is saved and every edit is kept
+      if (newEmail !== undefined) {
+        if (!await requestEmailChange(newEmail)) return;
+        // the email only changes once confirmed
+        setFormData((prev) => ({ ...prev, email: initialData.email }));
+      }
+
+      if (Object.keys(profileUpdates).length > 0) {
+        const res = await fetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profileUpdates),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 409) setErrors({ username: data.error || "Username is already taken" });
+          else toast.error(data.error || "Failed to update profile");
+          return;
+        }
+        // resyncs the form from the updated user
+        onUserUpdate?.(profileUpdates);
+        toast.success("Profile updated");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderError = (field: FormField) =>
+    errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>;
+
+  const label = (field: FormField, text: string) => (
+    <label htmlFor={`profile-${field}`} className="block text-sm font-medium text-gray-700 mb-1">
+      {text}
+    </label>
+  );
 
   return (
-    <div>    
-      <div className="w-full">
-        {renderRow("Username", "username")}
-        {renderRow("First Name", "first_name")}
-        {renderRow("Last Name", "last_name")}
-        {renderRow("Email", "email")}
-        {renderRow("Gender", "gender", "select")}
-        {renderRow("Sexual Preference", "sex_pref", "select")}
-        {renderRow("Bio", "bio", "textarea")}
+    <div>
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 pt-4">
+        <div>
+          {label("username", "Username")}
+          <Input
+            id="profile-username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            maxLength={20}
+            autoComplete="username"
+            className={fieldClass}
+          />
+          {renderError("username")}
         </div>
-      <div className="mt-6 text-center">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            {label("first_name", "First name")}
+            <Input
+              id="profile-first_name"
+              name="first_name"
+              value={formData.first_name}
+              onChange={handleChange}
+              autoComplete="given-name"
+              className={fieldClass}
+            />
+            {renderError("first_name")}
+          </div>
+          <div>
+            {label("last_name", "Last name")}
+            <Input
+              id="profile-last_name"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              autoComplete="family-name"
+              className={fieldClass}
+            />
+            {renderError("last_name")}
+          </div>
+        </div>
+
+        <div>
+          {label("email", "Email")}
+          <Input
+            id="profile-email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            autoComplete="email"
+            className={fieldClass}
+          />
+          {renderError("email") || (
+            <p className="text-gray-500 text-xs mt-1">
+              A confirmation link will be sent to the new address.
+            </p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            {label("gender", "Gender")}
+            <select
+              id="profile-gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className={`w-full rounded-lg border bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 ${fieldClass}`}
+            >
+              <option value="" disabled hidden>Select...</option>
+              <option value="M">Man</option>
+              <option value="F">Woman</option>
+            </select>
+            {renderError("gender")}
+          </div>
+          <div>
+            {label("sex_pref", "Interested in")}
+            <select
+              id="profile-sex_pref"
+              name="sex_pref"
+              value={formData.sex_pref}
+              onChange={handleChange}
+              className={`w-full rounded-lg border bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 ${fieldClass}`}
+            >
+              <option value="" disabled hidden>Select...</option>
+              <option value="M">Men</option>
+              <option value="F">Women</option>
+              <option value="B">Both</option>
+            </select>
+            {renderError("sex_pref")}
+          </div>
+        </div>
+
+        <div>
+          {label("bio", "Bio")}
+          <Textarea
+            id="profile-bio"
+            name="bio"
+            value={formData.bio}
+            onChange={handleChange}
+            maxLength={BIO_MAX}
+            rows={4}
+            placeholder="Tell people a bit about yourself"
+            className={`resize-y ${fieldClass}`}
+          />
+          <div className="flex justify-between">
+            <div>{renderError("bio")}</div>
+            <span className="text-gray-400 text-xs mt-1">{formData.bio.length}/{BIO_MAX}</span>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          {hasChanges && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={saving}
+              className="rounded-lg px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100 transition disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          )}
+          <Button
+            type="submit"
+            disabled={!hasChanges || saving}
+            className="disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-pink-600"
+          >
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </form>
+
+      <div className="mt-6 pt-4 border-t text-center">
         <a
           href="/profile/password"
           className="text-pink-600 hover:text-pink-800 underline font-medium"
@@ -230,6 +290,5 @@ export default function ProfileForm({
         </a>
       </div>
     </div>
-
   );
 }

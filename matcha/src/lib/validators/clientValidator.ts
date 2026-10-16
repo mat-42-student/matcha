@@ -13,8 +13,8 @@ export function validateProfileField(field: string, value: string) {
       return { valid: true };
     case "first_name":
     case "last_name":
-      if (!value || value.length < 2) return { valid: false, error: "Too short" };
-      if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(value))
+      if (!value || value.trim().length < 2) return { valid: false, error: "Too short" };
+      if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(value.trim()))
         return { valid: false, error: "Invalid characters" };
       return { valid: true };
     case "email":
@@ -22,7 +22,8 @@ export function validateProfileField(field: string, value: string) {
         return { valid: false, error: "Invalid email" };
       return { valid: true };
     case "bio":
-      return { valid: true }; // pas de restriction pour l'instant
+      if (value.length > 500) return { valid: false, error: "Bio is too long (max 500 characters)" };
+      return { valid: true };
     case "gender":
       if (!["M", "F"].includes(value)) return { valid: false, error: "Invalid gender" };
       return { valid: true };
