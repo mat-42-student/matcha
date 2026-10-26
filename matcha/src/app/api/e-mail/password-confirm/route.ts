@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEmailTokenByToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
 import { updateUserPassword } from "@/lib/db/users";
 import { deleteSessionsForUser } from "@/lib/db/session";
+import { closeSessionSockets } from "@/lib/socket/socket";
 import { validatePassword } from "@/lib/validators/serverValidator";
 import bcrypt from "bcryptjs";
 
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
 
 		await deleteEmailTokensForUserByType(tokenData.user_id, "password_reset");
 		await deleteSessionsForUser(tokenData.user_id);
+		// every device logged in before the reset is logged out, sockets included
+		closeSessionSockets(tokenData.user_id);
 
 		return NextResponse.json({ success: true });
 	} catch (err) {

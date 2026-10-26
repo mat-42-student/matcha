@@ -4,7 +4,7 @@ import { Server, Socket } from "socket.io";
 import type { Server as HttpServer } from "http";
 // @ts-expect-error -- cookie comes with socket.io and ships without type declarations
 import cookie from "cookie";
-import { getSessionUser } from "@/lib/db/session";
+import { getSessionExpiry, getSessionUser } from "@/lib/db/session";
 import { ChatMsgEvent, NotifPayload, PresencePayload, PublicUser, RelationChangedPayload, SocketUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { updateLastLogin } from "../db/users";
@@ -87,6 +87,18 @@ export function sendBlock(blockerId: string, blockedId: string) {
   send<RelationChangedPayload>(blockerId, "relation-changed", { userId: blockedId, likeStatus: "block" });
 }
 
+/***
+ * Close the sockets of a session that just ended (logout), or of every session of the user
+ * (password reset). Auth only runs at the handshake: without this, they keep sending and receiving.
+ * The client sees an "io server disconnect" and goes back to the login page.
+ */
+export function closeSessionSockets(userId: string, sessionId?: string) {
+  // copy: each disconnect removes the socket from the registry
+  for (const socket of [...(connectedUsers.get(userId) ?? [])]) {
+    if (!sessionId || socket.data.sessionId === sessionId) socket.disconnect(true);
+  }
+}
+
 export function isUserActivelyChattingWith(userId: string, otherUserId: string) {
   const targetSockets = connectedUsers.get(userId);
   if (!targetSockets || targetSockets.size === 0) return false;
@@ -120,11 +132,13 @@ export async function initSocket(httpServer: HttpServer) {
 
     if (!sessionId) return next(new Error("unauthorized"));
     try {
-      const user = await getSessionUser(sessionId);
-      if (!user) return next(new Error("unauthorized"));
+      const [user, expiresAt] = await Promise.all([getSessionUser(sessionId), getSessionExpiry(sessionId)]);
+      if (!user || !expiresAt) return next(new Error("unauthorized"));
 
       // Comes from the my_profile view (no password, but contains the email): never forward it as-is to other users
       socket.data.user = user;
+      socket.data.sessionId = sessionId;
+      socket.data.expiresAt = expiresAt;
       next();
     } catch (err) {
       console.error("Socket auth failed:", err);
@@ -169,7 +183,16 @@ export async function initSocket(httpServer: HttpServer) {
 
     socket.emit("notif", welcome)
 
-    socket.on("disconnect", () => handleDisconnect(socket));
+    // Close the socket when its session expires (setTimeout delays are capped at 2^31 - 1 ms, ~24 days)
+    const expiry = setTimeout(
+      () => socket.disconnect(true),
+      Math.min((socket.data.expiresAt as Date).getTime() - Date.now(), 2 ** 31 - 1)
+    );
+
+    socket.on("disconnect", () => {
+      clearTimeout(expiry);
+      handleDisconnect(socket);
+    });
     on<ChatMsgEvent>(socket, "chat-msg", (payload) => handleChatMessage(toSocketUser(socket.data.user), payload));
     on<{ senderId: string }>(socket, "chat-mark-read", async (payload) => {
       if (typeof payload?.senderId !== "string" || !isValidUuid(payload.senderId)) return;

@@ -2,6 +2,7 @@
 "use client";
 
 import { useMe } from "@/context/UserContext";
+import { useSocket } from "@/context/SocketContext";
 import MenuDesktop from "./MenuDesktop";
 import MenuMobile from "./MenuMobile";
 import NotificationBell from "./NotificationBell";
@@ -11,9 +12,12 @@ import toast from "react-hot-toast";
 
 export function Header() {
   const { me, setMe } = useMe();
+  const { socket } = useSocket();
   const router = useRouter();
 
   async function handleLogout() {
+    // closed first: the server closes the session's sockets, which in this tab must not read as "session ended"
+    socket?.disconnect();
     await fetch("/api/logout", { method: "POST", credentials: "include" });
     setMe(null);
     toast.success("Bye 👋");

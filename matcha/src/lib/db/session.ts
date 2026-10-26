@@ -16,12 +16,30 @@ export async function createSession(userId: string): Promise<string> {
   return sessionId;
 }
 
-export async function deleteSession(sessionId: string) {
-  await executeQuery(`DELETE FROM sessions WHERE id = $1`, [sessionId]);
+/**
+ * Delete a session, returns the id of its user (null if it did not exist)
+ */
+export async function deleteSession(sessionId: string): Promise<string | null> {
+  const result = await executeQuery<{ user_id: string }>(
+    `DELETE FROM sessions WHERE id = $1 RETURNING user_id`,
+    [sessionId]
+  );
+  return result.rows[0]?.user_id ?? null;
 }
 
 export async function deleteSessionsForUser(userId: string) {
   await executeQuery(`DELETE FROM sessions WHERE user_id = $1`, [userId]);
+}
+
+/**
+ * Expiry date of a valid session, null if it does not exist or has expired
+ */
+export async function getSessionExpiry(sessionId: string): Promise<Date | null> {
+  const result = await executeQuery<{ expires_at: Date }>(
+    `SELECT expires_at FROM sessions WHERE id = $1 AND expires_at > NOW()`,
+    [sessionId]
+  );
+  return result.rows[0]?.expires_at ?? null;
 }
 
 export async function getSessionUser(sessionId: string): Promise<PublicUser | null> {

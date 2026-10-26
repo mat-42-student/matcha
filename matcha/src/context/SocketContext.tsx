@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Notification, NotifPayload, Payload, PresencePayload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
 
@@ -47,7 +48,8 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const { me } = useMe();
+  const { me, setMe } = useMe();
+  const router = useRouter();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [like, setLike] = useState<Payload | null>(null);
   const [unlike, setUnlike] = useState<Payload | null>(null);
@@ -195,6 +197,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       fetchNotifications();
       s.emit("get-chat-users");
     });
+    // Closed by the server: the session ended (logout in another tab, password reset, expiry).
+    // Socket.io does not reconnect after this reason.
+    s.on("disconnect", (reason) => {
+      if (reason !== "io server disconnect") return;
+      setMe(null);
+      toast("Your session has ended, please log in again");
+      router.push("/auth");
+    });
     s.on("notif", handleNotif);
     // a notification was removed or read server side (in any tab)
     s.on("notifications-changed", fetchNotifications);
@@ -235,7 +245,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setOnlineUsers([]);
       setLastSeen({});
     };
-  }, [meId, fetchNotifications, handleNotif, handleChatUnreadMessages, handleChatUsers]);
+  }, [meId, setMe, router, fetchNotifications, handleNotif, handleChatUnreadMessages, handleChatUsers]);
 
   return (
     <SocketContext.Provider
