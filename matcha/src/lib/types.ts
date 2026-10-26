@@ -123,6 +123,14 @@ export interface ChatMsgEvent {
   msg: string;
 }
 
+// Pushed by the server to both users: the id lets the client merge it with the loaded history
+export interface ChatMsgPayload extends Payload {
+  id: number;
+}
+
+// Answer of the server to a "chat-msg" event
+export type ChatMsgAck = { ok: true } | { ok: false; error: string };
+
 export type UnreadMessages = {
   sender_id: string;
   unread_count: number;

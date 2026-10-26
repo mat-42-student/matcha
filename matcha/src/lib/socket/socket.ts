@@ -46,14 +46,19 @@ export function toSocketUser(user: Pick<PublicUser, "id" | "first_name">): Socke
 }
 
 /***
- * Register a socket event handler, catching errors so a bad payload or a DB error cannot crash the server
+ * Register a socket event handler, catching errors so a bad payload or a DB error cannot crash the server.
+ * When the client asks for an acknowledgement, it receives the handler's result
+ * (or a generic error if the handler threw).
  */
 function on<T>(socket: Socket, event: string, handler: (payload: T) => unknown) {
-  socket.on(event, async (payload: T) => {
+  socket.on(event, async (payload: T, ack?: (result: unknown) => void) => {
+    // the ack comes from the client: make sure it really is one
+    const reply = typeof ack === "function" ? ack : () => {};
     try {
-      await handler(payload);
+      reply((await handler(payload)) ?? null);
     } catch (err) {
       console.error(`Socket handler "${event}" failed:`, err);
+      reply({ ok: false, error: "Server error" });
     }
   });
 }

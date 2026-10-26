@@ -3,8 +3,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
-import { PublicUser, ChatMsgEvent, MAX_MESSAGE_LENGTH, Payload } from "@/lib/types";
+import { PublicUser, ChatMsgAck, ChatMsgEvent, ChatMsgPayload, MAX_MESSAGE_LENGTH } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 import ChatCardUser from "../card-user/ChatCardUser";
 import OnlineStatus from "../card-user/OnlineStatus";
 import { useMe } from "@/context/UserContext";
@@ -17,7 +18,11 @@ type RawMessage = {
   created_at: string | Date;
 };
 
-type Message = { from: "me" | "you"; text: string };
+// id: the chat row, shared by the history and the live messages (used to merge them)
+type Message = { id: number; from: "me" | "you"; text: string };
+
+// Time to wait for the server's answer to a message
+const ACK_TIMEOUT_MS = 10_000;
 
 export default function ChatWindow({
   selectedUser,
@@ -30,7 +35,7 @@ export default function ChatWindow({
   const { me } = useMe();
   const meId = me?.id;
   const selectedUserId = selectedUser?.id;
-  const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const isSendingRef = useRef(false);
@@ -39,10 +44,16 @@ export default function ChatWindow({
   function send(e?: React.FormEvent | React.KeyboardEvent) {
     e?.preventDefault();
 
-    if (isSendingRef.current || !me || !socket || !selectedUser) return;
+    if (isSendingRef.current || !meId || !socket || !selectedUser) return;
 
     const trimmedMessage = input.trim();
     if (!trimmedMessage) return;
+
+    // Not queued while offline: it could be delivered after the timeout below reported it as failed
+    if (!socket.connected) {
+      toast.error("You are offline, the message was not sent");
+      return;
+    }
 
     isSendingRef.current = true;
     setIsSending(true);
@@ -51,13 +62,17 @@ export default function ChatWindow({
       msg: trimmedMessage,
     };
 
-    try {
-      socket.emit("chat-msg", payload);
-      setInput("");
-    } finally {
+    // Cleared right away (the message comes back through "chat-msg"), given back if it is refused
+    setInput("");
+    socket.timeout(ACK_TIMEOUT_MS).emit("chat-msg", payload, (err: Error | null, ack: ChatMsgAck | null) => {
       isSendingRef.current = false;
       setIsSending(false);
-    }
+
+      const error = err ? "no answer from the server" : !ack ? "server error" : ack.ok ? null : ack.error;
+      if (!error) return;
+      toast.error(`Message not sent: ${error}`);
+      setInput((current) => current || trimmedMessage);
+    });
   }
 
   // Tell the server which conversation is open (its messages are then marked read instead of notified)
@@ -83,18 +98,17 @@ export default function ChatWindow({
   useEffect(() => {
     if (!socket || !selectedUserId) return;
 
-    function handleChatMsg(chatMsg: Payload) {
+    function handleChatMsg(chatMsg: ChatMsgPayload) {
       const isForCurrentChat =
         chatMsg.from.id === selectedUserId || chatMsg.to.id === selectedUserId;
       if (!isForCurrentChat) return;
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: chatMsg.from.id === meId ? "me" : "you",
-          text: chatMsg.msg,
-        },
-      ]);
+      setMessages((prev) =>
+        // already there if the history was loaded after the message was stored
+        prev.some((m) => m.id === chatMsg.id)
+          ? prev
+          : [...prev, { id: chatMsg.id, from: chatMsg.from.id === meId ? "me" : "you", text: chatMsg.msg }]
+      );
     }
 
     socket.on("chat-msg", handleChatMsg);
@@ -120,10 +134,14 @@ export default function ChatWindow({
         }
         const raw: RawMessage[] = await res.json();
         if (cancelled) return;
-        setMessages(raw.map((m): Message => ({
+        const history = raw.map((m): Message => ({
+          id: m.id,
           from: m.sender_id === meId ? "me" : "you",
           text: m.message,
-        })));
+        }));
+        // Keep the live messages received while loading that the history does not contain yet
+        const inHistory = new Set(history.map((m) => m.id));
+        setMessages((prev) => [...history, ...prev.filter((m) => !inHistory.has(m.id))]);
       } catch (err) {
         console.error("Could not retrieve messages:", err);
       }
@@ -163,9 +181,9 @@ export default function ChatWindow({
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {messages.map((m, i) => (
+        {messages.map((m) => (
           <div
-            key={i}
+            key={m.id}
             className={`flex ${
               m.from === "me" ? "justify-end" : "justify-start"
             }`}
@@ -193,7 +211,6 @@ export default function ChatWindow({
           autoFocus
           maxLength={MAX_MESSAGE_LENGTH}
           placeholder="Your message"
-          disabled={isSending}
         >
         </textarea>
         <button

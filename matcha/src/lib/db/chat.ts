@@ -66,12 +66,15 @@ export async function getUnreadCountByUsers(userId: string): Promise<UnreadMessa
   return result.rows;
 }
 
-export async function storeMessage(sender_id: string, recipient_id: string, message: string) {
+// Returns the id of the message: the client uses it to merge live messages with the loaded history
+export async function storeMessage(sender_id: string, recipient_id: string, message: string): Promise<number> {
   const query = `
     INSERT INTO chat (sender_id, recipient_id, message)
-    VALUES ($1, $2, $3);
+    VALUES ($1, $2, $3)
+    RETURNING id;
   `;
-  await executeQuery<ChatMessage>(query, [sender_id, recipient_id, message]);
+  const result = await executeQuery<Pick<ChatMessage, "id">>(query, [sender_id, recipient_id, message]);
+  return result.rows[0].id;
 }
 
 /**
