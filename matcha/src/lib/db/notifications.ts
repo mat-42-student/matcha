@@ -5,8 +5,25 @@ import { PoolClient } from "pg";
 type NotificationType = "like" | "match" | "unlike" | "message" | "view";
 
 /**
+ * True when targetId unliked senderId: senderId no longer notifies targetId (subject IV.5)
+ */
+export async function isNotificationMuted(
+  targetId: string,
+  senderId: string,
+  client?: PoolClient
+): Promise<boolean> {
+  const result = await executeQuery(
+    `SELECT 1 FROM unlikes WHERE user_id = $1 AND unliked_id = $2`,
+    [targetId, senderId],
+    client
+  );
+  return result.rowCount === 1;
+}
+
+/**
  * Create a notification for a specific user
  * Before inserting, cleans up conflicting notifications according to the type.
+ * Returns false when nothing was created (targetId unliked senderId): no real-time notif either.
  */
 export async function createNotification(
   targetId: string,
@@ -14,7 +31,9 @@ export async function createNotification(
   type: NotificationType,
   message: string,
   client?: PoolClient
-): Promise<void> {
+): Promise<boolean> {
+  if (await isNotificationMuted(targetId, senderId, client)) return false;
+
   // Handle cleanup rules before insertion
   if (type === "like" || type === "match") {
     // Like/match should replace prior view or unlike notifications between the same users.
@@ -34,6 +53,7 @@ export async function createNotification(
   `;
 
   await executeQuery(query, [targetId, senderId, type, message], client);
+  return true;
 }
 
 /**

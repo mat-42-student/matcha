@@ -8,9 +8,13 @@ import { createNotification } from "@/lib/db/notifications";
  * - Inserts or updates a record in the "views" table.
  * - A new view (not an update) notifies the viewed user; their fame counts distinct visitors.
  * - Nothing is recorded (nor notified) if either user blocked the other.
- * - Return true if a new line was created
+ * - scored: a new line was created; notified: the viewed user got a notification
+ *   (not when they unliked the viewer)
  */
-export async function recordProfileView(viewedUserId: string, viewerUserId: string): Promise<boolean> {
+export async function recordProfileView(
+  viewedUserId: string,
+  viewerUserId: string
+): Promise<{ scored: boolean; notified: boolean }> {
   // Insert or update the view, unless the user does not exist or a block exists between both users
   const insertQuery = `
     INSERT INTO views (user_id, seen_by)
@@ -29,10 +33,10 @@ export async function recordProfileView(viewedUserId: string, viewerUserId: stri
       [viewerUserId]
     );
     const viewerName = viewerNameResult.rows[0]?.username || "Someone";
-    await createNotification(viewedUserId, viewerUserId, "view", `${viewerName} viewed your profile`);
-    return true
+    const notified = await createNotification(viewedUserId, viewerUserId, "view", `${viewerName} viewed your profile`);
+    return { scored: true, notified };
   }
-  return false
+  return { scored: false, notified: false };
 }
 
 /**

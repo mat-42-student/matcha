@@ -29,8 +29,8 @@ export async function POST(
       return NextResponse.json({ error: "You cannot view your own profile" }, { status: 400 });
     }
 
-    const scored: boolean = await recordProfileView(userId, viewer.id);
-    if (scored) {
+    const { scored, notified } = await recordProfileView(userId, viewer.id);
+    if (notified) {
       send<NotifPayload>(userId, "notif", {
         from: toSocketUser(viewer),
         msg: "view",

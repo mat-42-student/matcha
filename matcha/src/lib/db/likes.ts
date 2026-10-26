@@ -19,9 +19,14 @@ export async function getMatchStatus(userA: string, userB: string): Promise<Like
 /**
  * Like a user (creates a match if reciprocated)
  * Like and notifications are written in a single transaction.
- * Returns the new status, or null if nothing changed (self, unknown user, already liked, blocked).
+ * Liking again lifts the mute set by a previous unlike: targetId notifies me again.
+ * Returns the new status and whether the target got a notification (false if they unliked me),
+ * or null if nothing changed (self, unknown user, already liked, blocked).
  */
-export async function likeUser(meId: string, targetId: string): Promise<"like" | "match" | null> {
+export async function likeUser(
+  meId: string,
+  targetId: string
+): Promise<{ status: "like" | "match"; notified: boolean } | null> {
   if (meId === targetId) return null; // cannot like self
 
   const client = await pool.connect();
@@ -55,17 +60,24 @@ export async function likeUser(meId: string, targetId: string): Promise<"like" |
     );
     const result = reciprocal.rowCount === 1 ? "match" : "like";
 
+    await executeQuery(
+      `DELETE FROM unlikes WHERE user_id = $1 AND unliked_id = $2`,
+      [meId, targetId],
+      client
+    );
+
     const nameOf = (id: string) => users.find((u) => u.id === id)?.username || "Someone";
 
+    let notified: boolean;
     if (result === "match") {
-      await createNotification(targetId, meId, "match", `You matched with ${nameOf(meId)}!`, client);
+      notified = await createNotification(targetId, meId, "match", `You matched with ${nameOf(meId)}!`, client);
       await createNotification(meId, targetId, "match", `You matched with ${nameOf(targetId)}!`, client);
     } else {
-      await createNotification(targetId, meId, "like", `${nameOf(meId)} liked you`, client);
+      notified = await createNotification(targetId, meId, "like", `${nameOf(meId)} liked you`, client);
     }
 
     await client.query("COMMIT");
-    return result;
+    return { status: result, notified };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -80,6 +92,7 @@ export async function likeUser(meId: string, targetId: string): Promise<"like" |
  * the relation is broken and has to be rebuilt from scratch.
  * Returns the removed status, or null if I did not like targetId.
  * Only an unmatch notifies the target; a simple unlike just withdraws the "like" notification.
+ * Either way, targetId stops notifying me until I like them again (subject IV.5).
  */
 export async function unlikeUser(meId: string, targetId: string): Promise<"like" | "match" | null> {
   const client = await pool.connect();
@@ -101,6 +114,12 @@ export async function unlikeUser(meId: string, targetId: string): Promise<"like"
         client
       );
       removed = theirs.rowCount === 1 ? "match" : "like";
+      await executeQuery(
+        `INSERT INTO unlikes (user_id, unliked_id) VALUES ($1, $2)
+         ON CONFLICT (user_id, unliked_id) DO UPDATE SET created_at = CURRENT_TIMESTAMP`,
+        [meId, targetId],
+        client
+      );
     }
 
     if (removed === "match") {

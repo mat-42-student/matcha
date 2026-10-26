@@ -10,15 +10,17 @@ import { isValidUuid } from "@/lib/validators/serverValidator";
 
 /**
  * Tell the target user, in real time, that the session user changed their relation
+ * (notif: false when the target unliked the session user, who no longer notifies them)
  */
 function notifyRelationChange(
   me: { id: string; first_name: string },
   targetId: string,
   msg: "like" | "match" | "unlike",
   targetLikeStatus: LikeStatus,
-  myLikeStatus: LikeStatus
+  myLikeStatus: LikeStatus,
+  notif = true
 ) {
-  send<NotifPayload>(targetId, "notif", { from: toSocketUser(me), msg });
+  if (notif) send<NotifPayload>(targetId, "notif", { from: toSocketUser(me), msg });
   sendRelationChange(me.id, targetId, targetLikeStatus, myLikeStatus);
 }
 
@@ -92,11 +94,11 @@ export async function POST(
       // relation changed concurrently (already liked, matched or blocked)
       return NextResponse.json({ success: false, newStatus: await getMatchStatus(me.id, userId) });
     }
-    if (res === "match") notifyRelationChange(me, userId, "match", "match", "match");
-    else notifyRelationChange(me, userId, "like", "isLiked", "like");
+    if (res.status === "match") notifyRelationChange(me, userId, "match", "match", "match", res.notified);
+    else notifyRelationChange(me, userId, "like", "isLiked", "like", res.notified);
 
     // fame of the target, recomputed from the new state
-    return NextResponse.json({ success: true, newStatus: res, fame: await getFame(userId) });
+    return NextResponse.json({ success: true, newStatus: res.status, fame: await getFame(userId) });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

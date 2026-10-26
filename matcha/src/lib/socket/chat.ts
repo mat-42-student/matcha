@@ -57,8 +57,8 @@ async function notifyRecipient(sender: SocketUser, recipient: SocketUser) {
       await markConversationAsRead(sender.id, recipient.id);
     } else {
       const senderName = (await getUserById(sender.id))?.username || "Someone";
-      await createNotification(recipient.id, sender.id, "message", `${senderName} sent you a message`);
-      send<NotifPayload>(recipient.id, "notif", { from: sender, msg: "message" });
+      if (await createNotification(recipient.id, sender.id, "message", `${senderName} sent you a message`))
+        send<NotifPayload>(recipient.id, "notif", { from: sender, msg: "message" });
     }
 
     await sendUnreadMessagesCount(recipient.id);
