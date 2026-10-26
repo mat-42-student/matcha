@@ -114,11 +114,22 @@ export function isUserActivelyChattingWith(userId: string, otherUserId: string) 
 }
 
 export async function initSocket(httpServer: HttpServer) {
+  // Only the site itself may open a socket with the user's cookie (cross-site WebSocket hijacking).
+  // Fails closed: without NEXT_PUBLIC_BASE_URL (.env), no browser can connect.
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const allowedOrigin = baseUrl ? new URL(baseUrl).origin : false;
+
   io = new Server(httpServer, {
     cors: {
-      origin: true,
+      origin: allowedOrigin,
       methods: ["GET", "POST"],
       credentials: true,
+    },
+    // cors only covers HTTP polling: the WebSocket handshake has to be checked here.
+    // Browsers always send an Origin; a request without one does not come from a web page.
+    allowRequest: (req, callback) => {
+      const origin = req.headers.origin;
+      callback(null, !origin || origin === allowedOrigin);
     },
     // Leave non-socket.io upgrades (Next HMR) alone instead of closing them after 1s
     destroyUpgrade: false,
