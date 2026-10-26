@@ -11,6 +11,8 @@ import { UsersStoreProvider } from "@/context/UsersStore";
 
 export default function Search() {
   const [results, setResults] = useState<PublicUser[]>([]);
+  // bumped on every search so Browse remounts with its pagination back to page 1
+  const [searchId, setSearchId] = useState(0);
 
   async function handleSearch(criteria: SearchCriteria) {
     if (Object.keys(criteria).length === 0) {
@@ -29,6 +31,7 @@ export default function Search() {
       return;
     }
     setResults(data.users);
+    setSearchId((id) => id + 1);
   }
 
   return (
@@ -36,7 +39,7 @@ export default function Search() {
       <SearchForm onSubmit={handleSearch} />
       {results && 
           <UsersStoreProvider initialUsers={results}>
-            <Browse />
+            <Browse key={searchId} />
           </UsersStoreProvider>
        }
     </div>
