@@ -72,11 +72,11 @@ function makeUser(): SeedUser {
 async function insertUsers(client: PoolClient, count: number, passwordHash: string) {
   const users = Array.from({ length: count }, makeUser);
   const { rows } = await executeQuery<{ id: string; gender: 'M'|'F' }>(
-    `INSERT INTO users (username, first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame, is_verified)
-     SELECT username, first_name, last_name, email, $1, gender, 'B', bio, city, latitude, longitude, birthdate, fame, true
+    `INSERT INTO users (username, first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame, last_login, is_verified)
+     SELECT username, first_name, last_name, email, $1, gender, 'B', bio, city, latitude, longitude, birthdate, fame, last_login, true
        FROM unnest($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[],
-                   $9::float[], $10::float[], $11::date[], $12::int[])
-         AS u(username, first_name, last_name, email, gender, bio, city, latitude, longitude, birthdate, fame)
+                   $9::float[], $10::float[], $11::date[], $12::int[], $13::timestamptz[])
+         AS u(username, first_name, last_name, email, gender, bio, city, latitude, longitude, birthdate, fame, last_login)
      ON CONFLICT DO NOTHING
      RETURNING id, gender`,
     [
@@ -92,6 +92,7 @@ async function insertUsers(client: PoolClient, count: number, passwordHash: stri
       users.map((u) => u.city.lon),
       users.map((u) => u.birthdate),
       users.map(() => Math.floor(Math.random() * 100)),
+      users.map(() => faker.date.recent({ days: 30 })),
     ],
     client
   );

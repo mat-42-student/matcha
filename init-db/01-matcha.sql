@@ -171,6 +171,7 @@ SELECT
   u.bio,
   u.fame,
   u.sex_pref,
+  u.last_login,
   date_part('year', age(current_date, u.birthdate))::int AS age,
   COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests
 FROM users u
@@ -283,6 +284,7 @@ RETURNS TABLE (
   longitude FLOAT,
   interests JSON,
   fame INT,
+  last_login TIMESTAMPTZ,
   distance INT,
   "likeStatus" TEXT
 )
@@ -300,6 +302,7 @@ AS $$
     u.longitude,
     u.interests,
     u.fame,
+    u.last_login,
     distance_km(ref_user_id, u.id),
     like_status(ref_user_id, u.id)
   FROM users_with_interests u

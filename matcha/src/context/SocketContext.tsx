@@ -21,6 +21,8 @@ interface SocketContextType {
   clearNotifications: () => Promise<void>;
   clearUnreadForUser: (userId: string) => void;
   onlineUsers: string[];
+  // users seen going offline since the page loaded: fresher than the last_login loaded with them
+  lastSeen: Record<string, Date>;
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -38,6 +40,7 @@ const SocketContext = createContext<SocketContextType>({
   clearNotifications: async () => {},
   clearUnreadForUser: () => {},
   onlineUsers: [],
+  lastSeen: {},
 });
 
 export function SocketProvider({ children }: { children: ReactNode }) {
@@ -51,6 +54,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<Map<string, number>>(new Map());
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [lastSeen, setLastSeen] = useState<Record<string, Date>>({});
   // Depend on the id only: updating the profile must not reconnect the socket
   const meId = me?.id;
 
@@ -185,7 +189,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", handleChatUsers);
 
+    // A user missing from the new list just went offline: last seen now
+    let previousOnline: string[] = [];
     s.on("online-users", (ids: string[]) => {
+      const now = new Date();
+      const wentOffline = previousOnline.filter((id) => !ids.includes(id));
+      if (wentOffline.length > 0) {
+        setLastSeen((prev) => {
+          const next = { ...prev };
+          for (const id of wentOffline) next[id] = now;
+          return next;
+        });
+      }
+      previousOnline = ids;
       setOnlineUsers(ids);
     });
 
@@ -196,6 +212,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setSocket(null);
       setNotifications([]);
       setOnlineUsers([]);
+      setLastSeen({});
     };
   }, [meId, fetchNotifications, handleNotif, handleChatUnreadMessages, handleChatUsers]);
 
@@ -216,6 +233,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         removeNotification,
         clearNotifications,
         onlineUsers,
+        lastSeen,
       }}
     >
       {children}

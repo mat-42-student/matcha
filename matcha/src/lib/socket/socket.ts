@@ -144,8 +144,13 @@ export async function initSocket(httpServer: HttpServer) {
 
   async function handleConnection(socket: Socket) {
     console.log(`\x1b[32mUser ${socket.data.user.first_name} connected\x1b[0m`, socket.id);
+    // The acting user is always the session user (socket.data.user), never an id sent by the client
+    const userId: string = socket.data.user.id;
+
     addSocket(socket);
     broadcastOnlineUsers();
+    // Also written on connection: if the server stops, the disconnect never writes it
+    updateLastLogin(userId).catch((err) => console.error("Failed to update last login:", err));
 
     const welcome: NotifPayload = {
       msg: `Hi ${socket.data.user.first_name}`,
@@ -153,9 +158,6 @@ export async function initSocket(httpServer: HttpServer) {
     }
 
     socket.emit("notif", welcome)
-
-    // The acting user is always the session user (socket.data.user), never an id sent by the client
-    const userId: string = socket.data.user.id;
 
     socket.on("disconnect", () => handleDisconnect(socket));
     on<ChatMsgEvent>(socket, "chat-msg", (payload) => handleChatMessage(toSocketUser(socket.data.user), payload));
