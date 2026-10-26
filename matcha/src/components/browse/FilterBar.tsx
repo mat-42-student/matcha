@@ -8,6 +8,9 @@ export type FilterValues = {
   ageMin: string;
   ageMax: string;
   distance: string;
+  fameMin: string;
+  fameMax: string;
+  tagsMin: string;
 };
 
 type FilterBarProps = {
@@ -20,34 +23,45 @@ export const DEFAULT_FILTERS: FilterValues = {
   ageMin: "",
   ageMax: "",
   distance: "",
+  fameMin: "",
+  fameMax: "",
+  tagsMin: "",
 };
 
+// Empty or invalid field = no limit
+function parseBound(value: string): number | null {
+  const n = Number.parseInt(value, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 export function filterUsers(users: PublicUser[], filters: FilterValues) {
-  let result = users;
+  const ageMin = parseBound(filters.ageMin);
+  const ageMax = parseBound(filters.ageMax);
+  const maxDistance = parseBound(filters.distance);
+  const fameMin = parseBound(filters.fameMin);
+  const fameMax = parseBound(filters.fameMax);
+  const tagsMin = parseBound(filters.tagsMin);
 
-  const min = Number.parseInt(filters.ageMin, 10);
-  if (!Number.isNaN(min)) result = result.filter((u) => u.age >= min);
-
-  const max = Number.parseInt(filters.ageMax, 10);
-  if (!Number.isNaN(max)) result = result.filter((u) => u.age <= max);
-
-  const maxDistance = Number.parseInt(filters.distance, 10);
-  if (!Number.isNaN(maxDistance)) {
-    result = result.filter((u) => u.distance <= maxDistance);
-  }
+  const result = users.filter((u) =>
+    (ageMin === null || u.age >= ageMin) &&
+    (ageMax === null || u.age <= ageMax) &&
+    (maxDistance === null || u.distance <= maxDistance) &&
+    (fameMin === null || u.fame >= fameMin) &&
+    (fameMax === null || u.fame <= fameMax) &&
+    (tagsMin === null || u.commonTags >= tagsMin)
+  );
 
   const [key, order] = filters.sortBy.split("-");
-  result = [...result].sort((a, b) => {
+  return result.sort((a, b) => {
     let diff = 0;
     if (key === "score") diff = a.score - b.score;
     if (key === "age") diff = a.age - b.age;
     if (key === "dist") diff = a.distance - b.distance;
     if (key === "fame") diff = a.fame - b.fame;
+    if (key === "tags") diff = a.commonTags - b.commonTags;
 
     return order === "desc" ? -diff : diff;
   });
-
-  return result;
 }
 
 export default function FilterSidebar({ values, onChange }: FilterBarProps) {
@@ -136,6 +150,8 @@ export default function FilterSidebar({ values, onChange }: FilterBarProps) {
                 <option value="dist-desc">Distance (Plus éloigné)</option>
                 <option value="fame-desc">Popularité (Décroissant)</option>
                 <option value="fame-asc">Popularité (Croissant)</option>
+                <option value="tags-desc">Tags communs (Plus)</option>
+                <option value="tags-asc">Tags communs (Moins)</option>
               </select>
             </div>
 
@@ -180,6 +196,43 @@ export default function FilterSidebar({ values, onChange }: FilterBarProps) {
                 </span>
               </div>
             </div>
+
+            {/* Tranche de popularité */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                Popularité ⭐
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={draftValues.fameMin}
+                  onChange={(e) => updateValue("fameMin", e.target.value)}
+                  className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={draftValues.fameMax}
+                  onChange={(e) => updateValue("fameMax", e.target.value)}
+                  className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
+                />
+              </div>
+            </div>
+
+            {/* Tags communs minimum */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                Tags communs (minimum)
+              </label>
+              <input
+                type="number"
+                placeholder="Ex: 2"
+                value={draftValues.tagsMin}
+                onChange={(e) => updateValue("tagsMin", e.target.value)}
+                className="w-full text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-600 outline-none transition"
+              />
+            </div>
           </div>
 
           {/* Boutons d'action */}
@@ -206,122 +259,3 @@ export default function FilterSidebar({ values, onChange }: FilterBarProps) {
   );
 }
 
-// "use client";
-
-// import { useState } from "react";
-// import { PublicUser } from "@/lib/types";
-
-// type FilterBarProps = {
-//   users: PublicUser[];
-//   onChange: (filtered: PublicUser[]) => void;
-// };
-
-// export default function FilterBar({ users, onChange }: FilterBarProps) {
-//   const [sortBy, setSortBy] = useState("");
-
-//   const [ageMin, setAgeMin] = useState("");
-//   const [ageMax, setAgeMax] = useState("");
-//   const [distance, setDistance] = useState("");
-
-//   function applyFilters() {
-//     let result = users;
-
-//     if (ageMin)
-//       result = result.filter((u) => u.age >= parseInt(ageMin));
-//     if (ageMax)
-//       result = result.filter((u) => u.age <= parseInt(ageMax));
-//     if (distance)
-//       result = result.filter((u) => u.distance <= parseInt(distance));
-//     if (sortBy) {
-//       const [key, order] = sortBy.split("-");
-
-//       result = [...result].sort((a, b) => {
-//         let diff = 0;
-
-//         if (key === "score") diff = a.score - b.score;
-//         if (key === "age") diff = a.age - b.age;
-//         if (key === "dist") diff = a.distance - b.distance;
-//         if (key === "fame") diff = a.fame - b.fame;
-
-//         return order === "desc" ? -diff : diff;
-//       });
-//     }
-//     onChange(result);
-//   }
-
-//   function resetFilters() {
-//     setAgeMin("");
-//     setAgeMax("");
-//     setDistance("");
-//     onChange(users);
-//   }
-
-// return (
-//   <div className="flex flex-col md:flex-row items-center gap-2 w-full">
-//     {/* Filtres */}
-//       <div
-//         className="
-//           flex flex-col md:flex-row
-//           gap-2 md:gap-4
-//           md:flex-1
-//           justify-center
-//         "
-//       >
-//         <input
-//           type="text"
-//           placeholder="Min age"
-//           value={ageMin}
-//           onChange={(e) => setAgeMin(e.target.value)}
-//           className="border-pink-800 border-2 p-2 rounded w-full md:w-24
-//            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
-//         />
-//         <input
-//           type="text"
-//           placeholder="Max age"
-//           value={ageMax}
-//           onChange={(e) => setAgeMax(e.target.value)}
-//           className="border-pink-800 border-2 p-2 rounded w-full md:w-24
-//            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
-//         />
-//         <input
-//           type="text"
-//           placeholder="Max km"
-//           value={distance}
-//           onChange={(e) => setDistance(e.target.value)}
-//           className="border-pink-800 border-2 p-2 rounded w-full md:w-24
-//            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
-//         />
-//         <select
-//           onChange={(e) => setSortBy(e.target.value)}
-//           className="border-pink-800 border-2 p-2 rounded w-full md:w-24
-//            focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
-//           >
-//           <option value="score-desc">Score ▼</option>
-//           <option value="score-asc">Score ▲</option>
-//           <option value="age-asc">Age ▲</option>
-//           <option value="age-desc">Age ▼</option>
-//           <option value="dist-asc">Km ▲</option>
-//           <option value="dist-desc">Km ▼</option>
-//           <option value="fame-desc">Fame ▼</option>
-//           <option value="fame-asc">Fame ▲</option>
-//         </select>
-//         <div className="flex gap-2">
-//           <button
-//             onClick={applyFilters}
-//             className="bg-pink-800 text-white px-4 py-2 rounded w-full md:w-auto
-//             focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
-//           >
-//             Apply
-//           </button>
-//           <button
-//             onClick={resetFilters}
-//             className="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto
-//             focus:outline-none focus:ring-1 focus:ring-pink-600 transition duration-150"
-//           >
-//             Reset
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }

@@ -54,9 +54,12 @@ export default function CardUser({ user }: { user: PublicUser }) {
           />
         </div>
 
-        <div className="text-gray-800 mb-2 mt-auto flex justify-between">
+        <div className="text-gray-800 mt-auto flex justify-between">
           <span>{user.city}</span>
           <span>{user.distance} km</span>
+        </div>
+        <div className="text-xs text-gray-500 mb-2">
+          {user.commonTags} tag{user.commonTags > 1 ? "s" : ""} en commun
         </div>
 
         <Interests interests={user.interests} />

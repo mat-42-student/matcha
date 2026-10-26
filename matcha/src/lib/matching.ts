@@ -15,18 +15,19 @@ function calcScore(me: PublicUser, user: PublicUser): number {
 
   const fameScore = Math.min(1, user.fame / 100) * 30;
 
-  const sharedInterests = user.interests.filter(i => me.interests.includes(i)).length;
   const maxShared = Math.max(me.interests.length, 1);
-  const interestsScore = (sharedInterests / maxShared) * 30;
+  const interestsScore = (user.commonTags / maxShared) * 30;
 
   return Math.round(distanceScore + fameScore + interestsScore);
 }
 
 /**
- * Set each user's score and sort by best score first
+ * Set each user's shared interests count and score, and sort by best score first
  */
 export function rankUsers(me: PublicUser, users: PublicUser[]): PublicUser[] {
-  for (const u of users)
+  for (const u of users) {
+    u.commonTags = u.interests.filter((i) => me.interests.includes(i)).length;
     u.score = calcScore(me, u);
+  }
   return users.sort((a, b) => b.score - a.score);
 }

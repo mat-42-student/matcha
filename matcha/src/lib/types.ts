@@ -45,6 +45,8 @@ export type PublicUser = {
   interests: string[];
   fame: number;
   score: number;
+  // number of interests shared with the viewer, set by rankUsers
+  commonTags: number;
   likeStatus: LikeStatus;
   last_login: string | Date;
 };
