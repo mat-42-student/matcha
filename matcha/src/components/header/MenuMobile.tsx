@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PublicUser } from "@/lib/types";
+import { useSocket } from "@/context/SocketContext";
 import {
   Menu,
   X,
@@ -14,6 +15,19 @@ import {
   LogOut,
 } from "lucide-react";
 
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className="absolute inline-flex items-center justify-center
+                  min-w-4 h-4 px-0.5 text-[10px] font-bold text-white bg-pink-900 border-2 border-white
+                  rounded-full -top-2 -right-2 z-10"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 export default function MenuMobile({
   user,
   onLogout,
@@ -22,12 +36,23 @@ export default function MenuMobile({
   onLogout: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { unreadMessages } = useSocket();
+  const unreadCount = [...unreadMessages.values()].reduce((sum, count) => sum + count, 0);
 
   const links = [
     { href: "/", label: "Browse", icon: <Users size={18} /> },
     { href: "/search", label: "Search", icon: <Search size={18} /> },
     { href: "/likes", label: "My links", icon: <Heart size={18} /> },
-    { href: "/chat", label: "Chat", icon: <MessageCircle size={18} /> },
+    {
+      href: "/chat",
+      label: "Chat",
+      icon: (
+        <span className="relative">
+          <MessageCircle size={18} />
+          <UnreadBadge count={unreadCount} />
+        </span>
+      ),
+    },
     { href: "/profile", label: user.first_name, icon: <User size={18} /> },
   ];
 
@@ -36,9 +61,12 @@ export default function MenuMobile({
       <button
         onClick={() => setOpen(!open)}
         className="text-white p-2 rounded-md hover:bg-pink-700/40 transition"
-        aria-label="Toggle menu"
+        aria-label={unreadCount > 0 ? `Toggle menu (${unreadCount} unread messages)` : "Toggle menu"}
       >
-        {open ? <X size={24} /> : <Menu size={24} />}
+        <span className="relative block">
+          {open ? <X size={24} /> : <Menu size={24} />}
+          {!open && <UnreadBadge count={unreadCount} />}
+        </span>
       </button>
 
       {open && (
