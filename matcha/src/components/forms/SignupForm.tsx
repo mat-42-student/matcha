@@ -1,13 +1,14 @@
 // matcha/src/components/forms/SignupForm.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 
 export function SignupForm() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // set once the account is created: the form is replaced by a "check your emails" message
+  const [signedUp, setSignedUp] = useState<{ email: string; emailSent: boolean } | null>(null);
 
 async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault();
@@ -27,7 +28,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         setErrors({ general: data.error || "Unknown error" });
       }
     } else {
-      router.push("/auth");
+      setSignedUp({ email: String(formData.get("email") ?? ""), emailSent: data.emailSent !== false });
     }
   } catch (err) {
     console.error(err);
@@ -36,6 +37,36 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     setLoading(false);
   }
 }
+
+  if (signedUp) {
+    return (
+      <div className="bg-white p-8 rounded-2xl shadow-md flex flex-col gap-4 w-full max-w-sm text-center">
+        <h1 className="text-2xl font-bold text-pink-700">Check your emails</h1>
+        {signedUp.emailSent ? (
+          <p className="text-gray-700">
+            Your account has been created. We sent a verification link to{" "}
+            <span className="font-semibold break-all">{signedUp.email}</span>: click it to activate your
+            account, then log in.
+          </p>
+        ) : (
+          <p className="text-gray-700">
+            Your account has been created, but the verification email could not be sent. Log in with your
+            username and password to receive a new link.
+          </p>
+        )}
+        <p className="text-gray-500 text-sm">
+          The link is valid for 24 hours. If it expires, logging in sends you a new one.
+        </p>
+        <Link
+          href="/auth"
+          className="px-4 py-2 rounded-full bg-pink-600 text-white font-semibold hover:bg-pink-700
+                    focus:outline-none focus:ring-2 focus:ring-pink-400"
+        >
+          Go to login
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form

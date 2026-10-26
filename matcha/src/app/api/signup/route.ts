@@ -56,9 +56,15 @@ export async function POST(req: NextRequest) {
       birthdate: birthdate,
     });
 
-    await sendVerificationEmail(newUser.id, email);
+    // the account exists either way: on failure, logging in sends a new link
+    const emailSent = await sendVerificationEmail(newUser.id, email)
+      .then(() => true)
+      .catch((err) => {
+        console.error("Error verification email:", err);
+        return false;
+      });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, emailSent });
   } catch (error) {
     // unique violation: username/email taken by a concurrent signup
     if ((error as { code?: string }).code === '23505') {
