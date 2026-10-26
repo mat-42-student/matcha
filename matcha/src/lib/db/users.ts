@@ -40,14 +40,14 @@ async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): P
 }
 
 /**
- * Create a new user
+ * Create a new user (email stored in lower case)
  */
 export async function createUser(user: Omit<User, 'id' | 'created_at' | 'is_verified'>): Promise<Pick<User, 'id'>> {
   const allowedFields: (keyof User)[] = [
     "username","first_name","last_name","email","passwd","country","city",
     "latitude","longitude","birthdate","gender","sex_pref","bio"
   ];
-  return insertUser(user, allowedFields);
+  return insertUser({ ...user, email: user.email.toLowerCase() }, allowedFields);
 }
 
 /**
@@ -78,7 +78,7 @@ export async function updateUser(
  * Update user email (only after confirmation through the email change flow)
  */
 export async function updateUserEmail(id: string, email: string): Promise<void> {
-  await executeQuery('UPDATE users SET email = $1 WHERE id = $2', [email, id]);
+  await executeQuery('UPDATE users SET email = lower($1) WHERE id = $2', [email, id]);
 }
 
 /**
@@ -98,10 +98,10 @@ export async function getFame(id: string): Promise<number | null> {
 }
 
 /**
- * Get user by email
+ * Check if an email is taken (case-insensitive, see users_email_lower_idx)
  */
 export async function isEmailUsed(email: string): Promise<boolean> {
-  const result = await executeQuery<User>('SELECT 1 FROM users WHERE email = $1', [email]);
+  const result = await executeQuery('SELECT 1 FROM users WHERE lower(email) = lower($1)', [email]);
   return result.rows.length > 0;
 }
 
@@ -120,9 +120,9 @@ export async function isUsernameUsed(username: string, excludeId?: string): Prom
  * Try to log user
  */
 export async function loginUser(identifier: string, password: string): Promise<User | null> {
-  // identifier is either an email or a username (case-insensitive)
+  // identifier is either an email or a username, both case-insensitive
   const query = identifier.includes('@')
-    ? 'SELECT * FROM users WHERE email = $1'
+    ? 'SELECT * FROM users WHERE lower(email) = lower($1)'
     : 'SELECT * FROM users WHERE lower(username) = lower($1)';
   const result = await executeQuery<User>(query, [identifier]);
   const user = result.rows[0];
@@ -162,9 +162,12 @@ export async function getUsersCount(): Promise<number> {
   return parseInt(result.rows[0].total, 10);
 }
 
+/**
+ * Get user by email (case-insensitive)
+ */
 export async function getUserByEmail(email: string): Promise<Pick<User, 'id'> | null> {
 	const result = await executeQuery<Pick<User, 'id'>>(
-		'SELECT id FROM users WHERE email = $1',
+		'SELECT id FROM users WHERE lower(email) = lower($1)',
 		[email]
 	);
 	return result.rows[0] ?? null;

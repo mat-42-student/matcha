@@ -3,6 +3,13 @@
 import { isCommonEnglishWord, isCommonPassword } from "./commonPasswords";
 import { MAX_INTEREST_LENGTH } from "@/lib/types";
 
+/**
+ * Emails are stored and compared in lower case: A@x.com and a@x.com are the same account
+ */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 export function isValidEmail(email: string): boolean {
   return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }

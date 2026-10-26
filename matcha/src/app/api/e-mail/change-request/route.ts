@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
 import { isEmailUsed } from "@/lib/db/users";
-import { isValidEmail } from "@/lib/validators/serverValidator";
+import { isValidEmail, normalizeEmail } from "@/lib/validators/serverValidator";
 import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
 
@@ -17,12 +17,12 @@ export async function POST(req: NextRequest) {
     if (typeof body?.new_email !== "string" || !body.new_email.trim()) {
       return NextResponse.json({ error: "Missing new_email" }, { status: 400 });
     }
-    const new_email = body.new_email.trim();
+    const new_email = normalizeEmail(body.new_email);
 
     if (!isValidEmail(new_email)) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
-    if (new_email === user.email) {
+    if (new_email === normalizeEmail(user.email)) {
       return NextResponse.json({ error: "This is already your email address" }, { status: 400 });
     }
     if (await isEmailUsed(new_email)) {

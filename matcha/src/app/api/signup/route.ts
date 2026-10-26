@@ -1,6 +1,6 @@
 // matcha/src/app/api/signup/route.ts
 
-import { validateSignupData } from '@/lib/validators/serverValidator';
+import { normalizeEmail, validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, isEmailUsed, isUsernameUsed } from '@/lib/db/users';
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return typeof value === 'string' ? value : '';
     };
     const username = field('username');
-    const email = field('email');
+    const email = normalizeEmail(field('email'));
     const password = field('password');
     // validated and stored trimmed
     const first_name = field('first_name').trim();

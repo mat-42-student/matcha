@@ -3,12 +3,12 @@ import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
 import { getUserByEmail } from "@/lib/db/users";
 import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
-import { isValidEmail } from "@/lib/validators/serverValidator";
+import { isValidEmail, normalizeEmail } from "@/lib/validators/serverValidator";
 
 export async function POST(req: NextRequest) {
 	try {
 		const body = await req.json().catch(() => null);
-		const email = typeof body?.email === "string" ? body.email.trim() : "";
+		const email = typeof body?.email === "string" ? normalizeEmail(body.email) : "";
 		if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 });
 		if (!isValidEmail(email)) return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
 
