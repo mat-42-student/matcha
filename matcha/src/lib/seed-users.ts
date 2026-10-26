@@ -1,8 +1,8 @@
 // matcha/src/server/seed-users.ts
 
 import { faker } from "@faker-js/faker";
-import { Pool } from 'pg';
-import { pool } from './db/db-utils';
+import { PoolClient } from 'pg';
+import { executeQuery, pool } from './db/db-utils';
 import { detectImageMimeType } from './validators/imageValidator';
 import bcrypt from 'bcryptjs';
 import fs from "fs";
@@ -38,38 +38,64 @@ function getUsername(firstName: string, lastName: string) {
   return `${base}_${faker.number.int({ min: 1000, max: 99999 })}`;
 }
 
-async function insertUser(pool: Pool, passwordHash: string) {
+interface SeedUser {
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  gender: 'M'|'F';
+  city: { name: string; lat: number; lon: number };
+  birthdate: Date;
+}
+
+function makeUser(): SeedUser {
   const gender = Math.random() < 0.5 ? 'M' : 'F';
-  const sexPref = 'B'
-
   const firstName = getRandomName(gender);
-  const lastName = faker.person.lastName()
-  const username = getUsername(firstName, lastName);
-  const city = getRandomCity();
-  const email = `${firstName}.${lastName}@${faker.internet.domainName()}`
-    .toLowerCase()
-    .replace(/\s+/g, ""); // supprime tout espace éventuel
+  const lastName = faker.person.lastName();
+  return {
+    username: getUsername(firstName, lastName),
+    firstName,
+    lastName,
+    email: `${firstName}.${lastName}@${faker.internet.domainName()}`
+      .toLowerCase()
+      .replace(/\s+/g, ""), // supprime tout espace éventuel
+    gender,
+    city: getRandomCity(),
+    birthdate: faker.date.birthdate(),
+  };
+}
 
-  const { rows } = await pool.query(
-    `INSERT INTO users (username, first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame) VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+/**
+ * Inserts count users in one query. A random username / email already taken is
+ * skipped (ON CONFLICT DO NOTHING), so fewer rows than requested may be returned.
+ */
+async function insertUsers(client: PoolClient, count: number, passwordHash: string) {
+  const users = Array.from({ length: count }, makeUser);
+  const { rows } = await executeQuery<{ id: string; gender: 'M'|'F' }>(
+    `INSERT INTO users (username, first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, fame)
+     SELECT username, first_name, last_name, email, $1, gender, 'B', bio, city, latitude, longitude, birthdate, fame
+       FROM unnest($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[],
+                   $9::float[], $10::float[], $11::date[], $12::int[])
+         AS u(username, first_name, last_name, email, gender, bio, city, latitude, longitude, birthdate, fame)
+     ON CONFLICT DO NOTHING
+     RETURNING id, gender`,
     [
-      username,
-      firstName,
-      lastName,
-      email,
       passwordHash,
-      gender,
-      sexPref,
-      faker.person.bio(),
-      city.name,
-      city.lat,
-      city.lon,
-      faker.date.birthdate(),
-      Math.floor(Math.random() * 100)
-    ]
+      users.map((u) => u.username),
+      users.map((u) => u.firstName),
+      users.map((u) => u.lastName),
+      users.map((u) => u.email),
+      users.map((u) => u.gender),
+      users.map(() => faker.person.bio()),
+      users.map((u) => u.city.name),
+      users.map((u) => u.city.lat),
+      users.map((u) => u.city.lon),
+      users.map((u) => u.birthdate),
+      users.map(() => Math.floor(Math.random() * 100)),
+    ],
+    client
   );
-  return [rows[0].id, gender];
+  return rows;
 }
 
 // Pixabay photos are downloaded once into this folder (gitignored) and reused by every
@@ -168,29 +194,77 @@ async function loadPictures(g: 'M'|'F'): Promise<Picture[]> {
   return pictures;
 }
 
-async function insertUserInterests(pool: Pool, userId: string) {
-  try {
-    const interestsCount = await pool.query("SELECT COUNT(*) FROM interests");
-    const interests = new Set();
+const INTERESTS_PER_USER = 3;
+const MAX_INSERT_ATTEMPTS = 5;
 
-    while (interests.size < 3) {
-      const randomInterest = Math.floor(Math.random() * Number(interestsCount.rows[0].count)) + 1;
-      interests.add(randomInterest);
-    }
-    for (const interestId of interests) {
-      await pool.query(
-        "INSERT INTO user_interests (user_id, interest_id) VALUES ($1, $2)",
-        [userId, interestId]
-      );
-    }
-  } catch (err) {
-    console.error("Seed interests error:", err);
+function pickRandom<T>(items: T[], count: number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
+  return copy.slice(0, count);
+}
+
+async function insertUsersInterests(client: PoolClient, userIds: string[]) {
+  const { rows } = await executeQuery<{ id: number }>("SELECT id FROM interests", [], client);
+  const interestIds = rows.map((r) => r.id);
+  const pairs = userIds.flatMap((userId) =>
+    pickRandom(interestIds, INTERESTS_PER_USER).map((interestId) => [userId, interestId] as const)
+  );
+  await executeQuery(
+    `INSERT INTO user_interests (user_id, interest_id)
+     SELECT * FROM unnest($1::uuid[], $2::int[])`,
+    [pairs.map(([userId]) => userId), pairs.map(([, interestId]) => interestId)],
+    client
+  );
+}
+
+/**
+ * Each picture is sent once into a temporary table, then copied by Postgres
+ * for every user sharing it (instead of sending ~500 image buffers).
+ */
+async function insertUsersPictures(
+  client: PoolClient, users: { id: string; gender: 'M'|'F' }[], pictures: Record<'M'|'F', Picture[]>
+) {
+  const all = [...pictures.M, ...pictures.F];
+  if (all.length === 0)
+    return;
+  await executeQuery(
+    `CREATE TEMP TABLE seed_pictures (idx int PRIMARY KEY, data bytea NOT NULL, mime_type text NOT NULL)
+     ON COMMIT DROP`,
+    [],
+    client
+  );
+  await executeQuery(
+    `INSERT INTO seed_pictures SELECT * FROM unnest($1::int[], $2::bytea[], $3::text[])`,
+    [all.map((_, i) => i), all.map((p) => p.buffer), all.map((p) => p.mimeType)],
+    client
+  );
+
+  // round robin over the pictures of the user's gender (F pictures come after M ones in idx)
+  const assigned = users
+    .map((user, i) => {
+      const count = pictures[user.gender].length;
+      const offset = user.gender === 'M' ? 0 : pictures.M.length;
+      return count > 0 ? [user.id, offset + (i % count)] as const : null;
+    })
+    .filter((pair) => pair !== null);
+  await executeQuery(
+    `INSERT INTO pictures (user_id, data, mime_type, is_main)
+     SELECT u.id, p.data, p.mime_type, true
+       FROM unnest($1::uuid[], $2::int[]) AS u(id, idx)
+       JOIN seed_pictures p ON p.idx = u.idx`,
+    [assigned.map(([id]) => id), assigned.map(([, idx]) => idx)],
+    client
+  );
 }
 
 export async function seed() {
+  const client = await pool.connect();
+  let inTransaction = false;
   try {
-    const ret = await pool.query("SELECT COUNT(*) FROM users");
+    const ret = await executeQuery<{ count: string }>("SELECT COUNT(*) FROM users", [], client);
     const userCount = Number(ret.rows[0].count);
     if (userCount >= MIN_USERS)
       return;
@@ -198,23 +272,22 @@ export async function seed() {
     const pictures = { M: await loadPictures('M'), F: await loadPictures('F') };
     console.log(`Seeding ${remainingUsers} users...`);
     const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
-    for (let i = userCount; i < MIN_USERS; i++) {
-      const [ id, gender ] = await insertUser(pool, passwordHash);
-      await insertUserInterests(pool, id);
-      const pics = pictures[gender as 'M'|'F'];
-      if (pics.length > 0)
-        await insertUserPic(pool, id, pics[i % pics.length]);
-    }
-    console.log("... Done");
-  } catch (err) {
-    console.error("Seed error:", err);
-  }
-}
 
-async function insertUserPic(pool: Pool, id: string, { buffer, mimeType }: Picture) {
-  await pool.query(
-    `INSERT INTO pictures (user_id, data, mime_type, is_main)
-      VALUES ($1, $2, $3, true)`,
-    [id, buffer, mimeType]
-  );
+    await client.query("BEGIN");
+    inTransaction = true;
+    const users: { id: string; gender: 'M'|'F' }[] = [];
+    // a few random usernames / emails may already be taken: retry for the missing ones
+    for (let attempt = 0; users.length < remainingUsers && attempt < MAX_INSERT_ATTEMPTS; attempt++)
+      users.push(...await insertUsers(client, remainingUsers - users.length, passwordHash));
+    await insertUsersInterests(client, users.map((u) => u.id));
+    await insertUsersPictures(client, users, pictures);
+    await client.query("COMMIT");
+    console.log(`... Done (${users.length} users)`);
+  } catch (err) {
+    if (inTransaction)
+      await client.query("ROLLBACK");
+    console.error("Seed error:", err);
+  } finally {
+    client.release();
+  }
 }
