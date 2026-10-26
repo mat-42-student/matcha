@@ -135,6 +135,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
           type="text"
           placeholder="First name"
           required
+          maxLength={50}
           className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900 w-full"
         />
         {errors.first_name && (
@@ -149,6 +150,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
           type="text"
           placeholder="Last name"
           required
+          maxLength={50}
           className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-900 w-full"
         />
         {errors.last_name && (
