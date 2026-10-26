@@ -3,11 +3,14 @@ import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
 import { getUserByEmail } from "@/lib/db/users";
 import { createEmailToken, deleteEmailTokensForUserByType } from "@/lib/db/emails";
+import { isValidEmail } from "@/lib/validators/serverValidator";
 
 export async function POST(req: NextRequest) {
 	try {
-		const { email } = await req.json();
+		const body = await req.json().catch(() => null);
+		const email = typeof body?.email === "string" ? body.email.trim() : "";
 		if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 });
+		if (!isValidEmail(email)) return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
 
 		const user = await getUserByEmail(email);
 		if (!user) return NextResponse.json({ success: true }); // pas de leak

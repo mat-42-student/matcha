@@ -9,11 +9,13 @@ export async function POST(req: Request) {
     const user = await requireUser();
     if (user instanceof NextResponse) return user;
 
-    const { current_password, new_password } = await req.json();
-    if (!current_password || !new_password) {
+    const body = await req.json().catch(() => null);
+    const current_password: unknown = body?.current_password;
+    const new_password: unknown = body?.new_password;
+    if (typeof current_password !== "string" || typeof new_password !== "string"
+      || !current_password || !new_password) {
       return NextResponse.json({ error: "missing field" }, { status: 400 });
     }
-
 
     const passwordErrors = validatePassword(new_password);
     if (passwordErrors.length > 0) {

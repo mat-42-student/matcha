@@ -14,6 +14,8 @@ type FormErrors = Partial<Record<FormField, string>>;
 
 const FIELDS: FormField[] = ["username", "first_name", "last_name", "email", "gender", "sex_pref", "bio"];
 const BIO_MAX = 500;
+// varchar(50) columns of users
+const NAME_MAX = 50;
 const fieldClass = "text-gray-900 border-gray-300";
 
 export default function ProfileForm({
@@ -171,6 +173,7 @@ export default function ProfileForm({
               name="first_name"
               value={formData.first_name}
               onChange={handleChange}
+              maxLength={NAME_MAX}
               autoComplete="given-name"
               className={fieldClass}
             />
@@ -183,6 +186,7 @@ export default function ProfileForm({
               name="last_name"
               value={formData.last_name}
               onChange={handleChange}
+              maxLength={NAME_MAX}
               autoComplete="family-name"
               className={fieldClass}
             />

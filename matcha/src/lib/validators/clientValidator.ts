@@ -14,6 +14,7 @@ export function validateProfileField(field: string, value: string) {
     case "first_name":
     case "last_name":
       if (!value || value.trim().length < 2) return { valid: false, error: "Too short" };
+      if (value.trim().length > 50) return { valid: false, error: "Too long (max 50 characters)" };
       if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(value.trim()))
         return { valid: false, error: "Invalid characters" };
       return { valid: true };

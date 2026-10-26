@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { deleteAllNotificationsByUser, getNotificationsByUser, markNotificationsAsRead } from "@/lib/db/notifications";
 import { send } from "@/lib/socket/socket";
+import { isValidDbId } from "@/lib/validators/serverValidator";
 
 export async function GET() {
   try {
@@ -25,7 +26,7 @@ export async function PATCH(req: Request) {
 
     const body = await req.json().catch(() => null);
     const upTo = body?.upTo;
-    if (!Number.isInteger(upTo) || upTo <= 0) {
+    if (!isValidDbId(upTo)) {
       return NextResponse.json({ error: "Invalid notification id" }, { status: 400 });
     }
 

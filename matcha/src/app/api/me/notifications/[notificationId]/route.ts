@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { deleteNotificationByIdForUser } from "@/lib/db/notifications";
+import { parseDbId } from "@/lib/validators/serverValidator";
 
 export async function DELETE(
   _req: Request,
@@ -11,9 +12,8 @@ export async function DELETE(
     if (user instanceof NextResponse) return user;
 
     const { notificationId } = await params;
-    const id = Number(notificationId);
-
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = parseDbId(notificationId);
+    if (id === null) {
       return NextResponse.json({ error: "Invalid notification id" }, { status: 400 });
     }
 

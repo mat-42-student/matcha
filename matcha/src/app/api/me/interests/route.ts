@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { getUserInterests, updateUserInterests } from "@/lib/db/interests";
 import { requireUser } from "@/lib/auth";
+import { isValidDbId } from "@/lib/validators/serverValidator";
 
 
 export async function GET() {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => null);
     const interestIds: unknown = body?.interestIds;
-    if (!Array.isArray(interestIds) || interestIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+    if (!Array.isArray(interestIds) || !interestIds.every(isValidDbId)) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 

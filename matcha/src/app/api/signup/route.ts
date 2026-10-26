@@ -17,8 +17,9 @@ export async function POST(req: NextRequest) {
     const username = field('username');
     const email = field('email');
     const password = field('password');
-    const first_name = field('first_name');
-    const last_name = field('last_name');
+    // validated and stored trimmed
+    const first_name = field('first_name').trim();
+    const last_name = field('last_name').trim();
     const birthdate = field('birthdate');
 
     const { valid, errors } = validateSignupData({

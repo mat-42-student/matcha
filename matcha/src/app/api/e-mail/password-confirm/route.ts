@@ -8,8 +8,10 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
 	try {
-		const { token, password } = await req.json();
-		if (!token || !password)
+		const body = await req.json().catch(() => null);
+		const token: unknown = body?.token;
+		const password: unknown = body?.password;
+		if (typeof token !== "string" || typeof password !== "string" || !token || !password)
 			return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
 		const tokenData = await getEmailTokenByToken(token);
@@ -21,14 +23,10 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: "Token expired" }, { status: 400 });
 		}
 
-
-   const errors = validatePassword(password);
-    if (errors.length > 0) {
-      return NextResponse.json(
-        { field: "password", errors },
-        { status: 400 }
-      );
-    }
+		const errors = validatePassword(password);
+		if (errors.length > 0) {
+			return NextResponse.json({ field: "password", errors }, { status: 400 });
+		}
 
 		const hashed = await bcrypt.hash(password, 10);
 		await updateUserPassword(tokenData.user_id, hashed);

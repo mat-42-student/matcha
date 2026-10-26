@@ -15,11 +15,76 @@ export function isValidUuid(id: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
-function calculateAgeISO(dateStr: string): number | null {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  const diff = Date.now() - d.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+// upper bound of a Postgres INT column (ids of interests, notifications, pictures)
+const MAX_DB_INT = 2147483647;
+
+/**
+ * Id of a row with an INT identity column: a positive integer that fits in Postgres INT
+ */
+export function isValidDbId(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 && value <= MAX_DB_INT;
+}
+
+/**
+ * Same as isValidDbId, for an id read from the URL ("12")
+ */
+export function parseDbId(value: string): number | null {
+  if (!/^\d{1,10}$/.test(value)) return null;
+  const id = Number(value);
+  return isValidDbId(id) ? id : null;
+}
+
+// same limit as the varchar(50) columns of users
+export const NAME_MAX_LENGTH = 50;
+
+/**
+ * First or last name, trimmed. Mirrors the CHECK of users.first_name / last_name.
+ */
+function validateName(value: unknown, label: string): ValidationResult {
+  if (typeof value !== "string") return { valid: false, error: `Invalid ${label.toLowerCase()}` };
+  const name = value.trim();
+  if (!name) return { valid: false, error: `${label} is required` };
+  if (name.length < 2) return { valid: false, error: `${label} must contain at least 2 characters` };
+  if (name.length > NAME_MAX_LENGTH)
+    return { valid: false, error: `${label} is too long (max ${NAME_MAX_LENGTH} characters)` };
+  if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(name))
+    return { valid: false, error: `${label} can only contain letters, spaces, hyphens, and apostrophes` };
+  return { valid: true, value: name };
+}
+
+const MIN_AGE = 18;
+const MAX_AGE = 100;
+
+// "YYYY-MM-DD" of the given date (UTC, the time zone of the Postgres container)
+function toIsoDate(y: number, m: number, d: number): string {
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+// today minus `years` years, the 29th of February becoming the 28th like Postgres' `current_date - interval`
+function yearsAgo(years: number): string {
+  const now = new Date();
+  const y = now.getUTCFullYear() - years;
+  const m = now.getUTCMonth() + 1;
+  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return toIsoDate(y, m, Math.min(now.getUTCDate(), lastDay));
+}
+
+/**
+ * Birthdate "YYYY-MM-DD" of a user aged 18 to 100. Mirrors the CHECK of users.birthdate
+ * (dates compared as strings, which is the date order for this format).
+ * @returns an error message, or null if valid
+ */
+function birthdateError(value: unknown): string | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return "Invalid birthdate format";
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  // rejects the dates that do not exist, such as 2001-02-30 (Date would roll it over to March)
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d)
+    return "Invalid birthdate";
+  if (value > yearsAgo(MIN_AGE)) return `You must be at least ${MIN_AGE} years old`;
+  if (value < yearsAgo(MAX_AGE)) return "Age seems invalid";
+  return null;
 }
 
 export function validateSignupData(data: {
@@ -31,13 +96,10 @@ export function validateSignupData(data: {
   birthdate?: string;
 }): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
-  const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/;
 
   const username = data.username ?? "";
   const email = data.email?.trim() ?? "";
   const password = data.password ?? "";
-  const first = data.first_name?.trim() ?? "";
-  const last = data.last_name?.trim() ?? "";
   const birth = data.birthdate ?? "";
 
   if (!username) errors.username = "Username is required";
@@ -53,24 +115,16 @@ export function validateSignupData(data: {
     if (passwordErrors.length > 0) errors.password = passwordErrors[0];
   }
 
-  if (!first) errors.first_name = "First name is required";
-  else if (!nameRegex.test(first))
-    errors.first_name =
-      "First name can only contain letters, spaces, hyphens, and apostrophes";
-  else if (first.length > 50) errors.first_name = "First name is too long";
+  const first = validateName(data.first_name ?? "", "First name");
+  if (!first.valid) errors.first_name = first.error ?? "Invalid first name";
 
-  if (!last) errors.last_name = "Last name is required";
-  else if (!nameRegex.test(last))
-    errors.last_name =
-      "Last name can only contain letters, spaces, hyphens, and apostrophes";
-  else if (last.length > 50) errors.last_name = "Last name is too long";
+  const last = validateName(data.last_name ?? "", "Last name");
+  if (!last.valid) errors.last_name = last.error ?? "Invalid last name";
 
   if (!birth) errors.birthdate = "Birthdate is required";
   else {
-    const age = calculateAgeISO(birth);
-    if (age === null) errors.birthdate = "Invalid birthdate format";
-    else if (age < 18) errors.birthdate = "You must be at least 18 years old";
-    else if (age > 100) errors.birthdate = "Age seems invalid";
+    const error = birthdateError(birth);
+    if (error) errors.birthdate = error;
   }
 
   return { valid: Object.keys(errors).length === 0, errors };
@@ -79,6 +133,8 @@ export function validateSignupData(data: {
 export interface ValidationResult {
   valid: boolean;
   error?: string;
+  // cleaned value to store instead of the one received (trimmed names)
+  value?: unknown;
 }
 
 export function validateProfileField(
@@ -97,23 +153,12 @@ export function validateProfileField(
     }
 
     case "first_name":
-    case "last_name": {
-      const str = String(value).trim();
-      if (str.length < 2)
-        return { valid: false, error: "Must contain at least 2 characters" };
-      if (/[^A-Za-zÀ-ÖØ-öø-ÿ' -]/.test(str))
-        return { valid: false, error: "Contains invalid characters" };
-      return { valid: true };
-    }
+    case "last_name":
+      return validateName(value, field === "first_name" ? "First name" : "Last name");
 
     case "birthdate": {
-      if (typeof value !== "string")
-        return { valid: false, error: "Invalid birthdate format" };
-      const age = calculateAgeISO(value);
-      if (age === null) return { valid: false, error: "Invalid birthdate format" };
-      if (age < 18) return { valid: false, error: "You must be at least 18 years old" };
-      if (age > 100) return { valid: false, error: "Age seems invalid" };
-      return { valid: true };
+      const error = birthdateError(value);
+      return error ? { valid: false, error } : { valid: true };
     }
 
     case "latitude":
@@ -188,8 +233,13 @@ export function validatePassword(password: string): string[] {
   return errors;
 }
 
+// same bounds as user_fame()
+const MAX_FAME = 100;
+// half of the Earth's circumference: no two places are further apart
+const MAX_DISTANCE_KM = 20000;
+
 function isFameBound(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= MAX_FAME;
 }
 
 export function validateFameRange(range: unknown): ValidationResult {
@@ -199,17 +249,15 @@ export function validateFameRange(range: unknown): ValidationResult {
 
   const { min, max } = range as { min?: unknown; max?: unknown };
   if (min !== undefined && !isFameBound(min))
-    return { valid: false, error: "Invalid minimum fame" };
+    return { valid: false, error: `Minimum fame must be a whole number between 0 and ${MAX_FAME}` };
   if (max !== undefined && !isFameBound(max))
-    return { valid: false, error: "Invalid maximum fame" };
+    return { valid: false, error: `Maximum fame must be a whole number between 0 and ${MAX_FAME}` };
   if (isFameBound(min) && isFameBound(max) && min > max)
     return { valid: false, error: "Minimum fame is greater than maximum" };
 
   return { valid: true };
 }
 
-const SEARCH_MIN_AGE = 18;
-const SEARCH_MAX_AGE = 100;
 const MAX_SEARCH_INTERESTS = 50;
 
 // body of POST /api/search, cf. SearchCriteria ; every field is optional
@@ -221,17 +269,18 @@ export function validateSearchCriteria(body: unknown): ValidationResult {
     body as Record<string, unknown>;
 
   if (distance !== undefined
-    && !(typeof distance === "number" && Number.isFinite(distance) && distance >= 0))
-    return { valid: false, error: "Invalid distance" };
+    && !(typeof distance === "number" && Number.isInteger(distance)
+      && distance >= 0 && distance <= MAX_DISTANCE_KM))
+    return { valid: false, error: `Distance must be a whole number of km between 0 and ${MAX_DISTANCE_KM}` };
 
   if (ageRange !== undefined) {
     if (!Array.isArray(ageRange) || ageRange.length !== 2)
       return { valid: false, error: "Invalid age range" };
     const [min, max] = ageRange;
     const isAge = (n: unknown): n is number =>
-      typeof n === "number" && Number.isInteger(n) && n >= SEARCH_MIN_AGE && n <= SEARCH_MAX_AGE;
+      typeof n === "number" && Number.isInteger(n) && n >= MIN_AGE && n <= MAX_AGE;
     if (!isAge(min) || !isAge(max))
-      return { valid: false, error: `Ages must be whole numbers between ${SEARCH_MIN_AGE} and ${SEARCH_MAX_AGE}` };
+      return { valid: false, error: `Ages must be whole numbers between ${MIN_AGE} and ${MAX_AGE}` };
     if (min > max)
       return { valid: false, error: "Minimum age is greater than maximum" };
   }
@@ -245,7 +294,7 @@ export function validateSearchCriteria(body: unknown): ValidationResult {
   if (customInterests !== undefined
     && !(Array.isArray(customInterests)
       && customInterests.length <= MAX_SEARCH_INTERESTS
-      && customInterests.every((i) => typeof i === "string")))
+      && customInterests.every((i) => typeof i === "string" && i.length <= MAX_INTEREST_LENGTH)))
     return { valid: false, error: "Invalid interests" };
 
   return { valid: true };

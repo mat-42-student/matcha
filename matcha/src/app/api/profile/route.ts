@@ -16,11 +16,12 @@ export async function POST(req: NextRequest) {
 
     const updates: Record<string, unknown> = {};
     for (const [field, value] of Object.entries(body)) {
-      const { valid, error } = validateProfileField(field, value);
-      if (!valid) {
-        return NextResponse.json({ error: error || "Invalid value" }, { status: 400 });
+      const check = validateProfileField(field, value);
+      if (!check.valid) {
+        return NextResponse.json({ error: check.error || "Invalid value" }, { status: 400 });
       }
-      updates[field] = value;
+      // names are stored trimmed
+      updates[field] = check.value !== undefined ? check.value : value;
     }
 
     if (typeof updates.username === "string" && await isUsernameUsed(updates.username, user.id)) {
