@@ -193,7 +193,7 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 131-138), [matcha/src/components/header/NotificationBell.tsx](matcha/src/components/header/NotificationBell.tsx) (l. 23)
 - [x] 🟡 **Les sockets survivent à la fin de session** (logout, reset du mot de passe, expiration) : auth au handshake seulement. Un autre onglet / appareil (ou un voleur de session après reset) continue à recevoir et envoyer des messages. Stocker `sessionId` dans `socket.data` et déconnecter les sockets concernés depuis `logout` et `deleteSessionsForUser`.
   - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (`authUser`), [matcha/src/app/api/logout/route.ts](matcha/src/app/api/logout/route.ts), [matcha/src/app/api/e-mail/password-confirm/route.ts](matcha/src/app/api/e-mail/password-confirm/route.ts) (l. 36)
-- [ ] 🟢 **Seed : tous les profils en `sex_pref = 'B'`** → impossible de montrer l'exclusion par orientation. Tirer M / F / B (à faire avec l'item seed ≥ 500 du §1).
+- [x] 🟢 **Seed : tous les profils en `sex_pref = 'B'`** → impossible de montrer l'exclusion par orientation. Tirer M / F / B (à faire avec l'item seed ≥ 500 du §1).
   - [matcha/src/lib/seed-users.ts](matcha/src/lib/seed-users.ts) (l. 76)
 - [ ] 🟢 **Entrées malformées → 500 au lieu de 400** :
   - `req.json()` non protégé et champs non vérifiés (`typeof === "string"`) : [password-request](matcha/src/app/api/e-mail/password-request/route.ts) (l. 9), [password-confirm](matcha/src/app/api/e-mail/password-confirm/route.ts) (l. 10), [me/password](matcha/src/app/api/me/password/route.ts) (l. 12) — un mot de passe numérique fait planter `isCommonPassword` / `bcrypt.compare`.

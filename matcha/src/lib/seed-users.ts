@@ -44,8 +44,20 @@ interface SeedUser {
   lastName: string;
   email: string;
   gender: 'M'|'F';
+  sexPref: 'M'|'F'|'B';
   city: { name: string; lat: number; lon: number };
   birthdate: Date;
+}
+
+/**
+ * Mixed orientations, so that the compatibility filter visibly excludes profiles:
+ * 60% attracted to the other gender, 15% to the same gender, 25% to both
+ */
+function getRandomSexPref(gender: 'M'|'F'): 'M'|'F'|'B' {
+  const r = Math.random();
+  if (r < 0.6) return gender === 'M' ? 'F' : 'M';
+  if (r < 0.75) return gender;
+  return 'B';
 }
 
 function makeUser(): SeedUser {
@@ -60,6 +72,7 @@ function makeUser(): SeedUser {
       .toLowerCase()
       .replace(/\s+/g, ""), // supprime tout espace éventuel
     gender,
+    sexPref: getRandomSexPref(gender),
     city: getRandomCity(),
     birthdate: faker.date.birthdate(),
   };
@@ -73,10 +86,10 @@ async function insertUsers(client: PoolClient, count: number, passwordHash: stri
   const users = Array.from({ length: count }, makeUser);
   const { rows } = await executeQuery<{ id: string; gender: 'M'|'F' }>(
     `INSERT INTO users (username, first_name, last_name, email, passwd, gender, sex_pref, bio, city, latitude, longitude, birthdate, base_fame, last_login, is_verified)
-     SELECT username, first_name, last_name, email, $1, gender, 'B', bio, city, latitude, longitude, birthdate, base_fame, last_login, true
-       FROM unnest($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[],
-                   $9::float[], $10::float[], $11::date[], $12::int[], $13::timestamptz[])
-         AS u(username, first_name, last_name, email, gender, bio, city, latitude, longitude, birthdate, base_fame, last_login)
+     SELECT username, first_name, last_name, email, $1, gender, sex_pref, bio, city, latitude, longitude, birthdate, base_fame, last_login, true
+       FROM unnest($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[], $9::text[],
+                   $10::float[], $11::float[], $12::date[], $13::int[], $14::timestamptz[])
+         AS u(username, first_name, last_name, email, gender, sex_pref, bio, city, latitude, longitude, birthdate, base_fame, last_login)
      ON CONFLICT DO NOTHING
      RETURNING id, gender`,
     [
@@ -86,6 +99,7 @@ async function insertUsers(client: PoolClient, count: number, passwordHash: stri
       users.map((u) => u.lastName),
       users.map((u) => u.email),
       users.map((u) => u.gender),
+      users.map((u) => u.sexPref),
       users.map(() => faker.person.bio()),
       users.map((u) => u.city.name),
       users.map((u) => u.city.lat),
