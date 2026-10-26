@@ -37,8 +37,6 @@ export type PublicUser = {
   email: string;
   gender: string;
   city: string;
-  latitude: number;
-  longitude: number;
   distance: number;
   bio: string;
   age: number;
@@ -50,6 +48,13 @@ export type PublicUser = {
   commonTags: number;
   likeStatus: LikeStatus;
   last_login: string | Date;
+};
+
+// Row of my_profile (session user): the only one carrying exact coordinates,
+// other users only expose city and distance
+export type MyProfile = PublicUser & {
+  latitude: number | null;
+  longitude: number | null;
 };
 
 // Row of GET /api/me/blocks

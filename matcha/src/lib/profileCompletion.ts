@@ -1,7 +1,7 @@
 import { getPictures } from "./db/pictures";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/db/session";
-import type { PublicUser } from "@/lib/types";
+import type { MyProfile } from "@/lib/types";
 
 export interface Completion {
   percentage: number;
@@ -9,7 +9,7 @@ export interface Completion {
   missingOptional: string[];
 }
 
-export async function analyzeProfileCompletion(user: PublicUser | null): Promise<Completion> {
+export async function analyzeProfileCompletion(user: MyProfile | null): Promise<Completion> {
   if (!user) {
     return { percentage: 0, missingRequired: [], missingOptional: [] };
   }

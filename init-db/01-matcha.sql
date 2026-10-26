@@ -179,6 +179,7 @@ RETURNS INT AS $$
   WHERE u.id = target_id;
 $$ LANGUAGE sql STABLE;
 
+-- Other users as seen by the client: no exact coordinates, only city (and distance_km)
 CREATE VIEW "users_with_interests" AS
 SELECT
   u.id,
@@ -187,8 +188,6 @@ SELECT
   u.last_name::text AS last_name,
   u.gender,
   u.city,
-  u.latitude,
-  u.longitude,
   u.bio,
   user_fame(u.id) AS fame,
   u.sex_pref,
@@ -302,8 +301,6 @@ RETURNS TABLE (
   city TEXT,
   bio TEXT,
   age INT,
-  latitude FLOAT,
-  longitude FLOAT,
   interests JSON,
   fame INT,
   distance INT,
@@ -320,8 +317,6 @@ AS $$
     u.city,
     u.bio,
     u.age,
-    u.latitude,
-    u.longitude,
     u.interests,
     u.fame,
     distance_km(ref_user_id, u.id),
@@ -334,8 +329,8 @@ AS $$
     AND target.report_count < report_threshold
     -- only complete profiles (keep in sync with lib/profileCompletion.ts)
     AND u.gender IS NOT NULL
-    AND u.latitude IS NOT NULL
-    AND u.longitude IS NOT NULL
+    AND target.latitude IS NOT NULL
+    AND target.longitude IS NOT NULL
     AND json_array_length(u.interests) >= 3
     AND EXISTS (
       SELECT 1 FROM pictures p WHERE p.user_id = u.id AND p.is_main

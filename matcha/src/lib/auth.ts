@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/db/session";
-import type { PublicUser } from "@/lib/types";
+import type { MyProfile } from "@/lib/types";
 import { analyzeProfileCompletion } from "@/lib/profileCompletion";
 
 /**
@@ -11,7 +11,7 @@ import { analyzeProfileCompletion } from "@/lib/profileCompletion";
  *   const me = await requireUser();
  *   if (me instanceof NextResponse) return me;
  */
-export async function requireUser(): Promise<PublicUser | NextResponse> {
+export async function requireUser(): Promise<MyProfile | NextResponse> {
   const sessionId = (await cookies()).get("session_id")?.value;
   const user = sessionId ? await getSessionUser(sessionId) : null;
   if (!user) {
@@ -24,7 +24,7 @@ export async function requireUser(): Promise<PublicUser | NextResponse> {
  * Same as requireUser, for the routes the UI only opens once the profile is complete
  * (suggestions, search, profile views): 403 if a required field is missing.
  */
-export async function requireCompleteUser(): Promise<PublicUser | NextResponse> {
+export async function requireCompleteUser(): Promise<MyProfile | NextResponse> {
   const user = await requireUser();
   if (user instanceof NextResponse) return user;
 

@@ -221,8 +221,9 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
 
 ### 6.3 Mineur
 
-- [ ] 🟢 **Coordonnées GPS exactes des autres utilisateurs envoyées au client** (`latitude` / `longitude` dans `users_with_interests` et `compatible_users_from`, inutilisées par l'UI) → ne renvoyer que `distance` et `city`.
+- [x] 🟢 **Coordonnées GPS exactes des autres utilisateurs envoyées au client** (`latitude` / `longitude` dans `users_with_interests` et `compatible_users_from`, inutilisées par l'UI) → ne renvoyer que `distance` et `city`.
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 169-170, 282-283, 299-300)
+  - Corrigé : `latitude` / `longitude` retirées de `users_with_interests` (donc de `users_me_like` / `users_who_like_me`) et de `compatible_users_from` (le filtre « profil complet » lit `target.latitude`). Seule `my_profile` les garde : nouveau type `MyProfile` (`PublicUser` + coordonnées) renvoyé par `getSessionUser` / `requireUser`, `PublicUser` n'a plus de coordonnées. Nécessite `make vdown && make dev`.
 - [ ] 🟢 **Blocage visible** : `sendBlock` envoie `likeStatus: "block"` au bloqué, et la carte reste affichée en gris avec bio / tags dans les deux navigateurs (retirer l'utilisateur du store) .
   - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (`sendBlock`)
   - Corrigé (partie statut) : `online-users` n'est plus diffusé à tous les sockets, seulement aux matchs (cf. §6.1 « En ligne / dernière connexion »)., [matcha/src/components/browse/Browse.tsx](matcha/src/components/browse/Browse.tsx)

@@ -1,7 +1,7 @@
 // matcha/src/lib/db/session.ts
 import { v4 as uuidv4 } from "uuid";
 import { executeQuery } from "./db-utils";
-import type { PublicUser } from "@/lib/types";
+import type { MyProfile } from "@/lib/types";
 
 export async function createSession(userId: string): Promise<string> {
   const sessionId = uuidv4();
@@ -42,10 +42,10 @@ export async function getSessionExpiry(sessionId: string): Promise<Date | null> 
   return result.rows[0]?.expires_at ?? null;
 }
 
-export async function getSessionUser(sessionId: string): Promise<PublicUser | null> {
+export async function getSessionUser(sessionId: string): Promise<MyProfile | null> {
   if (!sessionId) return null;
 
-  const result = await executeQuery<PublicUser>(
+  const result = await executeQuery<MyProfile>(
     `SELECT mp.*
      FROM sessions s
      JOIN my_profile mp ON s.user_id = mp.id
