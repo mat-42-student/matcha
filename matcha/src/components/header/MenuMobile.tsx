@@ -57,7 +57,16 @@ export default function MenuMobile({
   ];
 
   return (
-    <div className="md:hidden relative">
+    <div className="md:hidden relative flex items-center gap-1">
+      {/* outside the menu: logout stays one click away (subject IV.1) */}
+      <button
+        onClick={onLogout}
+        className="text-white p-2 rounded-md hover:bg-pink-700/40 transition"
+        aria-label="Logout"
+        title="Logout"
+      >
+        <LogOut size={22} />
+      </button>
       <button
         onClick={() => setOpen(!open)}
         className="text-white p-2 rounded-md hover:bg-pink-700/40 transition"
@@ -82,16 +91,6 @@ export default function MenuMobile({
               <span className="text-sm font-medium">{label}</span>
             </Link>
           ))}
-          <button
-            onClick={() => {
-              onLogout();
-              setOpen(false);
-            }}
-            className="flex items-center gap-3 px-3 py-2 text-fuchsia-100 rounded-md hover:bg-pink-800 hover:text-white transition-all duration-150"
-          >
-            <LogOut size={18} />
-            <span className="text-sm font-medium">Logout</span>
-          </button>
         </nav>
       )}
     </div>
