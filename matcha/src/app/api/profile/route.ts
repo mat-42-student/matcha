@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
     }
 
     // every field went through validateProfileField, which rejects anything updateUser does not expect
-    const updated = await updateUser(user.id, updates as Partial<User>);
+    await updateUser(user.id, updates as Partial<User>);
 
-    return NextResponse.json({ success: true, user: updated });
+    return NextResponse.json({ success: true });
   } catch (e) {
     // unique violation: username taken by a concurrent update
     if ((e as { code?: string }).code === "23505") {

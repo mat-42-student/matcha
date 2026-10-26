@@ -2,7 +2,6 @@
 import bcrypt from 'bcryptjs';
 import { PoolClient } from 'pg';
 import { executeQuery } from "./db-utils";
-import { PublicUser } from '../types';
 
 export interface User {
   id: string;
@@ -27,7 +26,7 @@ export interface User {
 /**
  * Utilitaire pour construire une requête INSERT générique
  */
-async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): Promise<User> {
+async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): Promise<Pick<User, 'id'>> {
   const fields = (Object.keys(user) as (keyof User)[])
     .filter((f) => allowedFields.includes(f));
 
@@ -35,15 +34,16 @@ async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): P
   const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
   const values = fields.map((f) => user[f] ?? null);
 
-  const query = `INSERT INTO users (${columns}) VALUES (${placeholders}) RETURNING *`;
-  const result = await executeQuery<User>(query, values);
+  // only the id: the row holds the password hash, which must never reach a response
+  const query = `INSERT INTO users (${columns}) VALUES (${placeholders}) RETURNING id`;
+  const result = await executeQuery<Pick<User, 'id'>>(query, values);
   return result.rows[0];
 }
 
 /**
  * Create a new user
  */
-export async function createUser(user: Omit<User, 'id' | 'created_at' | 'is_verified'>): Promise<User> {
+export async function createUser(user: Omit<User, 'id' | 'created_at' | 'is_verified'>): Promise<Pick<User, 'id'>> {
   const allowedFields: (keyof User)[] = [
     "username","first_name","last_name","email","passwd","country","city",
     "latitude","longitude","birthdate","gender","sex_pref","bio","fame"
@@ -52,27 +52,27 @@ export async function createUser(user: Omit<User, 'id' | 'created_at' | 'is_veri
 }
 
 /**
- * Update a user (partial update)
+ * Update a user (partial update), true if the user was updated
  */
 export async function updateUser(
   id: string,
   updates: Partial<User>
-): Promise<User | null> {
+): Promise<boolean> {
   const allowedFields: (keyof User)[] = [
     "username","first_name","last_name","city","country",
     "gender","sex_pref","bio","birthdate","latitude","longitude"
   ];
 
   const fields = (Object.keys(updates) as (keyof User)[]).filter((f) => allowedFields.includes(f));
-  if (fields.length === 0) return null;
+  if (fields.length === 0) return false;
 
   const setClauses = fields.map((f, i) => `"${f}" = $${i + 1}`).join(", ");
   const values = fields.map((f) => updates[f]);
 
-  const query = `UPDATE users SET ${setClauses} WHERE id = $${fields.length + 1} RETURNING *`;
-  const result = await executeQuery<User>(query, [...values, id]);
+  const query = `UPDATE users SET ${setClauses} WHERE id = $${fields.length + 1}`;
+  const result = await executeQuery(query, [...values, id]);
 
-  return result.rows[0] ?? null;
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**
@@ -155,24 +155,23 @@ export async function getUsersCount(): Promise<number> {
   return parseInt(result.rows[0].total, 10);
 }
 
-export async function getUserByEmail(email: string): Promise<PublicUser | null> {
-	const result = await executeQuery<PublicUser>(
-		'SELECT * FROM users WHERE email = $1',
+export async function getUserByEmail(email: string): Promise<Pick<User, 'id'> | null> {
+	const result = await executeQuery<Pick<User, 'id'>>(
+		'SELECT id FROM users WHERE email = $1',
 		[email]
 	);
 	return result.rows[0] ?? null;
 }
 
 
-export async function updateUserPassword(id: string, hashedPassword: string): Promise<User | null> {
+export async function updateUserPassword(id: string, hashedPassword: string): Promise<boolean> {
 	const query = `
     UPDATE users
     SET passwd = $1
     WHERE id = $2
-    RETURNING *;
   `;
-	const result = await executeQuery<User>(query, [hashedPassword, id]);
-	return result.rows[0] ?? null;
+	const result = await executeQuery(query, [hashedPassword, id]);
+	return (result.rowCount ?? 0) > 0;
 }
 
 export async function changeUserPassword (
