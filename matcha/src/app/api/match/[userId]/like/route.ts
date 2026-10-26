@@ -15,10 +15,20 @@ function notifyRelationChange(
   me: { id: string; first_name: string },
   targetId: string,
   msg: "like" | "match" | "unlike",
-  targetLikeStatus: LikeStatus
+  targetLikeStatus: LikeStatus,
+  myLikeStatus: LikeStatus
 ) {
   send<NotifPayload>(targetId, "notif", { from: toSocketUser(me), msg });
-  send<RelationChangedPayload>(targetId, "relation-changed", { userId: me.id, likeStatus: targetLikeStatus });
+  sendRelationChange(me.id, targetId, targetLikeStatus, myLikeStatus);
+}
+
+/**
+ * Sync the relation in every tab of both users: the target's, and the session user's
+ * (the acting tab already updated itself, the others would keep the old status)
+ */
+function sendRelationChange(myId: string, targetId: string, targetLikeStatus: LikeStatus, myLikeStatus: LikeStatus) {
+  send<RelationChangedPayload>(targetId, "relation-changed", { userId: myId, likeStatus: targetLikeStatus });
+  send<RelationChangedPayload>(myId, "relation-changed", { userId: targetId, likeStatus: myLikeStatus });
 }
 
 /**
@@ -82,8 +92,8 @@ export async function POST(
       // relation changed concurrently (already liked, matched or blocked)
       return NextResponse.json({ success: false, newStatus: await getMatchStatus(me.id, userId) });
     }
-    if (res === "match") notifyRelationChange(me, userId, "match", "match");
-    else notifyRelationChange(me, userId, "like", "isLiked");
+    if (res === "match") notifyRelationChange(me, userId, "match", "match", "match");
+    else notifyRelationChange(me, userId, "like", "isLiked", "like");
 
     // fame of the target, recomputed from the new state
     return NextResponse.json({ success: true, newStatus: res, fame: await getFame(userId) });
@@ -117,14 +127,14 @@ export async function DELETE(
     }
     if (removed === "match") {
       // Only an unmatch is notified (subject: "unliked by a connected user")
-      notifyRelationChange(me, userId, "unlike", "none");
+      notifyRelationChange(me, userId, "unlike", "none", "none");
       await Promise.all([
         sendUnreadMessagesCount(me.id),
         sendUnreadMessagesCount(userId),
       ]);
     } else {
-      // Silent: the target's UI and notification list still need to drop the like
-      send<RelationChangedPayload>(userId, "relation-changed", { userId: me.id, likeStatus: "none" });
+      // Silent: the target's UI and notification list (and my other tabs) still need to drop the like
+      sendRelationChange(me.id, userId, "none", "none");
     }
 
     return NextResponse.json({ success: true, newStatus: 'none', fame: await getFame(userId) });
