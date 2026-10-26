@@ -64,6 +64,21 @@ export default function ChatWindow({
     });
   }, [socket, selectedUser?.id]);
 
+  // Tell the server which conversation is open: its messages are then marked read instead of notified
+  useEffect(() => {
+    if (!socket || !selectedUserId) return;
+
+    const emitActive = () => socket.emit("chat-active-user", { userId: selectedUserId });
+
+    emitActive();
+    // Same client socket on reconnect, but a new one server side that forgot the open conversation
+    socket.on("connect", emitActive);
+    return () => {
+      socket.off("connect", emitActive);
+      socket.emit("chat-active-user", { userId: null });
+    };
+  }, [socket, selectedUserId]);
+
   useEffect(() => {
     if (!socket || !selectedUserId) return;
 

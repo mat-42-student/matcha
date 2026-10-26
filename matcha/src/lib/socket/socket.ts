@@ -9,6 +9,7 @@ import { ChatMsgEvent, NotifPayload, PresencePayload, PublicUser, RelationChange
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { updateLastLogin } from "../db/users";
 import { getMatchIds, markConversationAsRead } from "../db/chat";
+import { isValidUuid } from "../validators/serverValidator";
 
 type SocketRegistry = Map<string, Set<Socket>>;
 
@@ -177,7 +178,7 @@ export async function initSocket(httpServer: HttpServer) {
     });
     on<{ userId: string | null }>(socket, "chat-active-user", (payload) => {
       const activeId = payload?.userId;
-      socket.data.activeChatUserId = typeof activeId === "string" ? activeId : null;
+      socket.data.activeChatUserId = typeof activeId === "string" && isValidUuid(activeId) ? activeId : null;
     });
     on(socket, "get-chat-users", () => handleUsersInfo(userId));
 
