@@ -27,7 +27,7 @@ export default function CardUser({ user }: { user: PublicUser }) {
   return (
     <>
       <div
-        className={`w-72 ${COLOR[user.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
+        className={`w-full max-w-72 ${COLOR[user.likeStatus]} border-2 border-gray-300 rounded-lg shadow-md p-4 m-2 md:m-4 cursor-pointer hover:border-pink-500 flex flex-col`}
         onClick={handleCardClick}
         title={user.score.toString()}
       >

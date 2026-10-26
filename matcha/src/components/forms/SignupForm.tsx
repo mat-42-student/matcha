@@ -40,7 +40,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-8 rounded-2xl shadow-md flex flex-col gap-4 w-96"
+      className="bg-white p-8 rounded-2xl shadow-md flex flex-col gap-4 w-full max-w-sm"
     >
       <h1 className="text-2xl font-bold text-center text-pink-700">
         Create an account

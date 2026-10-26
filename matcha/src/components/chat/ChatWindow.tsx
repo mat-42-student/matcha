@@ -4,7 +4,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { PublicUser, ChatMsgEvent, MAX_MESSAGE_LENGTH, Payload } from "@/lib/types";
+import { ArrowLeft } from "lucide-react";
 import ChatCardUser from "../card-user/ChatCardUser";
+import OnlineStatus from "../card-user/OnlineStatus";
 import { useMe } from "@/context/UserContext";
 
 type RawMessage = {
@@ -19,8 +21,10 @@ type Message = { from: "me" | "you"; text: string };
 
 export default function ChatWindow({
   selectedUser,
+  onBack,
 }: {
   selectedUser: PublicUser | null;
+  onBack: () => void;
 }) {
   const { socket } = useSocket();
   const { me } = useMe();
@@ -147,6 +151,16 @@ export default function ChatWindow({
 
   return (
     <div className="flex-1 flex flex-col bg-gray-950 text-gray-100">
+      {/* Mobile only: the user list is hidden while a conversation is open */}
+      <div className="md:hidden flex items-center gap-3 p-3 border-b border-gray-700">
+        <button onClick={onBack} className="p-1 rounded hover:bg-gray-800" aria-label="Back to the user list">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <div className="font-semibold text-pink-500">{selectedUser.first_name}</div>
+          <OnlineStatus userId={selectedUser.id} className="text-xs" />
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.map((m, i) => (
           <div
@@ -156,7 +170,7 @@ export default function ChatWindow({
             }`}
           >
             <div
-              className={`p-2 rounded-lg ${
+              className={`p-2 rounded-lg max-w-[80%] wrap-anywhere ${
                 m.from === "me" ? "bg-pink-700" : "bg-gray-800"
               }`}
             >
@@ -167,7 +181,7 @@ export default function ChatWindow({
           <div ref={messagesEndRef} />
       </div>
       <div className="p-3 border-t border-gray-700 flex gap-2">
-        <div>
+        <div className="hidden md:block">
           <ChatCardUser user={selectedUser}/>
         </div>
         <textarea

@@ -15,9 +15,14 @@ export default function MainChat() {
 
   return (
     <div className="flex h-full">
-      <ChatSidebar onSelectUser={setSelectedUser} />
-      {/* key: a new conversation starts with a fresh window instead of clearing the old one */}
-      <ChatWindow key={activeUser?.id} selectedUser={activeUser} />
+      {/* Mobile: full-screen list, then full-screen conversation */}
+      <div className={`${activeUser ? "hidden md:flex" : "flex"} w-full md:w-64 shrink-0`}>
+        <ChatSidebar onSelectUser={setSelectedUser} />
+      </div>
+      <div className={`${activeUser ? "flex" : "hidden md:flex"} flex-1 min-w-0`}>
+        {/* key: a new conversation starts with a fresh window instead of clearing the old one */}
+        <ChatWindow key={activeUser?.id} selectedUser={activeUser} onBack={() => setSelectedUser(null)} />
+      </div>
     </div>
   );
 }

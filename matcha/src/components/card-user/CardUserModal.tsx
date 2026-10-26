@@ -78,11 +78,11 @@ export default function CardUserModal({
 
   return (
     <div
-      className="fixed inset-0 backdrop-blur-sm flex justify-center items-center z-50 bg-black/30"
+      className="fixed inset-0 backdrop-blur-sm flex justify-center items-center p-4 z-50 bg-black/30"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg p-6 w-96 relative"
+        className="bg-white rounded-lg p-6 w-full max-w-sm max-h-full overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-2">

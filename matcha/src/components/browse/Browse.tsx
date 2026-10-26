@@ -40,12 +40,12 @@ export default function Browse() {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] w-full items-start">
-      <div className="sticky top-0 self-start">
+      <div className="sticky top-0 self-start shrink-0 max-md:w-16">
         <FilterBar values={filters} onChange={handleFilterChange} />
       </div>
       <main className="flex-1 flex flex-col items-center p-4 md:p-6 overflow-hidden">
         {currentUsers.length > 0 ? (
-          <div className=" border-2 flex flex-wrap justify-center gap-4 w-full max-w-[90%]">
+          <div className=" border-2 flex flex-wrap justify-center gap-4 w-full md:max-w-[90%]">
             {currentUsers.map((u) => (
               <CardUser key={u.id} user={u} />
             ))}

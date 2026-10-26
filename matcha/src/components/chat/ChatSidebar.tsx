@@ -37,7 +37,7 @@ export default function ChatSidebar({
   if (!chatUsers) return <div>No match</div>;
 
   return (
-    <div className="w-1/6 bg-gray-900 text-gray-200 border-r border-gray-700 overflow-y-auto">
+    <div className="w-full bg-gray-900 text-gray-200 border-r border-gray-700 overflow-y-auto">
       <div className="p-3 font-semibold text-lg border-b border-gray-700">
         Users
       </div>
