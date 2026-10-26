@@ -16,6 +16,7 @@ const filePath = path.join(process.cwd(), "src/data/fr-cities.json");
 const frCities = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
 interface Hit {
+  id: number;
   webformatURL: string;
 }
 
@@ -71,41 +72,100 @@ async function insertUser(pool: Pool, passwordHash: string) {
   return [rows[0].id, gender];
 }
 
-async function getPixabayPictureUrls(
-  g: 'M'|'F', remainingUsers: number, page = 1
-): Promise<string[]> {
-  const nb_users = remainingUsers > 200 ? 200 : remainingUsers;
-  const gender = g === 'M' ? 'male' : 'female';
+// Pixabay photos are downloaded once into this folder (gitignored) and reused by every
+// seed afterwards: no network nor API key needed once the cache is filled.
+const PICS_CACHE_DIR = path.join(process.cwd(), ".seed-cache");
+const PICS_PER_GENDER = 100; // shared by all the seeded users (Pixabay per_page <= 200)
+const DOWNLOAD_CONCURRENCY = 8;
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+interface Picture {
+  buffer: Buffer;
+  mimeType: string;
+}
+
+async function getPixabayHits(g: 'M'|'F', count: number): Promise<Hit[]> {
   const params = new URLSearchParams({
     key: API_KEY as string,
-    q: gender,
+    q: g === 'M' ? 'male' : 'female',
     category: "people",
     image_type: "photo",
-    per_page: nb_users.toString(),
+    per_page: count.toString(),
     safesearch: "true",
-    page: page.toString()
   });
-
-  const URL = `https://pixabay.com/api/?${params.toString()}`;
-  try {
-    const response = await fetch(URL);
-    if (!response.ok) {
-      throw new Error(`Pixabay API error: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    const urls = data.hits.map((hit: Hit) => hit.webformatURL);
-
-    const remaining = remainingUsers - nb_users;
-    if (remaining > 0) {
-      const nextUrls = await getPixabayPictureUrls(g, remaining, page + 1);
-      return urls.concat(nextUrls);
-    }
-
-    return urls;
-  } catch (err) {
-    console.error("getPixabayPictureUrls error:", err);
-    return [];
+  const response = await fetch(`https://pixabay.com/api/?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Pixabay API error: ${response.status} ${response.statusText}`);
   }
+  const data = await response.json();
+  return data.hits;
+}
+
+async function downloadImage(url: string): Promise<Picture> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to download ${url}`);
+  }
+  const buffer = Buffer.from(await res.arrayBuffer());
+  // same check as uploads: trust the content, not the remote Content-Type
+  const mimeType = detectImageMimeType(buffer);
+  if (!mimeType) {
+    throw new Error(`Not an allowed image: ${url}`);
+  }
+  return { buffer, mimeType };
+}
+
+// Downloads the missing pictures into dir; a failed download is skipped, not fatal
+async function fillPicturesCache(g: 'M'|'F', dir: string, cached: string[]) {
+  if (!API_KEY) {
+    console.warn("PIX_KEY not set: cannot download seed pictures");
+    return;
+  }
+  const known = new Set(cached.map((file) => path.parse(file).name));
+  const hits = (await getPixabayHits(g, PICS_PER_GENDER))
+    .filter((hit) => !known.has(String(hit.id)));
+
+  const worker = async () => {
+    for (let hit = hits.pop(); hit; hit = hits.pop()) {
+      try {
+        const { buffer, mimeType } = await downloadImage(hit.webformatURL);
+        await fs.promises.writeFile(path.join(dir, `${hit.id}.${EXTENSIONS[mimeType]}`), buffer);
+      } catch (err) {
+        console.error("Seed picture download error:", err);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: DOWNLOAD_CONCURRENCY }, worker));
+}
+
+async function loadPictures(g: 'M'|'F'): Promise<Picture[]> {
+  const dir = path.join(PICS_CACHE_DIR, g);
+  await fs.promises.mkdir(dir, { recursive: true });
+  let files = await fs.promises.readdir(dir);
+  if (files.length < PICS_PER_GENDER) {
+    console.log(`Downloading ${g} seed pictures from Pixabay...`);
+    try {
+      await fillPicturesCache(g, dir, files);
+    } catch (err) {
+      console.error("Seed pictures error:", err);
+    }
+    files = await fs.promises.readdir(dir);
+  }
+
+  const pictures: Picture[] = [];
+  for (const file of files) {
+    const buffer = await fs.promises.readFile(path.join(dir, file));
+    const mimeType = detectImageMimeType(buffer);
+    if (mimeType)
+      pictures.push({ buffer, mimeType });
+  }
+  if (pictures.length === 0)
+    console.warn(`No ${g} seed pictures available: those users get no picture`);
+  return pictures;
 }
 
 async function insertUserInterests(pool: Pool, userId: string) {
@@ -131,21 +191,19 @@ async function insertUserInterests(pool: Pool, userId: string) {
 export async function seed() {
   try {
     const ret = await pool.query("SELECT COUNT(*) FROM users");
-    const userCount = ret.rows[0].count;
+    const userCount = Number(ret.rows[0].count);
     if (userCount >= MIN_USERS)
       return;
     const remainingUsers = MIN_USERS - userCount;
-    console.log("Getting url pictures from Pixabay...");
-    const malePics = await getPixabayPictureUrls('M', remainingUsers);
-    const femalePics = await getPixabayPictureUrls('F', remainingUsers);
-    console.log("... Done");
+    const pictures = { M: await loadPictures('M'), F: await loadPictures('F') };
     console.log(`Seeding ${remainingUsers} users...`);
     const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
     for (let i = userCount; i < MIN_USERS; i++) {
       const [ id, gender ] = await insertUser(pool, passwordHash);
       await insertUserInterests(pool, id);
-      const urlPic = gender === 'M' ? malePics.pop() : femalePics.pop();
-      await insertUserPic(pool, id, urlPic as string);
+      const pics = pictures[gender as 'M'|'F'];
+      if (pics.length > 0)
+        await insertUserPic(pool, id, pics[i % pics.length]);
     }
     console.log("... Done");
   } catch (err) {
@@ -153,26 +211,10 @@ export async function seed() {
   }
 }
 
-async function downloadImage(url: string) {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to download ${url}`);
-  }
-  const buffer = Buffer.from(await res.arrayBuffer());
-  // same check as uploads: trust the content, not the remote Content-Type
-  const mimeType = detectImageMimeType(buffer);
-  if (!mimeType) {
-    throw new Error(`Not an allowed image: ${url}`);
-  }
-  return { buffer, mimeType };
-}
-
-async function insertUserPic(pool: Pool, id: string, urlPic: string) {
-    const { buffer, mimeType } = await downloadImage(urlPic);
-
-    await pool.query(
-      `INSERT INTO pictures (user_id, data, mime_type, is_main)
-        VALUES ($1, $2, $3, true)`,
-      [id, buffer, mimeType]
-    );
+async function insertUserPic(pool: Pool, id: string, { buffer, mimeType }: Picture) {
+  await pool.query(
+    `INSERT INTO pictures (user_id, data, mime_type, is_main)
+      VALUES ($1, $2, $3, true)`,
+    [id, buffer, mimeType]
+  );
 }
