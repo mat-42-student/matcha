@@ -2,11 +2,11 @@
 import { NextResponse } from "next/server";
 import { getChatPartner, getConversation } from "@/lib/db/chat";
 import { requireUser } from "@/lib/auth";
-import { send } from "@/lib/socket/socket";
 import { isValidUuid } from "@/lib/validators/serverValidator";
 
 // Get all mesages between the authenticated user and userId
 // Only while matched and not blocked: the history is no longer readable after an unmatch or a block
+// Read only: opening the conversation emits chat-mark-read, which marks it read and updates the counters
 export async function GET(
   req: Request,
   context: { params: Promise<{ userId: string }> }
@@ -24,7 +24,6 @@ export async function GET(
     }
 
     const conversation = await getConversation(me.id, userId);
-    send(me.id, "chat-unread-count", [{ sender_id: userId, unread_count: 0 }]);
     return NextResponse.json(conversation);
   } catch (err) {
     console.error("Error fetching conversation:", err);

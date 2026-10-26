@@ -91,8 +91,7 @@ export async function markConversationAsRead(senderId: string, recipientId: stri
   return deleteMessageNotification(recipientId, senderId);
 }
 
-// Fetch conversation between two users
-// Mark messages as read when fetched
+// Fetch conversation between two users (read only: the chat-mark-read socket event marks it read)
 export async function getConversation(me: string, user: string): Promise<ChatMessage[]> {
   const query = `
     SELECT * FROM chat
@@ -101,13 +100,5 @@ export async function getConversation(me: string, user: string): Promise<ChatMes
     ORDER BY created_at ASC;
   `;
   const result = await executeQuery<ChatMessage>(query, [me, user]);
-
-  // the "message" notification is dropped by the chat-mark-read socket event, which also refreshes the bell
-  const markReadQuery = `
-    UPDATE chat
-    SET is_read = true
-    WHERE sender_id = $1 AND recipient_id = $2 AND is_read = false;
-  `;
-  await executeQuery(markReadQuery, [user, me]);
   return result.rows;
 }
