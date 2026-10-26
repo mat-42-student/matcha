@@ -23,6 +23,11 @@ export interface RelationChangedPayload {
   likeStatus: LikeStatus;
 }
 
+// A block in either direction: the other user must disappear from every list (the reason is not sent)
+export interface UserHiddenPayload {
+  userId: string;
+}
+
 // A match connected (first tab) or disconnected (last tab)
 export interface PresencePayload {
   userId: string;

@@ -22,7 +22,7 @@ export default function CardUserModal({
   user: PublicUser;
   onClose: () => void;
 }) {
-  const { updateUser } = useUsersStore();
+  const { removeUser } = useUsersStore();
   const [pics, setPics] = useState<string[]>([mainPic]);
   const [current, setCurrent] = useState(0);
 
@@ -69,9 +69,9 @@ export default function CardUserModal({
       return;
     }
     toast.success("User reported");
-    const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
-    updateUser(updatedUser);
+    // reporting also blocks: the user leaves the list (the other tabs get it through the socket)
     onClose();
+    removeUser(user.id);
   }
 
   async function blockUser() {
@@ -79,8 +79,8 @@ export default function CardUserModal({
     try {
       const res = await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
       if (res.ok) {
-        const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
-        updateUser(updatedUser);
+        onClose();
+        removeUser(user.id);
       } else {
         const data = await res.json().catch(() => ({}));
         toast.error(data.error ?? "Something went wrong");
@@ -88,7 +88,6 @@ export default function CardUserModal({
     } catch {
       toast.error("Network error, please try again");
     }
-    onClose();
   }
 
   return (

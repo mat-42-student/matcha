@@ -5,7 +5,7 @@ import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Notification, NotifPayload, Payload, PresencePayload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
+import { Notification, NotifPayload, Payload, PresencePayload, PublicUser, RelationChangedPayload, UnreadMessages, UserHiddenPayload } from "@/lib/types";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -227,14 +227,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("unlike", setUnlike);
     s.on("relation-changed", (payload: RelationChangedPayload) => {
       setRelationChanged(payload);
-      if (
-        payload.likeStatus === "match" ||
-        payload.likeStatus === "none" ||
-        payload.likeStatus === "block"
-      ) {
+      if (payload.likeStatus === "match" || payload.likeStatus === "none") {
         s.emit("get-chat-users");
         fetchNotifications();
       }
+    });
+    // Blocked or blocking: "block" stays local, the UsersStore drops the user on this status
+    s.on("user-hidden", ({ userId }: UserHiddenPayload) => {
+      setRelationChanged({ userId, likeStatus: "block" });
+      s.emit("get-chat-users");
+      fetchNotifications();
     });
     s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", handleChatUsers);

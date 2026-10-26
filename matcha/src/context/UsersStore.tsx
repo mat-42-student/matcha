@@ -8,6 +8,7 @@ type UsersStoreType = {
   users: PublicUser[];
   updateUser: (u: PublicUser) => void;
   updateUserLikeStatus: (userId: string, likeStatus: LikeStatus) => void;
+  removeUser: (userId: string) => void;
   setUsers: (users: PublicUser[]) => void;
 };
 
@@ -15,6 +16,7 @@ const UsersStoreContext = createContext<UsersStoreType>({
   users: [],
   updateUser: () => {},
   updateUserLikeStatus: () => {},
+  removeUser: () => {},
   setUsers: () => {},
 });
 
@@ -39,14 +41,20 @@ export function UsersStoreProvider({
     setUsers(prev => prev.map(user => (user.id === u.id ? u : user)));
   }, []);
 
+  // A blocked user (in either direction) leaves the list instead of staying as a greyed card
+  const removeUser = useCallback((userId: string) => {
+    setUsers((prev) => prev.filter((user) => user.id !== userId));
+  }, []);
+
   const updateUserLikeStatus = useCallback((userId: string, likeStatus: LikeStatus) => {
+    if (likeStatus === "block") return removeUser(userId);
     setUsers((prev) =>
       prev.map((user) => (user.id === userId ? { ...user, likeStatus } : user))
     );
-  }, []);
+  }, [removeUser]);
 
   return (
-    <UsersStoreContext.Provider value={{ users, updateUser, updateUserLikeStatus, setUsers }}>
+    <UsersStoreContext.Provider value={{ users, updateUser, updateUserLikeStatus, removeUser, setUsers }}>
       {children}
     </UsersStoreContext.Provider>
   );
