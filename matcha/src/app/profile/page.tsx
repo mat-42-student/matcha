@@ -33,8 +33,8 @@ export default async function ProfilePage() {
     const completionData = await analyzeProfileCompletion(user);
 
   return (
-    <main className="min-h-screen bg-pink-50 flex flex-col items-center py-10">
+    <div className="min-h-screen bg-pink-50 flex flex-col items-center py-10">
       <ProfileTabs user={user} completion={completionData}/>
-    </main>
+    </div>
   );
 }

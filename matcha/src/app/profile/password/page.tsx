@@ -31,9 +31,9 @@ export default async function passwordChangePage() {
 
 
   return (
-    <main className="min-h-screen bg-pink-50 flex flex-col items-center py-10">
+    <div className="min-h-screen bg-pink-50 flex flex-col items-center py-10">
       <ProfilePasswordChange />
-    </main>
+    </div>
   );
 }
 
