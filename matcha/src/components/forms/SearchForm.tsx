@@ -46,11 +46,11 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
     min: fameMin === "" ? undefined : Number(fameMin),
     max: fameMax === "" ? undefined : Number(fameMax),
   };
-  const isBadBound = (n?: number) => n !== undefined && !(Number.isInteger(n) && n >= 0);
+  const isBadBound = (n?: number) => n !== undefined && !(Number.isInteger(n) && n >= 0 && n <= 100);
   const fameError = !useFame
     ? null
     : isBadBound(fameRange.min) || isBadBound(fameRange.max)
-      ? "Fame bounds must be positive whole numbers"
+      ? "Fame bounds must be whole numbers between 0 and 100"
       : fameRange.min !== undefined && fameRange.max !== undefined && fameRange.min > fameRange.max
         ? "Minimum fame must be lower than maximum"
         : null;
@@ -244,6 +244,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
         <input
           type="number"
           min={0}
+          max={100}
           placeholder="0"
           value={fameMin}
           onChange={(e) => setFameMin(e.target.value)}
@@ -255,7 +256,8 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
         <input
           type="number"
           min={0}
-          placeholder="∞"
+          max={100}
+          placeholder="100"
           value={fameMax}
           onChange={(e) => setFameMax(e.target.value)}
           className={`border rounded p-2 w-20 ${fameInvalid ? "border-red-500" : ""}`}
