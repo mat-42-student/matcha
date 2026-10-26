@@ -1,0 +1,34 @@
+# Dev overrides (make dev): sources mounted + tsx watch, Postgres port and Adminer exposed
+
+volumes:
+  node_modules:
+
+services:
+
+  matcha_server:
+    image: node:26.11.1-alpine3.24
+    build: !reset null
+    working_dir: /app
+    volumes: !override
+      - ./matcha:/app
+      - node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev"
+
+  matcha_postgres:
+    ports: # used by adminer / local clients
+      - "5432:5432"
+
+  matcha_adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - main-network
+    depends_on:
+      matcha_postgres:
+        condition: service_healthy
+
+  mailpit:
+    ports:
+      - "1025:1025"   # Serveur SMTP

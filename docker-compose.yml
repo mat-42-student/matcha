@@ -1,10 +1,11 @@
+# Production / evaluation stack (make). Dev overrides: docker-compose.dev.yml (make dev)
+
 networks:
   main-network:
     driver: bridge
 
 volumes:
   postgres_data:
-  node_modules:
 
 services:
 
@@ -21,15 +22,16 @@ services:
     restart: on-failure
 
   matcha_server:
-    image: node:26-alpine
     container_name: matcha_server
-    working_dir: /app
+    build:
+      context: ./matcha
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     volumes:
-      - ./matcha:/app
-      - node_modules:/app/node_modules
+      # pictures downloaded by the seed, shared with dev
+      - ./matcha/.seed-cache:/app/.seed-cache
     expose:
       - "3000"
-    command: sh -c "npm install && npm run dev"
     env_file:
       - .env
     networks:
@@ -38,7 +40,6 @@ services:
       matcha_postgres:
         condition: service_healthy
     restart: on-failure
-  
 
   matcha_postgres:
     container_name: matcha_postgres
@@ -52,9 +53,6 @@ services:
       - .env
     networks:
       - main-network
-    ports: # for dev only, used by adminer
-      - "5432:5432"
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d matcha -U alice"]
       interval: 1s
@@ -62,22 +60,11 @@ services:
       retries: 5
     restart: on-failure
 
-  matcha_adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
-    networks:
-      - main-network
-    depends_on:
-      matcha_postgres:
-        condition: service_healthy
-
+  # no real SMTP: verification / reset emails are read at http://localhost:8025
   mailpit:
-    image: axllent/mailpit
     container_name: matcha_mailpit
+    image: axllent/mailpit
     ports:
       - "8025:8025"   # Interface web
-      - "1025:1025"   # Serveur SMTP
     networks:
       - main-network

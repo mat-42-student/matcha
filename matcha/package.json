@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server/server.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "tsx src/server/server.ts",
     "lint": "eslint src",
     "typecheck": "next typegen && tsc --noEmit"
   },

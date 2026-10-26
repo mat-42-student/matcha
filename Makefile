@@ -1,7 +1,12 @@
+DEV = docker compose -f docker-compose.yml -f docker-compose.dev.yml
+
 all: build run
 
 run:
 	docker compose up
+
+dev:
+	$(DEV) up
 
 re: clean all
 
@@ -9,10 +14,10 @@ build:
 	docker compose build
 
 vdown:
-	docker compose down -v
+	$(DEV) down -v
 
 down:
-	docker compose down
+	$(DEV) down
 
 fclean: vdown clean
 	docker system prune -a -f
@@ -20,9 +25,9 @@ fclean: vdown clean
 clean: down
 
 lint:
-	docker compose run --rm --no-deps matcha_server sh -c "npm install && npm run lint"
+	$(DEV) run --rm --no-deps matcha_server sh -c "npm install && npm run lint"
 
 typecheck:
-	docker compose run --rm --no-deps matcha_server sh -c "npm install && npm run typecheck"
+	$(DEV) run --rm --no-deps matcha_server sh -c "npm install && npm run typecheck"
 
-.PHONY: all build run re clean fclean lint typecheck
+.PHONY: all build run dev re clean fclean lint typecheck
