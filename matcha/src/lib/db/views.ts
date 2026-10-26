@@ -8,7 +8,7 @@ const VIEW_RENOTIFY_DELAY = "1 minute";
 /**
  * Record a user profile view.
  * - Inserts or updates a record in the "views" table.
- * - A new view notifies the viewed user; their fame counts distinct visitors.
+ * - A new view notifies the viewed user; their fame counts distinct visitors, the latest visits weighing more (see fame_weight).
  * - A visit from the same viewer notifies again once VIEW_RENOTIFY_DELAY has passed
  *   (the notification may have been deleted or read meanwhile), replacing the previous one.
  * - Nothing is recorded (nor notified) if either user blocked the other.

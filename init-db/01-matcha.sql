@@ -177,14 +177,23 @@ CREATE TABLE email_tokens (
 
 
 -- Fame out of 100, computed from the current state instead of a counter that unlike / block loops could pump:
--- 5 per like received + 1 per distinct visitor, on top of the seed's base_fame
+-- 5 per like received + 1 per distinct visitor, on top of the seed's base_fame.
+-- Likes and visits fade with time (see fame_weight) so that fame reflects recent popularity
+-- instead of piling up to 100 for every account.
+-- Weight of a like or a visit made at "at": 1 when fresh, halved every 30 days
+-- (a revisit or a re-like refreshes it, views.created_at being the last visit)
+CREATE OR REPLACE FUNCTION fame_weight(at timestamptz)
+RETURNS float AS $$
+  SELECT power(0.5, extract(epoch FROM now() - at) / extract(epoch FROM interval '30 days'));
+$$ LANGUAGE sql STABLE;
+
 CREATE OR REPLACE FUNCTION user_fame(target_id UUID)
 RETURNS INT AS $$
-  SELECT LEAST(100,
+  SELECT LEAST(100, round(
     u.base_fame
-    + 5 * (SELECT count(*) FROM likes l WHERE l.liked_id = u.id)
-    + (SELECT count(*) FROM views v WHERE v.user_id = u.id)
-  )::int
+    + 5 * COALESCE((SELECT sum(fame_weight(l.created_at)) FROM likes l WHERE l.liked_id = u.id), 0)
+    + COALESCE((SELECT sum(fame_weight(v.created_at)) FROM views v WHERE v.user_id = u.id), 0)
+  ))::int
   FROM users u
   WHERE u.id = target_id;
 $$ LANGUAGE sql STABLE;
