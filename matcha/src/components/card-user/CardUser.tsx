@@ -6,6 +6,7 @@ import { PublicUser, COLOR } from "@/lib/types";
 import Image from "next/image";
 import CardUserModal from "./CardUserModal";
 import Interests from "./Interests";
+import RelationBadge from "./RelationBadge";
 import { useUsersStore } from "@/context/UsersStore";
 
 export default function CardUser({ user }: { user: PublicUser }) {
@@ -37,6 +38,7 @@ export default function CardUser({ user }: { user: PublicUser }) {
             <span className="text-sm text-gray-400"> ({user.gender})</span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
             <div className="text-xs text-gray-500">@{user.username}</div>
+            <RelationBadge status={user.likeStatus} className="mt-1" />
           </div>
           <span className="text-sm text-gray-600">⭐{user.fame}</span>
         </div>

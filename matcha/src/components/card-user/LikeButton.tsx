@@ -11,7 +11,7 @@ import { useUsersStore } from "@/context/UsersStore";
 const BUTTONTEXT = {
   match: "Unmatch",
   like: "Unlike",
-  isLiked: "Match",
+  isLiked: "Like back",
   block: "🚫",
   none: "Like",
 }
