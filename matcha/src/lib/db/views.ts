@@ -3,10 +3,14 @@ import { executeQuery } from "@/lib/db/db-utils";
 import { PublicUser } from "@/lib/types";
 import { createNotification } from "@/lib/db/notifications";
 
+const VIEW_RENOTIFY_DELAY = "1 minute";
+
 /**
  * Record a user profile view.
  * - Inserts or updates a record in the "views" table.
- * - A new view (not an update) notifies the viewed user; their fame counts distinct visitors.
+ * - A new view notifies the viewed user; their fame counts distinct visitors.
+ * - A visit from the same viewer notifies again once VIEW_RENOTIFY_DELAY has passed
+ *   (the notification may have been deleted or read meanwhile), replacing the previous one.
  * - Nothing is recorded (nor notified) if either user blocked the other.
  * - scored: a new line was created; notified: the viewed user got a notification
  *   (not when they unliked the viewer)
@@ -15,28 +19,38 @@ export async function recordProfileView(
   viewedUserId: string,
   viewerUserId: string
 ): Promise<{ scored: boolean; notified: boolean }> {
-  // Insert or update the view, unless the user does not exist or a block exists between both users
+  // Insert or update the view, unless the user does not exist or a block exists between both users.
+  // "previous" reads the snapshot taken before the statement: the last visit before this one.
   const insertQuery = `
+    WITH previous AS (
+      SELECT created_at FROM views WHERE user_id = $1 AND seen_by = $2
+    )
     INSERT INTO views (user_id, seen_by)
     SELECT id, $2::uuid FROM users
     WHERE id = $1 AND NOT is_blocked($1, $2)
     ON CONFLICT (user_id, seen_by)
     DO UPDATE SET created_at = CURRENT_TIMESTAMP
-    RETURNING (xmax = 0) AS inserted;
+    RETURNING (xmax = 0) AS inserted,
+      COALESCE((SELECT created_at FROM previous) < now() - $3::interval, true) AS notify;
   `;
 
-  const result = await executeQuery<{ inserted: boolean }>(insertQuery, [viewedUserId, viewerUserId]);
+  const result = await executeQuery<{ inserted: boolean; notify: boolean }>(
+    insertQuery,
+    [viewedUserId, viewerUserId, VIEW_RENOTIFY_DELAY]
+  );
+  const row = result.rows[0];
+  if (!row) return { scored: false, notified: false };
 
-  if (result.rows[0]?.inserted) {
+  if (row.notify) {
     const viewerNameResult = await executeQuery<{ username: string }>(
       `SELECT username FROM users WHERE id = $1`,
       [viewerUserId]
     );
     const viewerName = viewerNameResult.rows[0]?.username || "Someone";
     const notified = await createNotification(viewedUserId, viewerUserId, "view", `${viewerName} viewed your profile`);
-    return { scored: true, notified };
+    return { scored: row.inserted, notified };
   }
-  return { scored: false, notified: false };
+  return { scored: row.inserted, notified: false };
 }
 
 /**

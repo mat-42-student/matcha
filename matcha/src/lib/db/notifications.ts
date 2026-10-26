@@ -35,7 +35,14 @@ export async function createNotification(
   if (await isNotificationMuted(targetId, senderId, client)) return false;
 
   // Handle cleanup rules before insertion
-  if (type === "like" || type === "match") {
+  if (type === "view") {
+    // A new visit from the same user replaces the previous one
+    await executeQuery(
+      `DELETE FROM notifications WHERE target_id = $1 AND sender_id = $2 AND type = 'view';`,
+      [targetId, senderId],
+      client
+    );
+  } else if (type === "like" || type === "match") {
     // Like/match should replace prior view or unlike notifications between the same users.
     await deleteNotificationsBetweenUsers(targetId, senderId, ["unlike", "view"], client);
   } else if (type === "unlike") {
