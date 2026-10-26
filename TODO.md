@@ -12,12 +12,14 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
 - [x] 🟢 **Mots de passe en clair en DB** : le seed insère `faker.internet.password()` sans hash.
   - [matcha/src/lib/seed-users.ts](matcha/src/lib/seed-users.ts) (l. 55)
   - Corrigé : mot de passe commun `SEED_PASSWORD` (`.env`), hashé une fois avec bcrypt et réutilisé pour tous les profils seedés → ils sont désormais connectables (cf. README).
-- [ ] 🟢 **Seed : 20 profils au lieu de ≥ 500** (`MIN_USERS = 20`).
-  - [ ] 🟡 Rendre le seed robuste sans réseau / sans clé Pixabay (actuellement une erreur de téléchargement interrompt la boucle). `userCount` est une string (COUNT) comparée à un nombre ; les ids d'intérêts sont supposés contigus `1..N`.
+- [x] 🟢 **Seed : 20 profils au lieu de ≥ 500** (`MIN_USERS = 20`).
+  - [x] 🟡 Rendre le seed robuste sans réseau / sans clé Pixabay (actuellement une erreur de téléchargement interrompt la boucle). `userCount` est une string (COUNT) comparée à un nombre ; les ids d'intérêts sont supposés contigus `1..N`.
+  - Corrigé : `MIN_USERS = 500`, seed en ~1,5 s. Les photos Pixabay (100 par genre) sont téléchargées une seule fois en parallèle dans `matcha/.seed-cache/` (gitignoré, survit à `make vdown`) puis partagées par les profils ; un téléchargement raté est ignoré, sans clé ni cache les profils n'ont pas de photo. Utilisateurs, intérêts (ids lus en base) et photos sont insérés en masse (`unnest`) dans une seule transaction ; chaque photo n'est envoyée qu'une fois (table temporaire) puis copiée par Postgres. Les profils seedés sont `is_verified`.
 - [x] 🟡 **Pas de username** : inscription et login se font par email, le sujet impose un username (schéma, signup, login, validateurs, seed, UI).
   - Corrigé : colonne `username` (`^[A-Za-z0-9_]{3,20}$`, unique insensible à la casse), demandée au signup, login par username **ou** email, modifiable dans le profil, affichée en `@username` sur les cards/chat et utilisée dans les notifications. Nécessite `make vdown && make`.
-- [ ] 🟢 **`is_verified` jamais vérifié au login** → un compte non vérifié peut se connecter.
+- [x] 🟢 **`is_verified` jamais vérifié au login** → un compte non vérifié peut se connecter.
   - [matcha/src/lib/db/users.ts](matcha/src/lib/db/users.ts) (`loginUser`)
+  - Corrigé : `POST /api/login` renvoie 403 si le compte n'est pas vérifié (testé après le mot de passe, pour ne pas révéler l'existence du compte). Si le lien d'inscription a expiré, un nouveau est envoyé (`sendVerificationEmail`, partagé avec le signup) au lieu de laisser le compte bloqué. Profils seedés et `03-seed.sql` créés vérifiés. Nécessite `make vdown && make dev`.
 - [x] 🟢 **Changement d'email sans confirmation** via `POST /api/profile` (`email` est dans les champs autorisés de `updateUser`), sans contrôle d'unicité (→ 500). Retirer `email` des champs modifiables directement. `birthdate`, `latitude`, `longitude`, `city`, `country` passent aussi sans validation (le `default` du validateur accepte tout).
   - [matcha/src/app/api/profile/route.ts](matcha/src/app/api/profile/route.ts), [matcha/src/lib/validators/serverValidator.ts](matcha/src/lib/validators/serverValidator.ts)
   - `change-request` ne valide pas non plus le format ni l'unicité de `new_email`.
@@ -127,8 +129,10 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - Corrigé : le script `typecheck` lance `next typegen` avant `tsc --noEmit`, ce qui régénère `.next/types` à partir des routes existantes. Vérifié en créant puis en supprimant une route : `tsc` seul échoue, `next typegen && tsc` passe.
 - [x] 🟢 Géoloc IP via un service tiers appelé depuis le navigateur ([Geoloc.tsx](matcha/src/components/geoloc/Geoloc.tsx)) : un bloqueur de pub → erreur console. La faire côté serveur avec `X-Real-IP` (déjà transmis par nginx). La demande de géoloc se déclenche aussi à chaque chargement.
   - Corrigé : `lib/geoip.ts` localise l'IP `X-Real-IP` côté serveur (ipwhois, timeout 5 s, ville / pays validés comme le profil ; IP privée en dev → IP publique du serveur). Le repli du hook `useGeolocation` appelle `GET /api/me/location` au lieu du service tiers. Au login, un utilisateur sans localisation reçoit celle de son IP (localisé même s'il refuse). La demande de géoloc ne part plus qu'au clic (le composant `Geoloc.tsx` n'existe plus). Les appels Nominatim du navigateur (reverse et recherche de ville) passent aussi par le serveur depuis la refonte de l'onglet Geolocation (§5).
-- [ ] 🟢 Docker : mode dev uniquement (`npm install && tsx watch` à chaque démarrage), `node:alpine` non épinglé, port Postgres exposé.
-- [ ] 🟢 `productionBrowserSourceMaps: true` dans `next.config.ts`.
+- [x] 🟢 Docker : mode dev uniquement (`npm install && tsx watch` à chaque démarrage), `node:alpine` non épinglé, port Postgres exposé.
+  - Corrigé : `make` lance la stack d'évaluation (`matcha/Dockerfile` : `npm ci` + `next build` à la construction, `NODE_ENV=production`, `npm start` = serveur custom), sans port Postgres ni Adminer. `make dev` ajoute `docker-compose.dev.yml` (sources montées + `tsx watch`, port 5432, Adminer, SMTP 1025). Image `node:26.11.1-alpine3.24` épinglée. Les deux modes partagent la base et le cache de photos du seed.
+- [x] 🟢 `productionBrowserSourceMaps: true` dans `next.config.ts`.
+  - Corrigé : option retirée, l'image de prod ne contient aucun `.map` dans `.next/static`.
 
 ## 5. UI
 
