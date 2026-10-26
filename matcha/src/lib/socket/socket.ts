@@ -5,7 +5,7 @@ import type { Server as HttpServer } from "http";
 // @ts-expect-error -- cookie comes with socket.io and ships without type declarations
 import cookie from "cookie";
 import { getSessionExpiry, getSessionUser } from "@/lib/db/session";
-import { ChatMsgEvent, NotifPayload, PresencePayload, PublicUser, RelationChangedPayload, SocketUser } from "@/lib/types";
+import { ChatMsgEvent, PresencePayload, PublicUser, RelationChangedPayload, SocketUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { updateLastLogin } from "../db/users";
 import { getMatchIds, markConversationAsRead } from "../db/chat";
@@ -37,11 +37,6 @@ async function sendPresence(userId: string, online: boolean) {
   }
 }
 
-
-const system: SocketUser = {
-  id: "System",
-  first_name: "System",
-}
 
 /***
  * Strip a user down to what other users may see through sockets
@@ -175,13 +170,6 @@ export async function initSocket(httpServer: HttpServer) {
     if (firstTab) sendPresence(userId, true).catch((err) => console.error("Failed to send presence:", err));
     // Also written on connection: if the server stops, the disconnect never writes it
     updateLastLogin(userId).catch((err) => console.error("Failed to update last login:", err));
-
-    const welcome: NotifPayload = {
-      msg: `Hi ${socket.data.user.first_name}`,
-      from: system,
-    }
-
-    socket.emit("notif", welcome)
 
     // Close the socket when its session expires (setTimeout delays are capped at 2^31 - 1 ms, ~24 days)
     const expiry = setTimeout(

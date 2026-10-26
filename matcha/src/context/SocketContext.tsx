@@ -136,9 +136,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       case "message":
         toast(payload.from.first_name + " messaged you !");
         break;
-      default:
-        toast.success(payload.msg);
-        break;
     }
     await fetchNotifications();
   }, [fetchNotifications]);
