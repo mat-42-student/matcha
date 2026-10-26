@@ -1,8 +1,5 @@
-import { readFileSync } from "node:fs";
-import { existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
-
-const commonPasswords = new Set<string>();
 
 const LEET_CHAR_MAP: Record<string, string> = {
   "0": "o",
@@ -16,41 +13,29 @@ const LEET_CHAR_MAP: Record<string, string> = {
   "!": "i",
 };
 
-try {
+/***
+ * Load a word list from src/data, one lowercase entry per line.
+ * Throws if the file is missing: a silently disabled check would let weak passwords through.
+ */
+function loadList(fileName: string): Set<string> {
   const candidates = [
-    path.resolve(process.cwd(), "src/data/top500-worst-password-ever.txt"),
-    path.resolve(process.cwd(), "matcha/src/data/top500-worst-password-ever.txt"),
-    new URL("../../data/top500-worst-password-ever.txt", import.meta.url),
+    path.resolve(process.cwd(), "src/data", fileName),
+    path.resolve(process.cwd(), "matcha/src/data", fileName),
   ];
+  const source = candidates.find((candidate) => existsSync(candidate));
+  if (!source) throw new Error(`Password blacklist not found: ${fileName}`);
 
-  const source = candidates.find((candidate) => {
-    if (candidate instanceof URL) {
-      try {
-        readFileSync(candidate, "utf8");
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    return existsSync(candidate);
-  });
-
-  if (!source) {
-    throw new Error("Common password file not found");
+  const list = new Set<string>();
+  for (const line of readFileSync(source, "utf8").split(/\r?\n/)) {
+    const entry = line.trim().toLowerCase();
+    if (entry) list.add(entry);
   }
-
-  const contents = readFileSync(source, "utf8");
-
-  for (const line of contents.split(/\r?\n/)) {
-    const password = line.trim().toLowerCase();
-    if (password) {
-      commonPasswords.add(password);
-    }
-  }
-} catch (error) {
-  console.warn("Unable to load common password blacklist", error);
+  return list;
 }
+
+const commonPasswords = loadList("top500-worst-password-ever.txt");
+// ~9500 most frequent English words (3 letters or more), from google-10000-english
+const commonEnglishWords = loadList("common-english-words.txt");
 
 function normalizeLeet(value: string): string {
   return value
@@ -107,4 +92,18 @@ export function isCommonPassword(password: string): boolean {
   }
 
   return commonPasswords.has(value) || isCloseVariant(value);
+}
+
+/***
+ * True when the letters of the password spell a common English word, leet included:
+ * "Kitchen123", "123Elephant!", "K1tch3n!"
+ */
+export function isCommonEnglishWord(password: string): boolean {
+  const value = password.trim().toLowerCase();
+  // Digits and symbols around the word are padding, not leet: "K1tch3n!" -> "k1tch3n" -> "kitchen"
+  const core = value.replace(/^[^a-z]+|[^a-z]+$/g, "");
+
+  return [value, normalizeLeet(value), normalizeLeet(core)]
+    .map(lettersOnly)
+    .some((letters) => commonEnglishWords.has(letters));
 }

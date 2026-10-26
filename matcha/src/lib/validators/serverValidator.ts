@@ -1,6 +1,6 @@
 // matcha/src/lib/validators/serverValidator.ts
 
-import { isCommonPassword } from "./commonPasswords";
+import { isCommonEnglishWord, isCommonPassword } from "./commonPasswords";
 
 export function isValidEmail(email: string): boolean {
   return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -170,6 +170,7 @@ export function validatePassword(password: string): string[] {
   if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
   if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number");
   if (isCommonPassword(password)) errors.push("Password is too common");
+  else if (isCommonEnglishWord(password)) errors.push("Password must not be a common English word");
 
   return errors;
 }
