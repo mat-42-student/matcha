@@ -7,7 +7,7 @@ import {
   countUserPictures,
   MAX_PICTURES,
 } from "@/lib/db/pictures";
-import { MAX_IMAGE_SIZE, detectImageMimeType } from "@/lib/validators/imageValidator";
+import { MAX_IMAGE_SIZE, validateImage } from "@/lib/validators/imageValidator";
 
 export async function GET() {
   try {
@@ -51,10 +51,10 @@ export async function POST(req: Request) {
       return tooMany();
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const mimeType = detectImageMimeType(buffer);
+    const mimeType = validateImage(buffer);
     if (!mimeType)
       return NextResponse.json(
-        { error: "Only JPEG, PNG and WebP pictures are allowed." },
+        { error: "Only complete JPEG, PNG and WebP pictures are allowed." },
         { status: 415 }
       );
 
