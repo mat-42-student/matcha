@@ -216,7 +216,8 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - [matcha/src/lib/db/users.ts](matcha/src/lib/db/users.ts) (l. 97, 118, 160)
   - Corrigé : `normalizeEmail` (trim + minuscules) dans signup, `change-request` et `password-request` ; `createUser` / `updateUserEmail` stockent en minuscules ; `isEmailUsed`, `getUserByEmail` et le login par email comparent `lower(email) = lower($1)`. Index unique `users_email_lower_idx` sur `lower(email)` dans `01-matcha.sql` → nécessite `make vdown && make`.
 - [ ] 🟢 **Erreurs réseau non gérées côté client** (promesse rejetée → console) : [Search.tsx](matcha/src/components/browse/Search.tsx) (l. 61-66), [reset-request/page.tsx](matcha/src/app/auth/reset-request/page.tsx) (l. 16-29) ; le logout ne vérifie pas `res.ok` ([Header.tsx](matcha/src/components/header/Header.tsx) l. 16-21).
-- [ ] 🟢 **Profil incomplet bloqué seulement en UI** : `/api/users/compatible`, `/api/search` et `/api/match/[userId]/views` ne vérifient pas que l'appelant a un profil complet (un appel direct peut générer des visites). Helper `requireCompleteUser()` → 403. Au passage, `!user.latitude` traite 0 comme manquant ([profileCompletion.ts](matcha/src/lib/profileCompletion.ts) l. 25, 41).
+- [x] 🟢 **Profil incomplet bloqué seulement en UI** : `/api/users/compatible`, `/api/search` et `/api/match/[userId]/views` ne vérifient pas que l'appelant a un profil complet (un appel direct peut générer des visites). Helper `requireCompleteUser()` → 403. Au passage, `!user.latitude` traite 0 comme manquant ([profileCompletion.ts](matcha/src/lib/profileCompletion.ts) l. 25, 41).
+  - Corrigé : `requireCompleteUser()` dans [auth.ts](matcha/src/lib/auth.ts) (401 sans session, 403 `{ error, missing }` si `analyzeProfileCompletion` signale un champ requis manquant), utilisé par les 3 routes. Localisation testée avec `!= null`.
 
 ### 6.3 Mineur
 

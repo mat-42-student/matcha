@@ -22,7 +22,9 @@ export async function analyzeProfileCompletion(user: PublicUser | null): Promise
   const missingOptional: string[] = [];
 
   if (!user.gender) missingRequired.push("Gender not specified");
-  if (!user.latitude || !user.longitude)
+  // 0 is a valid coordinate (equator, Greenwich meridian)
+  const hasLocation = user.latitude != null && user.longitude != null;
+  if (!hasLocation)
     missingRequired.push("Location missing");
   // required criteria are mirrored in compatible_users_from (init-db/01-matcha.sql)
   if (!Array.isArray(pictures) || pictureCount < 1)
@@ -38,7 +40,7 @@ export async function analyzeProfileCompletion(user: PublicUser | null): Promise
   const filledCriteria = [
     !!user.gender,
     !!user.bio,
-    !!user.latitude && !!user.longitude,
+    hasLocation,
     Array.isArray(pictures) && pictureCount >= 1,
     Array.isArray(user.interests) && user.interests.length >= 3,
     Array.isArray(user.interests) && user.interests.length >= 5,

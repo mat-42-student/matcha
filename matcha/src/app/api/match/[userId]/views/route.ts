@@ -1,6 +1,6 @@
 // matcha/src/app/api/match/[userId]/views/route.ts
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireCompleteUser } from "@/lib/auth";
 import { recordProfileView } from "@/lib/db/views";
 import { getFame } from "@/lib/db/users";
 import { send, toSocketUser } from "@/lib/socket/socket";
@@ -17,7 +17,8 @@ export async function POST(
 ) {
   try {
     const { userId } = await context.params;
-    const viewer = await requireUser();
+    // an incomplete profile cannot browse, so it cannot visit either
+    const viewer = await requireCompleteUser();
     if (viewer instanceof NextResponse) return viewer;
 
     if (!isValidUuid(userId)) {

@@ -1,6 +1,6 @@
 // matcha/src/app/api/search/route.ts
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireCompleteUser } from "@/lib/auth";
 import { searchCompatibleUsers } from "@/lib/db/search";
 import { rankUsers } from "@/lib/matching";
 import { validateSearchCriteria } from "@/lib/validators/serverValidator";
@@ -8,7 +8,7 @@ import { SearchCriteria } from "@/lib/types";
 
 export async function POST(req: Request) {
   try {
-    const me = await requireUser();
+    const me = await requireCompleteUser();
     if (me instanceof NextResponse) return me;
 
     let body: unknown;
