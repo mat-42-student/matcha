@@ -256,7 +256,8 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - Corrigé : 🔺 en `type="button"` ; « 500+ km » n'envoie plus de `distance` (pas de limite) ; `searchCompatibleUsers` teste `distance !== undefined` → « 0 km » garde les profils à moins de 0,5 km (distance arrondie au km) ; le résumé replié (devenu un `<button>`) n'affiche que les critères cochés, « All profiles » sinon ; une recherche sans critère envoie `{}` et affiche tous les profils compatibles.
 - [x] 🟢 **HTML** : `<main>` imbriqués dans celui du layout → `div` / `section` ([profile/page.tsx](matcha/src/app/profile/page.tsx) l. 36, [profile/password/page.tsx](matcha/src/app/profile/password/page.tsx) l. 34, [Browse.tsx](matcha/src/components/browse/Browse.tsx) l. 46).
   - Corrigé : `div` dans les deux pages profil, `section` dans `Browse` ; il ne reste que le `<main>` du layout (aucune autre occurrence).
-- [ ] 🟢 **Géoloc** dépendante de services externes (ipwhois, Nominatim, Photon) : à tester en conditions d'éval en refusant la géoloc du navigateur. « Localisation » de la recherche avancée = rayon autour de soi uniquement (probablement accepté).
+- [x] 🟢 **Géoloc** dépendante de services externes (ipwhois, Nominatim, Photon) : à tester en conditions d'éval en refusant la géoloc du navigateur. « Localisation » de la recherche avancée = rayon autour de soi uniquement (probablement accepté).
+  - Vérifié le 2026-10-26 : ipwhois, Photon et Nominatim répondent depuis le conteneur (tous appelés côté serveur, compatibles avec la CSP `connect-src 'self'`) ; `POST /api/me/location` sans position (cas du refus / timeout 8 s du navigateur) renvoie bien la localisation par IP. Reste à refaire une fois dans le navigateur en refusant la permission, et à prévoir que la recherche de ville est indisponible si Photon tombe.
 
 ## Ordre conseillé
 
