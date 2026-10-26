@@ -32,10 +32,11 @@ export default function ProfileTabs({
   const [completion, setCompletion] = useState(initialCompletion);
 
   const refreshCompletion = useCallback(async () => {
-    const res = await fetch("/api/me/completion");
-    if (res.ok) {
-      const data = await res.json();
-      setCompletion(data);
+    try {
+      const res = await fetch("/api/me/completion");
+      if (res.ok) setCompletion(await res.json());
+    } catch {
+      // best effort: the bar keeps its previous value if the request fails
     }
   }, []);
 

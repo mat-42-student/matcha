@@ -15,20 +15,25 @@ export default function Search() {
   const [searchId, setSearchId] = useState(0);
 
   async function handleSearch(criteria: SearchCriteria) {
-    // no criteria = every compatible profile
-    const res = await fetch("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(criteria),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      toast.error(data.error ?? "Search failed");
+    try {
+      // no criteria = every compatible profile
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(criteria),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(data.users)) {
+        toast.error(data.error ?? "Search failed");
+        setResults([]);
+        return;
+      }
+      setResults(data.users);
+      setSearchId((id) => id + 1);
+    } catch {
+      toast.error("Network error, please try again");
       setResults([]);
-      return;
     }
-    setResults(data.users);
-    setSearchId((id) => id + 1);
   }
 
   return (

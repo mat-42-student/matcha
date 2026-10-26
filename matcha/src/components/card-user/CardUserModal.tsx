@@ -57,10 +57,15 @@ export default function CardUserModal({
 
   async function reportUser() {
     if (!confirm("Report this user as a fake account ? They will also be blocked.")) return;
-    const res = await fetch(`/api/users/${user.id}/report`, { method: 'POST' });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      toast.error(data.error ?? "Something went wrong");
+    try {
+      const res = await fetch(`/api/users/${user.id}/report`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Something went wrong");
+        return;
+      }
+    } catch {
+      toast.error("Network error, please try again");
       return;
     }
     toast.success("User reported");
@@ -71,10 +76,17 @@ export default function CardUserModal({
 
   async function blockUser() {
     if (!confirm("Do you really want to block this user ?")) return;
-    const res = await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
-    if (res.ok) {
-      const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
-      updateUser(updatedUser);
+    try {
+      const res = await fetch(`/api/match/${user.id}/block`, { method: 'POST' });
+      if (res.ok) {
+        const updatedUser: PublicUser = { ...user, likeStatus: 'block' };
+        updateUser(updatedUser);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Something went wrong");
+      }
+    } catch {
+      toast.error("Network error, please try again");
     }
     onClose();
   }

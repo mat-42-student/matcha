@@ -13,20 +13,24 @@ export default function ResetRequestPage() {
 		setLoading(true);
 		setMessage(null);
 
-		const res = await fetch("/api/e-mail/password-request", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ email }),
-		});
+		try {
+			const res = await fetch("/api/e-mail/password-request", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email }),
+			});
 
-		if (res.ok) {
-			setMessage("A reset password email has been sent.");
-		} else {
-			const data = await res.json();
-			setMessage(data.error || "Error during e-mail sending.");
+			if (res.ok) {
+				setMessage("A reset password email has been sent.");
+			} else {
+				const data = await res.json().catch(() => ({}));
+				setMessage(data.error || "Error during e-mail sending.");
+			}
+		} catch {
+			setMessage("Network error, please try again.");
+		} finally {
+			setLoading(false);
 		}
-
-		setLoading(false);
 	};
 
 	return (

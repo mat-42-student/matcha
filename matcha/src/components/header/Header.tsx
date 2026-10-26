@@ -18,7 +18,15 @@ export function Header() {
   async function handleLogout() {
     // closed first: the server closes the session's sockets, which in this tab must not read as "session ended"
     socket?.disconnect();
-    await fetch("/api/logout", { method: "POST", credentials: "include" });
+    try {
+      const res = await fetch("/api/logout", { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Logout failed");
+    } catch {
+      // the session is still alive: stay logged in and get the socket back
+      socket?.connect();
+      toast.error("Logout failed, please try again");
+      return;
+    }
     setMe(null);
     toast.success("Bye 👋");
     router.push("/auth");
