@@ -60,25 +60,22 @@ export default function ChatWindow({
     }
   }
 
-  useEffect(() => {
-    if (!socket || !selectedUser?.id) return;
-
-    socket.emit("chat-mark-read", {
-      senderId: selectedUser.id,
-    });
-  }, [socket, selectedUser?.id]);
-
-  // Tell the server which conversation is open: its messages are then marked read instead of notified
+  // Tell the server which conversation is open (its messages are then marked read instead of notified)
+  // and mark it read
   useEffect(() => {
     if (!socket || !selectedUserId) return;
 
-    const emitActive = () => socket.emit("chat-active-user", { userId: selectedUserId });
+    const openConversation = () => {
+      socket.emit("chat-active-user", { userId: selectedUserId });
+      socket.emit("chat-mark-read", { senderId: selectedUserId });
+    };
 
-    emitActive();
-    // Same client socket on reconnect, but a new one server side that forgot the open conversation
-    socket.on("connect", emitActive);
+    openConversation();
+    // Same client socket on reconnect, but a new one server side that forgot the open conversation,
+    // and messages received while disconnected are unread
+    socket.on("connect", openConversation);
     return () => {
-      socket.off("connect", emitActive);
+      socket.off("connect", openConversation);
       socket.emit("chat-active-user", { userId: null });
     };
   }, [socket, selectedUserId]);
@@ -107,11 +104,11 @@ export default function ChatWindow({
   }, [socket, selectedUserId, meId]);
 
   useEffect(() => {
-    if (!selectedUserId) return;
+    if (!socket || !selectedUserId) return;
     // Ignore the response if the window unmounted in the meantime
     let cancelled = false;
 
-    (async () => {
+    async function loadHistory() {
       try {
         const res = await fetch(`/api/chat/${selectedUserId}`, {
           method: "GET",
@@ -130,12 +127,16 @@ export default function ChatWindow({
       } catch (err) {
         console.error("Could not retrieve messages:", err);
       }
-    })();
+    }
 
+    loadHistory();
+    // Messages sent while disconnected were never pushed: reload the history on reconnect
+    socket.on("connect", loadHistory);
     return () => {
       cancelled = true;
+      socket.off("connect", loadHistory);
     };
-  }, [selectedUserId, meId]);
+  }, [socket, selectedUserId, meId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

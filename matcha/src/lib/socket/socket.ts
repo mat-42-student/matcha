@@ -137,7 +137,8 @@ export async function initSocket(httpServer: HttpServer) {
       next();
     } catch (err) {
       console.error("Socket auth failed:", err);
-      next(new Error("unauthorized"));
+      // not "unauthorized": the client retries instead of ending the session
+      next(new Error("server error"));
     }
   }
 

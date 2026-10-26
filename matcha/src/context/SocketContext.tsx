@@ -28,6 +28,9 @@ interface SocketContextType {
   lastSeen: Record<string, Date>;
 }
 
+// id of the "connection lost" toast, replaced instead of stacked on each retry
+const CONNECTION_TOAST = "socket-connection";
+
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   like: null,
@@ -174,19 +177,29 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!meId) return;
 
+    // Retry forever (server restart, network loss), at most every 5 s
     const s = io(window.location.origin, {
       path: "/socket.io",
       transports: ["websocket"],
       withCredentials: true,
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
+    let retry: ReturnType<typeof setTimeout> | undefined;
+
+    function endSession() {
+      setMe(null);
+      toast("Your session has ended, please log in again");
+      router.push("/auth");
+    }
 
     // Expose the socket once connected (same object on reconnect, so no extra render)
     // and (re)load notifications and matches with their online status,
     // which also catches up on what was missed while disconnected
     s.on("connect", () => {
+      toast.dismiss(CONNECTION_TOAST);
       setSocket(s);
       fetchNotifications();
       s.emit("get-chat-users");
@@ -194,10 +207,17 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     // Closed by the server: the session ended (logout in another tab, password reset, expiry).
     // Socket.io does not reconnect after this reason.
     s.on("disconnect", (reason) => {
-      if (reason !== "io server disconnect") return;
-      setMe(null);
-      toast("Your session has ended, please log in again");
-      router.push("/auth");
+      if (reason === "io server disconnect") return endSession();
+      // the client side reasons (logout, unmount) remove the listeners first
+      toast.loading("Connection lost, reconnecting...", { id: CONNECTION_TOAST });
+    });
+    s.on("connect_error", (err) => {
+      // network error or server down: socket.io retries by itself
+      if (s.active) return;
+      // refused by the auth middleware: the session is no longer valid
+      if (err.message === "unauthorized") return endSession();
+      // refused for another reason (server error during the auth): socket.io gives up, retry later
+      retry = setTimeout(() => s.connect(), 5000);
     });
     s.on("notif", handleNotif);
     // a notification was removed or read server side (in any tab)
@@ -233,6 +253,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     // Runs on logout (meId becomes undefined), on a user change and on unmount:
     // nothing of the previous user may stay visible to the next one
     return () => {
+      clearTimeout(retry);
+      toast.dismiss(CONNECTION_TOAST);
       s.removeAllListeners();
       s.disconnect();
       setSocket(null);
