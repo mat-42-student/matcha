@@ -172,8 +172,9 @@ export async function initSocket(httpServer: HttpServer) {
     socket.on("disconnect", () => handleDisconnect(socket));
     on<ChatMsgEvent>(socket, "chat-msg", (payload) => handleChatMessage(toSocketUser(socket.data.user), payload));
     on<{ senderId: string }>(socket, "chat-mark-read", async (payload) => {
-      if (typeof payload?.senderId !== "string") return;
-      await markConversationAsRead(payload.senderId, userId);
+      if (typeof payload?.senderId !== "string" || !isValidUuid(payload.senderId)) return;
+      // every tab of the user reloads its bell, not only the one reading
+      if (await markConversationAsRead(payload.senderId, userId)) send(userId, "notifications-changed", null);
       await sendUnreadMessagesCount(userId);
     });
     on<{ userId: string | null }>(socket, "chat-active-user", (payload) => {

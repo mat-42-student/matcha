@@ -1,5 +1,6 @@
 import { PublicUser, SocketUser, UnreadMessages } from '@/lib/types';
 import { executeQuery } from './db-utils';
+import { deleteMessageNotification } from './notifications';
 
 export interface ChatMessage {
   id: number;
@@ -73,13 +74,18 @@ export async function storeMessage(sender_id: string, recipient_id: string, mess
   await executeQuery<ChatMessage>(query, [sender_id, recipient_id, message]);
 }
 
-export async function markConversationAsRead(senderId: string, recipientId: string) {
+/**
+ * Mark the messages of senderId to recipientId as read, and drop the matching "message" notification.
+ * Returns true when a notification was deleted: the recipient's bell must then be refreshed.
+ */
+export async function markConversationAsRead(senderId: string, recipientId: string): Promise<boolean> {
   const query = `
     UPDATE chat
     SET is_read = true
     WHERE sender_id = $1 AND recipient_id = $2 AND is_read = false;
   `;
   await executeQuery(query, [senderId, recipientId]);
+  return deleteMessageNotification(recipientId, senderId);
 }
 
 // Fetch conversation between two users
@@ -93,6 +99,7 @@ export async function getConversation(me: string, user: string): Promise<ChatMes
   `;
   const result = await executeQuery<ChatMessage>(query, [me, user]);
 
+  // the "message" notification is dropped by the chat-mark-read socket event, which also refreshes the bell
   const markReadQuery = `
     UPDATE chat
     SET is_read = true

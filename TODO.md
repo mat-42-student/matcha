@@ -187,7 +187,7 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - [matcha/src/components/card-user/CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) (l. 30), [matcha/src/components/card-user/LikeButton.tsx](matcha/src/components/card-user/LikeButton.tsx) (l. 12-18)
 - [x] 🟢 **La modale de profil n'affiche pas tout** (« toutes les infos sauf email et mot de passe ») : ni orientation (`sex_pref` absent de `compatible_users_from`), ni tags, ni distance (présents sur la carte seulement), nom réduit à l'initiale (`LEFT(last_name, 1)`, à arbitrer).
   - [matcha/src/components/card-user/CardUserModal.tsx](matcha/src/components/card-user/CardUserModal.tsx) (l. 87-134), [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 166, 273-304)
-- [ ] 🟢 **Lire une conversation n'efface pas la notif « message »** de la cloche (`getConversation` et `chat-mark-read` ne touchent pas `notifications`).
+- [x] 🟢 **Lire une conversation n'efface pas la notif « message »** de la cloche (`getConversation` et `chat-mark-read` ne touchent pas `notifications`).
   - [matcha/src/lib/db/chat.ts](matcha/src/lib/db/chat.ts) (l. 74-90), [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts)
 - [ ] 🟡 **Pas de statut lu / non lu sur les notifications** : pas de colonne `is_read`, le badge compte toutes les notifs, seule la suppression « lit ». Colonne `is_read` + marquer comme lu à l'ouverture de la cloche.
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 131-138), [matcha/src/components/header/NotificationBell.tsx](matcha/src/components/header/NotificationBell.tsx) (l. 23)

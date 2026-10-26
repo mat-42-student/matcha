@@ -24,11 +24,7 @@ export async function createNotification(
     await deleteAllNotificationsBetweenUsers(targetId, senderId, client);
   } else if (type === "message") {
     // Keep a single message notification per conversation: the latest one
-    await executeQuery(
-      `DELETE FROM notifications WHERE target_id = $1 AND sender_id = $2 AND type = 'message';`,
-      [targetId, senderId],
-      client
-    );
+    await deleteMessageNotification(targetId, senderId, client);
   }
 
   // Create the new notification
@@ -38,6 +34,23 @@ export async function createNotification(
   `;
 
   await executeQuery(query, [targetId, senderId, type, message], client);
+}
+
+/**
+ * Delete the "message" notification of senderId in the bell of targetId (conversation read).
+ * Returns true when a row was deleted.
+ */
+export async function deleteMessageNotification(
+  targetId: string,
+  senderId: string,
+  client?: PoolClient
+): Promise<boolean> {
+  const result = await executeQuery(
+    `DELETE FROM notifications WHERE target_id = $1 AND sender_id = $2 AND type = 'message';`,
+    [targetId, senderId],
+    client
+  );
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**

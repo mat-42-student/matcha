@@ -175,6 +175,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       s.emit("get-chat-users");
     });
     s.on("notif", handleNotif);
+    // a notification was removed server side (conversation read in any tab)
+    s.on("notifications-changed", fetchNotifications);
     s.on("like", setLike);
     s.on("match", setMatch);
     s.on("unlike", setUnlike);
