@@ -8,7 +8,7 @@ import bcrypt from 'bcryptjs';
 import fs from "fs";
 import path from "path";
 
-const MIN_USERS = 200;
+const MIN_USERS = 500;
 const API_KEY = process.env.PIX_KEY;
 // Mot de passe commun à tous les profils seedés (hashé une seule fois dans seed())
 const SEED_PASSWORD = process.env.SEED_PASSWORD || "Matcha-Seed-42";
