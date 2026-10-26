@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { FameRange, SearchCriteria } from "@/lib/types";
 
+// last step of the distance slider, shown as "500+ km" and sent as no limit
+const MAX_DISTANCE = 500;
+const distanceLabel = (d: number) => (d >= MAX_DISTANCE ? `${MAX_DISTANCE}+ km` : `${d} km`);
+
 export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCriteria) => void }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -74,7 +78,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
     e.preventDefault();
     if (fameInvalid || ageInvalid) return;
     const criteria: SearchCriteria = {};
-    if (useDistance) criteria.distance = distance;
+    if (useDistance && distance < MAX_DISTANCE) criteria.distance = distance;
     if (useAge) criteria.ageRange = ageRange;
     if (useInterests) {
       criteria.interests = interestsMode;
@@ -86,23 +90,28 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
   }
 
   if (collapsed) {
-    const displayedInterests =
-    interestsMode === "custom"
-      ? customInterests.slice(0, 5)
-      : [];
+    // only the criteria that were actually sent with the search
+    const interestsLabel = !useInterests
+      ? null
+      : interestsMode === "similar"
+        ? "shared interests"
+        : customInterests.length > 0
+          ? customInterests.slice(0, 5).join(", ") + (customInterests.length > 5 ? "…" : "")
+          : null;
+    const hasCriteria = useDistance || useAge || useFame || interestsLabel !== null;
 
     return (
-      <div
-        className="p-3 bg-blue-50 border rounded flex items-center text-sm text-black"
-        onClick={() => setCollapsed(!collapsed)}
+      <button
+        type="button"
+        className="w-full p-3 bg-blue-50 border rounded flex flex-wrap items-center text-left text-sm text-black"
+        onClick={() => setCollapsed(false)}
       >
-        <span className="mr-2">📍 {distance === 500 ? "500+ km" : `${distance} km`}</span>
-        <span className="mr-2">🎂 {ageRange[0]} - {ageRange[1]} </span>
-        <span className="mr-2">⭐ {fameLabel()}</span>
-        {interestsMode === "custom" && displayedInterests.length > 0 && (
-          <span className="mr-2">🎯 {displayedInterests.join(", ")}</span>
-        )}
-      </div>
+        {useDistance && <span className="mr-2">📍 {distanceLabel(distance)}</span>}
+        {useAge && <span className="mr-2">🎂 {ageRange[0]} - {ageRange[1]}</span>}
+        {useFame && <span className="mr-2">⭐ {fameLabel()}</span>}
+        {interestsLabel && <span className="mr-2">🎯 {interestsLabel}</span>}
+        {!hasCriteria && <span className="mr-2">All profiles</span>}
+      </button>
     );
   }
 
@@ -112,7 +121,7 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
       className="space-y-6 p-4 max-w-md mx-auto bg-white rounded-2xl text-black"
     >
       <div className="flex justify-between">
-        <button onClick={() => setCollapsed(!collapsed)}>🔺</button>
+        <button type="button" onClick={() => setCollapsed(true)} aria-label="Collapse search">🔺</button>
         <span>Advanced search</span>
       </div>
       {/* Distance */}
@@ -127,14 +136,14 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: SearchCr
         <input
           type="range"
           min="0"
-          max="500"
+          max={MAX_DISTANCE}
           step="5"
           value={distance}
           onChange={(e) => setDistance(Number(e.target.value))}
           className="flex-1"
           disabled={!useDistance}
         />
-        <span className="text-sm ml-2">{distance === 500 ? "500+ km" : `${distance} km`}</span>
+        <span className="text-sm ml-2">{distanceLabel(distance)}</span>
       </div>
 
       {/* Age */}

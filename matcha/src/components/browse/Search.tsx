@@ -15,10 +15,7 @@ export default function Search() {
   const [searchId, setSearchId] = useState(0);
 
   async function handleSearch(criteria: SearchCriteria) {
-    if (Object.keys(criteria).length === 0) {
-      setResults([]);
-      return;
-    }
+    // no criteria = every compatible profile
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

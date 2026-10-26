@@ -25,8 +25,8 @@ export async function searchCompatibleUsers(
 
   const params: (string | string[] | number | number[])[] = [me.id, REPORT_THRESHOLD];
 
-  // Distance filter (km)
-  if (distance) {
+  // Distance filter (km) ; 0 keeps profiles in the same spot (distance is rounded to the km)
+  if (distance !== undefined) {
     query += ` AND c.distance <= $${params.length + 1}`;
     params.push(distance);
   }
