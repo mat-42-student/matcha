@@ -25,11 +25,7 @@ export default function ChatCardUser({ user }: { user: PublicUser }) {
         <div>{user.fame} ⭐</div>
         <div>{user.city} 🏠</div>
 
-        <OnlineStatus
-          userId={user.id}
-          lastLogin={user.last_login}
-          className="justify-end mt-1 text-sm"
-        />
+        <OnlineStatus userId={user.id} className="justify-end mt-1 text-sm" />
       </div>
     </div>
   );

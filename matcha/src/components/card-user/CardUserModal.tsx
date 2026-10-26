@@ -91,7 +91,7 @@ export default function CardUserModal({
             <span className="text-sm text-gray-400"> ({user.gender}) </span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
             <div className="text-xs text-gray-500">@{user.username}</div>
-            <OnlineStatus userId={user.id} lastLogin={user.last_login} className="text-xs mt-1" />
+            <OnlineStatus userId={user.id} className="text-xs mt-1" />
           </div>
           <span className="text-sm text-gray-600" title="Fame">
             ⭐{user.fame}

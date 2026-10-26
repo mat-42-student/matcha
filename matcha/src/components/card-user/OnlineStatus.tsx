@@ -4,18 +4,20 @@
 import { useSocket } from "@/context/SocketContext";
 
 /**
- * "Online" while the user has a socket open, otherwise the date of their last connection
+ * "Online" while a match has a socket open, otherwise the date of their last connection.
+ * Renders nothing for a user who is not a match: online status is only shared between matches.
  */
 export default function OnlineStatus({
   userId,
-  lastLogin,
   className = "",
 }: {
   userId: string;
-  lastLogin?: string | Date | null;
   className?: string;
 }) {
-  const { onlineUsers, lastSeen } = useSocket();
+  const { chatUsers, onlineUsers, lastSeen } = useSocket();
+
+  const match = chatUsers.find((u) => u.id === userId);
+  if (!match) return null;
 
   if (onlineUsers.includes(userId)) {
     return (
@@ -26,7 +28,7 @@ export default function OnlineStatus({
     );
   }
 
-  const seen = lastSeen[userId] ?? (lastLogin ? new Date(lastLogin) : null);
+  const seen = lastSeen[userId] ?? (match.last_login ? new Date(match.last_login) : null);
 
   return (
     <span className={`flex items-center gap-1 text-gray-500 ${className}`}>

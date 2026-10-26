@@ -10,14 +10,27 @@ export interface ChatMessage {
 }
 
 export async function getOnlineMatchedUsers(user: string): Promise<PublicUser[]> {
+  // last_login only goes to matches: nobody else may follow when a user connects
   const query = `
-    SELECT uwi.*
+    SELECT uwi.*, u.last_login
     FROM user_matches m
     JOIN users_with_interests uwi ON uwi.id = m.matched_id
+    JOIN users u ON u.id = m.matched_id
     WHERE m.user_id = $1;
   `
   const result = await executeQuery<PublicUser>(query, [user]);
   return result.rows;
+}
+
+/**
+ * Ids of the users matched with userId: the only ones told when userId connects or disconnects
+ */
+export async function getMatchIds(userId: string): Promise<string[]> {
+  const result = await executeQuery<{ matched_id: string }>(
+    `SELECT matched_id FROM user_matches WHERE user_id = $1`,
+    [userId]
+  );
+  return result.rows.map((row) => row.matched_id);
 }
 
 /**

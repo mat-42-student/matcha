@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { io, Socket } from "socket.io-client";
 import { useMe } from "@/context/UserContext";
 import toast from "react-hot-toast";
-import { Notification, NotifPayload, Payload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
+import { Notification, NotifPayload, Payload, PresencePayload, PublicUser, RelationChangedPayload, UnreadMessages } from "@/lib/types";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -20,8 +20,9 @@ interface SocketContextType {
   removeNotification: (notificationId: number) => Promise<void>;
   clearNotifications: () => Promise<void>;
   clearUnreadForUser: (userId: string) => void;
+  // matches only: the server never tells anyone else
   onlineUsers: string[];
-  // users seen going offline since the page loaded: fresher than the last_login loaded with them
+  // matches seen going offline since the page loaded: fresher than the last_login loaded with them
   lastSeen: Record<string, Date>;
 }
 
@@ -166,10 +167,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
 
     // Expose the socket once connected (same object on reconnect, so no extra render)
-    // and (re)load notifications, which also catches up on the ones missed while disconnected
+    // and (re)load notifications and matches with their online status,
+    // which also catches up on what was missed while disconnected
     s.on("connect", () => {
       setSocket(s);
       fetchNotifications();
+      s.emit("get-chat-users");
     });
     s.on("notif", handleNotif);
     s.on("like", setLike);
@@ -189,20 +192,15 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("chat-unread-count", handleChatUnreadMessages);
     s.on("chat-users", handleChatUsers);
 
-    // A user missing from the new list just went offline: last seen now
-    let previousOnline: string[] = [];
-    s.on("online-users", (ids: string[]) => {
-      const now = new Date();
-      const wentOffline = previousOnline.filter((id) => !ids.includes(id));
-      if (wentOffline.length > 0) {
-        setLastSeen((prev) => {
-          const next = { ...prev };
-          for (const id of wentOffline) next[id] = now;
-          return next;
-        });
-      }
-      previousOnline = ids;
-      setOnlineUsers(ids);
+    // Full list of online matches, sent along with chat-users
+    s.on("online-users", setOnlineUsers);
+    // A match connected or disconnected (then last seen now)
+    s.on("presence", ({ userId, online }: PresencePayload) => {
+      setOnlineUsers((prev) => {
+        const others = prev.filter((id) => id !== userId);
+        return online ? [...others, userId] : others;
+      });
+      if (!online) setLastSeen((prev) => ({ ...prev, [userId]: new Date() }));
     });
 
     // Runs on logout (meId becomes undefined) and on unmount

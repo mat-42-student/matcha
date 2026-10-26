@@ -22,6 +22,12 @@ export interface RelationChangedPayload {
   likeStatus: LikeStatus;
 }
 
+// A match connected (first tab) or disconnected (last tab)
+export interface PresencePayload {
+  userId: string;
+  online: boolean;
+}
+
 export type PublicUser = {
   id: string;
   username: string;

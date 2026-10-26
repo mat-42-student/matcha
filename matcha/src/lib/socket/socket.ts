@@ -5,10 +5,10 @@ import type { Server as HttpServer } from "http";
 // @ts-expect-error -- cookie comes with socket.io and ships without type declarations
 import cookie from "cookie";
 import { getSessionUser } from "@/lib/db/session";
-import { ChatMsgEvent, NotifPayload, PublicUser, RelationChangedPayload, SocketUser } from "@/lib/types";
+import { ChatMsgEvent, NotifPayload, PresencePayload, PublicUser, RelationChangedPayload, SocketUser } from "@/lib/types";
 import { handleChatMessage, handleUsersInfo, sendUnreadMessagesCount } from "./chat";
 import { updateLastLogin } from "../db/users";
-import { markConversationAsRead } from "../db/chat";
+import { getMatchIds, markConversationAsRead } from "../db/chat";
 
 type SocketRegistry = Map<string, Set<Socket>>;
 
@@ -22,10 +22,18 @@ globalThis.matchaSocketRegistry = connectedUsers;
 
 let io: Server | undefined = globalThis.matchaSocketServer;
 
-function broadcastOnlineUsers() {
-  const onlineUserIds = Array.from(connectedUsers.keys());
-  if (!io) return;
-  io.emit("online-users", onlineUserIds);
+export function isOnline(userId: string) {
+  return connectedUsers.has(userId);
+}
+
+/***
+ * Tell the connected matches of a user that they came online or went offline.
+ * Online status is private: only matches see it, never the whole server.
+ */
+async function sendPresence(userId: string, online: boolean) {
+  for (const matchId of await getMatchIds(userId)) {
+    send<PresencePayload>(matchId, "presence", { userId, online });
+  }
 }
 
 
@@ -131,10 +139,10 @@ export async function initSocket(httpServer: HttpServer) {
       if (sockets.size === 0){
         connectedUsers.delete(userId);
         updateLastLogin(userId).catch((err) => console.error("Failed to update last login:", err));
-      } 
+        sendPresence(userId, false).catch((err) => console.error("Failed to send presence:", err));
+      }
     }
     console.log(`\x1b[31mUser ${socket.data.user.first_name} disconnected\x1b[0m`);
-    broadcastOnlineUsers();
   }
 
   function addSocket(s: Socket) {
@@ -147,8 +155,9 @@ export async function initSocket(httpServer: HttpServer) {
     // The acting user is always the session user (socket.data.user), never an id sent by the client
     const userId: string = socket.data.user.id;
 
+    const firstTab = !isOnline(userId);
     addSocket(socket);
-    broadcastOnlineUsers();
+    if (firstTab) sendPresence(userId, true).catch((err) => console.error("Failed to send presence:", err));
     // Also written on connection: if the server stops, the disconnect never writes it
     updateLastLogin(userId).catch((err) => console.error("Failed to update last login:", err));
 

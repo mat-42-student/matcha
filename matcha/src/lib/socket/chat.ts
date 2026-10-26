@@ -1,5 +1,5 @@
 import { ChatMsgEvent, MAX_MESSAGE_LENGTH, NotifPayload, Payload, SocketUser, UnreadMessages } from "@/lib/types";
-import { isUserActivelyChattingWith, send } from "./socket";
+import { isOnline, isUserActivelyChattingWith, send } from "./socket";
 import { markConversationAsRead, storeMessage, getOnlineMatchedUsers, getUnreadCountByUsers, getChatPartner } from "../db/chat";
 import { createNotification } from "../db/notifications";
 import { getUserById } from "../db/users";
@@ -33,6 +33,8 @@ export async function handleChatMessage(sender: SocketUser, event: ChatMsgEvent)
 export async function handleUsersInfo(userId: string) {
   const users = await getOnlineMatchedUsers(userId);
   send(userId, "chat-users", users);
+  // online status of matches only, kept up to date by "presence" events
+  send<string[]>(userId, "online-users", users.filter((u) => isOnline(u.id)).map((u) => u.id));
   await sendUnreadMessagesCount(userId);
 }
 
