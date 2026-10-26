@@ -185,7 +185,7 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 181-199)
 - [x] 🟢 **« Il m'a liké » / « connectés » pas clairement affiché** : seulement la couleur de fond de la carte (sans légende) et le libellé du bouton (« Match » se lit comme une action). Badge texte sur la carte et dans la modale.
   - [matcha/src/components/card-user/CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) (l. 30), [matcha/src/components/card-user/LikeButton.tsx](matcha/src/components/card-user/LikeButton.tsx) (l. 12-18)
-- [ ] 🟢 **La modale de profil n'affiche pas tout** (« toutes les infos sauf email et mot de passe ») : ni orientation (`sex_pref` absent de `compatible_users_from`), ni tags, ni distance (présents sur la carte seulement), nom réduit à l'initiale (`LEFT(last_name, 1)`, à arbitrer).
+- [x] 🟢 **La modale de profil n'affiche pas tout** (« toutes les infos sauf email et mot de passe ») : ni orientation (`sex_pref` absent de `compatible_users_from`), ni tags, ni distance (présents sur la carte seulement), nom réduit à l'initiale (`LEFT(last_name, 1)`, à arbitrer).
   - [matcha/src/components/card-user/CardUserModal.tsx](matcha/src/components/card-user/CardUserModal.tsx) (l. 87-134), [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 166, 273-304)
 - [ ] 🟢 **Lire une conversation n'efface pas la notif « message »** de la cloche (`getConversation` et `chat-mark-read` ne touchent pas `notifications`).
   - [matcha/src/lib/db/chat.ts](matcha/src/lib/db/chat.ts) (l. 74-90), [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts)

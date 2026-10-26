@@ -11,6 +11,8 @@ import RelationBadge from "./RelationBadge";
 import { useUsersStore } from "@/context/UsersStore";
 import toast from "react-hot-toast";
 
+const SEX_PREF_LABEL: Record<string, string> = { M: "Men", F: "Women", B: "Men and women" };
+
 export default function CardUserModal({
   mainPic,
   user,
@@ -88,7 +90,7 @@ export default function CardUserModal({
       >
         <div className="flex justify-between items-center mb-2">
           <div>
-            <span className="text-xl text-pink-700 font-semibold">{user.first_name}</span>
+            <span className="text-xl text-pink-700 font-semibold">{user.first_name} {user.last_name}</span>
             <span className="text-sm text-gray-400"> ({user.gender}) </span>
             <span className="text-sm text-gray-600">{user.age} ans</span>
             <div className="text-xs text-gray-500">@{user.username}</div>
@@ -134,8 +136,18 @@ export default function CardUserModal({
           </>
         )}
 
-        <p className="text-gray-700 mt-2">{user.bio}</p>
-        <p className="text-sm text-gray-400">{user.city}</p>
+        <p className="text-gray-700 mt-2 wrap-anywhere">{user.bio}</p>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 mt-3 text-sm">
+          <dt className="text-gray-500">Interested in</dt>
+          <dd className="text-gray-800">{SEX_PREF_LABEL[user.sex_pref] ?? SEX_PREF_LABEL.B}</dd>
+          <dt className="text-gray-500">Location</dt>
+          <dd className="text-gray-800">{user.city} · {user.distance} km</dd>
+        </dl>
+        <ul className="flex flex-wrap gap-1 mt-3">
+          {user.interests.map((i) => (
+            <li key={i} className="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs">#{i}</li>
+          ))}
+        </ul>
 
         <div className="flex justify-between mt-4">
           <LikeButton user={user} />
