@@ -143,9 +143,95 @@ Audit du 2026-10-12. Difficulté : 🟢 < 1 h · 🟡 ~ demi-journée · 🔴 gr
   - [x] Onglet Geolocation : la position du navigateur avait un timeout infini (le bouton pouvait tourner sans fin) → `timeout` 8 s puis repli sur l'IP, position en cache acceptée 10 min. `POST /api/me/location` nomme la position (reverse Nominatim côté serveur, niveau ville) ou localise l'IP, et l'enregistre en un seul appel (remplace le `GET`). Recherche de ville avec suggestions au fil de la frappe (`GET /api/geo/cities`, Photon côté serveur, la charte Nominatim interdit l'autocomplétion), debounce 300 ms, navigation clavier ; choisir une ville l'enregistre directement. `lib/geocoding.ts` remplace `lib/gps.ts` (code mort). Plus aucun appel à un service tiers depuis le navigateur.
     - Limite : les noms hors Latin-1 (ex. Łódź) sont refusés par le `CHECK` SQL de `city` / `country` et n'apparaissent donc pas dans les suggestions.
 
+## 6. Audit du 2026-10-26 (par rapport au sujet)
+
+Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité). ✔ = revérifié à la main dans le code ; « à tester » = soupçon qui demande un test manuel.
+
+### 6.1 Bloquants évaluation
+
+- [ ] 🟢 **Hash bcrypt renvoyé au client** ✔ : `updateUser` fait `UPDATE … RETURNING *` et `POST /api/profile` renvoie `{ success, user: updated }` → `passwd`, `report_count`, `is_verified` visibles dans l'onglet Réseau. Restreindre le `RETURNING` aux colonnes de `my_profile` (ou ne renvoyer que `{ success: true }`). Même `RETURNING *` dans `insertUser`, `updateUserPassword` et `emails.ts` (non renvoyés aujourd'hui, mais à durcir).
+  - [matcha/src/lib/db/users.ts](matcha/src/lib/db/users.ts) (l. 38, 72, 172), [matcha/src/app/api/profile/route.ts](matcha/src/app/api/profile/route.ts) (l. 37), [matcha/src/lib/db/emails.ts](matcha/src/lib/db/emails.ts) (l. 26)
+- [ ] 🟡 **En ligne / dernière connexion absents de la vue d'un profil** ✔ : rien dans `CardUserModal` ni `CardUser`. Seul `ChatCardUser` l'affiche, et `last_login` y vaut toujours `undefined` (absent de `users_with_interests` et de `compatible_users_from`) → « last login: unknown ».
+  - Ajouter `last_login` aux deux, afficher « en ligne » (`onlineUsers`) ou la date dans la modale.
+  - `last_login` n'est écrit qu'à la fermeture du dernier socket ([socket.ts](matcha/src/lib/socket/socket.ts)) : l'écrire aussi à la connexion (un crash serveur ne l'écrit jamais). Les profils seedés gardent la date de création ([seed-users.ts](matcha/src/lib/seed-users.ts)) → en générer une aléatoire.
+  - La valeur côté client reste figée : envoyer `{ userId, lastSeen }` quand un utilisateur passe hors ligne.
+- [ ] 🟡 **Tri et filtres incomplets (IV.3 et IV.4)** ✔ : le sujet exige tri **et** filtre par âge, localisation, fame **et** tags communs. Manquent le tri par tags communs, le filtre fame et le filtre tags communs. Renvoyer `common_tags` depuis `compatible_users_from`.
+  - [matcha/src/components/browse/FilterBar.tsx](matcha/src/components/browse/FilterBar.tsx) (l. 7-45, 131-138), [matcha/src/components/browse/Search.tsx](matcha/src/components/browse/Search.tsx) (réutilise `Browse`)
+- [ ] 🟢 **`chat-active-user` jamais émis par le client** ✔ (correction §1 « message reçu » incomplète) : le serveur l'écoute (`isUserActivelyChattingWith`) mais aucun composant ne l'émet → conversation ouverte : notif DB + cloche + toast à chaque message, message non marqué lu, badge qui s'incrémente. Émettre `{ userId }` au montage de `ChatWindow` et `{ userId: null }` au démontage ; valider l'id (`isValidUuid`) côté serveur.
+  - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (l. 167), [matcha/src/lib/socket/chat.ts](matcha/src/lib/socket/chat.ts) (l. 22), [matcha/src/components/chat/ChatWindow.tsx](matcha/src/components/chat/ChatWindow.tsx)
+- [ ] 🟡 **Responsive mobile** (largeurs ✔, à tester sur écran 375 px) :
+  - Chat : `ChatSidebar` en `w-1/6` sans breakpoint (~62 px) → liste plein écran puis conversation sur mobile ([ChatSidebar.tsx](matcha/src/components/chat/ChatSidebar.tsx) l. 40).
+  - Accueil / recherche : `FilterBar` ouverte par défaut en `w-72` à côté de cartes `w-72` → cartes rognées ; fermée par défaut sous `md` ([FilterBar.tsx](matcha/src/components/browse/FilterBar.tsx) l. 54, 68, [Browse.tsx](matcha/src/components/browse/Browse.tsx)).
+  - `w-96` → `w-full max-w-sm` : [CardUserModal.tsx](matcha/src/components/card-user/CardUserModal.tsx) (l. 84), [SignupForm.tsx](matcha/src/components/forms/SignupForm.tsx) (l. 43).
+- [ ] 🟢 **Page morte `/verify-email`** ✔ : appelle `/api/verify-email` (inexistante) → 404 dans la console + « Erreur réseau ». Le vrai lien pointe vers `/api/e-mail/verify` : supprimer la page.
+  - [matcha/src/app/verify-email/page.tsx](matcha/src/app/verify-email/page.tsx) (l. 23)
+- [ ] 🟡 **Mots anglais courants non refusés** (à tester : `Kitchen123`, `Elephant42`) : seule la liste des 500 pires mots de passe est utilisée. Ajouter une liste de quelques milliers de mots anglais fréquents et refuser un mot de passe dont la partie alphabétique (après normalisation leet) en fait partie. Si le fichier est introuvable, le contrôle est désactivé avec un simple `console.warn` → échouer plutôt.
+  - [matcha/src/lib/validators/commonPasswords.ts](matcha/src/lib/validators/commonPasswords.ts) (l. 19-53, 103-109)
+- [ ] 🟡 **Tags non créables** ✔ (interprétation du sujet, « #vegan, #geek… réutilisables ») : 100 tags figés (`02-interests.sql`), `GET /api/interests` uniquement. `POST /api/interests` (nom validé, sans `#`, unique insensible à la casse, `ON CONFLICT DO NOTHING RETURNING id`) + champ « ajouter un tag » dans `ProfileInterests`.
+  - [matcha/src/app/api/interests/route.ts](matcha/src/app/api/interests/route.ts), [matcha/src/lib/db/interests.ts](matcha/src/lib/db/interests.ts), [matcha/src/components/profile/ProfileInterests.tsx](matcha/src/components/profile/ProfileInterests.tsx)
+
+### 6.2 Bugs visibles en soutenance
+
+- [ ] 🟢 **La proximité n'est pas prioritaire dans le score** : 40 (linéaire sur 1000 km) / 30 fame / 30 tags → un profil à 500 km avec 99 de fame passe devant un voisin à 0 de fame ; dans une même ville la distance ne pèse qu'~1 point. Trier par tranche de distance puis départager, ou poids ≥ 60 avec décroissance rapide (`exp(-d/50)`).
+  - [matcha/src/lib/matching.ts](matcha/src/lib/matching.ts) (l. 5-22)
+- [ ] 🟡 **Fame manipulable** ✔ : un unmatch supprime les deux likes mais ne retire 5 qu'à la cible → boucle like / match / unmatch avec un 2e compte = +5 par cycle pour celui qui unmatch. Même chose avec block (supprime les deux likes, −5 au bloqué seulement) puis unblock (+5). Le plafond `LEAST(100, …)` rend aussi like / unlike asymétriques. Idéalement calculer la fame depuis l'état réel (likes reçus présents, visiteurs distincts) plutôt qu'en compteur.
+  - [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts) (l. 94-113), [matcha/src/lib/db/blocks.ts](matcha/src/lib/db/blocks.ts) (l. 26-37, 85), [matcha/src/lib/db/db-utils.ts](matcha/src/lib/db/db-utils.ts) (l. 61)
+- [ ] 🟢 **On ne voit pas sa propre fame** : `my_profile` n'expose pas `fame`, rien dans `ProfileTabs` ni le header.
+  - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 181-199)
+- [ ] 🟢 **« Il m'a liké » / « connectés » pas clairement affiché** : seulement la couleur de fond de la carte (sans légende) et le libellé du bouton (« Match » se lit comme une action). Badge texte sur la carte et dans la modale.
+  - [matcha/src/components/card-user/CardUser.tsx](matcha/src/components/card-user/CardUser.tsx) (l. 30), [matcha/src/components/card-user/LikeButton.tsx](matcha/src/components/card-user/LikeButton.tsx) (l. 12-18)
+- [ ] 🟢 **La modale de profil n'affiche pas tout** (« toutes les infos sauf email et mot de passe ») : ni orientation (`sex_pref` absent de `compatible_users_from`), ni tags, ni distance (présents sur la carte seulement), nom réduit à l'initiale (`LEFT(last_name, 1)`, à arbitrer).
+  - [matcha/src/components/card-user/CardUserModal.tsx](matcha/src/components/card-user/CardUserModal.tsx) (l. 87-134), [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 166, 273-304)
+- [ ] 🟢 **Lire une conversation n'efface pas la notif « message »** de la cloche (`getConversation` et `chat-mark-read` ne touchent pas `notifications`).
+  - [matcha/src/lib/db/chat.ts](matcha/src/lib/db/chat.ts) (l. 74-90), [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts)
+- [ ] 🟡 **Pas de statut lu / non lu sur les notifications** : pas de colonne `is_read`, le badge compte toutes les notifs, seule la suppression « lit ». Colonne `is_read` + marquer comme lu à l'ouverture de la cloche.
+  - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 131-138), [matcha/src/components/header/NotificationBell.tsx](matcha/src/components/header/NotificationBell.tsx) (l. 23)
+- [ ] 🟡 **Les sockets survivent à la fin de session** (logout, reset du mot de passe, expiration) : auth au handshake seulement. Un autre onglet / appareil (ou un voleur de session après reset) continue à recevoir et envoyer des messages. Stocker `sessionId` dans `socket.data` et déconnecter les sockets concernés depuis `logout` et `deleteSessionsForUser`.
+  - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (`authUser`), [matcha/src/app/api/logout/route.ts](matcha/src/app/api/logout/route.ts), [matcha/src/app/api/e-mail/password-confirm/route.ts](matcha/src/app/api/e-mail/password-confirm/route.ts) (l. 36)
+- [ ] 🟢 **Seed : tous les profils en `sex_pref = 'B'`** → impossible de montrer l'exclusion par orientation. Tirer M / F / B (à faire avec l'item seed ≥ 500 du §1).
+  - [matcha/src/lib/seed-users.ts](matcha/src/lib/seed-users.ts) (l. 76)
+- [ ] 🟢 **Entrées malformées → 500 au lieu de 400** :
+  - `req.json()` non protégé et champs non vérifiés (`typeof === "string"`) : [password-request](matcha/src/app/api/e-mail/password-request/route.ts) (l. 9), [password-confirm](matcha/src/app/api/e-mail/password-confirm/route.ts) (l. 10), [me/password](matcha/src/app/api/me/password/route.ts) (l. 12) — un mot de passe numérique fait planter `isCommonPassword` / `bcrypt.compare`.
+  - Nom / prénom > 50 caractères (colonne `varchar(50)`, pas de max dans `validateProfileField` ni de `maxLength` dans `ProfileForm`) ; un tableau `["Bob"]` passe `String(value)` ; valeur enregistrée sans `trim` via l'API. Même chose au signup (valide les valeurs trimées, stocke les brutes).
+  - Entiers > 2³¹ : `interestIds` ([me/interests](matcha/src/app/api/me/interests/route.ts) l. 28), `notificationId` ([me/notifications/[notificationId]](matcha/src/app/api/me/notifications/[notificationId]/route.ts) l. 14), `fameRange`, `distance` (décimale ou énorme) dans [serverValidator.ts](matcha/src/lib/validators/serverValidator.ts) → borner (distance 0-20 000, fame 0-100).
+  - Date de naissance : `new Date()` accepte `"1990"`, `"0"` que Postgres refuse ; l'arrondi à 365,25 jours peut laisser passer un âge refusé par le CHECK → imposer `^\d{4}-\d{2}-\d{2}$` et calculer l'âge comme en SQL (à tester).
+  - Pas de try/catch : [me/completion](matcha/src/app/api/me/completion/route.ts), [geo/cities](matcha/src/app/api/geo/cities/route.ts) (l. 8).
+- [ ] 🟢 **Pas de badge de messages non lus sur mobile** (seul `MenuDesktop` en a un) ; logout en 2 clics sur mobile (menu burger), à arbitrer.
+  - [matcha/src/components/header/MenuMobile.tsx](matcha/src/components/header/MenuMobile.tsx) (l. 36-95)
+- [ ] 🟢 **Pagination non remise à zéro après une nouvelle recherche** (page 5 + 3 résultats → « Aucun profil »). `key` sur `Browse` dans `Search.tsx`.
+  - [matcha/src/components/browse/Browse.tsx](matcha/src/components/browse/Browse.tsx) (l. 17, 41-44)
+- [ ] 🟢 **Compteurs de non-lus fusionnés au lieu d'être remplacés** : un `chat-mark-read` d'un autre onglet ne fait pas baisser le badge ; au logout, `unreadMessages` / `chatUsers` ne sont pas vidés (se reconnecter avec un autre compte dans le même onglet affiche les non-lus de l'ancien).
+  - [matcha/src/context/SocketContext.tsx](matcha/src/context/SocketContext.tsx) (l. 118-124, 193-199)
+- [ ] 🟢 **Après un unlike, les notifs de cette personne continuent** (visite, nouveau like) ; seul le chat est coupé. Le sujet dit « unlike coupe les notifications de cet utilisateur » → à arbitrer (mémoriser l'unlike et ne plus notifier).
+  - [matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts), [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts) (l. 63-64)
+- [ ] 🟢 **Inscription** : si l'envoi de l'email échoue, le compte reste bloqué 24 h (token inséré avant `sendMail`, le login ne renvoie pas de lien tant que le token est valide) ; aucun message « vérifie tes emails » après le signup ; la page d'erreur de vérification ne dit pas comment obtenir un nouveau lien.
+  - [matcha/src/lib/mail.ts](matcha/src/lib/mail.ts) (l. 29-33), [matcha/src/components/forms/SignupForm.tsx](matcha/src/components/forms/SignupForm.tsx) (l. 30), [matcha/src/app/verify-email/error/page.tsx](matcha/src/app/verify-email/error/page.tsx) (l. 12)
+- [ ] 🟢 **Emails comparés en tenant compte de la casse** : `A@x.com` et `a@x.com` peuvent être deux comptes, le reset échoue en silence si la casse diffère. Passer en minuscules à l'insertion et comparer avec `lower(email)`.
+  - [matcha/src/lib/db/users.ts](matcha/src/lib/db/users.ts) (l. 97, 118, 160)
+- [ ] 🟢 **Erreurs réseau non gérées côté client** (promesse rejetée → console) : [Search.tsx](matcha/src/components/browse/Search.tsx) (l. 61-66), [reset-request/page.tsx](matcha/src/app/auth/reset-request/page.tsx) (l. 16-29) ; le logout ne vérifie pas `res.ok` ([Header.tsx](matcha/src/components/header/Header.tsx) l. 16-21).
+- [ ] 🟢 **Profil incomplet bloqué seulement en UI** : `/api/users/compatible`, `/api/search` et `/api/match/[userId]/views` ne vérifient pas que l'appelant a un profil complet (un appel direct peut générer des visites). Helper `requireCompleteUser()` → 403. Au passage, `!user.latitude` traite 0 comme manquant ([profileCompletion.ts](matcha/src/lib/profileCompletion.ts) l. 25, 41).
+
+### 6.3 Mineur
+
+- [ ] 🟢 **Coordonnées GPS exactes des autres utilisateurs envoyées au client** (`latitude` / `longitude` dans `users_with_interests` et `compatible_users_from`, inutilisées par l'UI) → ne renvoyer que `distance` et `city`.
+  - [init-db/01-matcha.sql](init-db/01-matcha.sql) (l. 169-170, 282-283, 299-300)
+- [ ] 🟢 **Blocage visible / statut en ligne diffusé** : `sendBlock` envoie `likeStatus: "block"` au bloqué, et la carte reste affichée en gris avec bio / tags dans les deux navigateurs (retirer l'utilisateur du store) ; `online-users` est diffusé à tous les sockets, bloqués compris.
+  - [matcha/src/lib/socket/socket.ts](matcha/src/lib/socket/socket.ts) (`sendBlock`, `online-users`), [matcha/src/components/browse/Browse.tsx](matcha/src/components/browse/Browse.tsx)
+- [ ] 🟢 **Relations non synchronisées entre les onglets de l'acteur** : like / match / unmatch n'envoient `relation-changed` qu'à la cible ([like/route.ts](matcha/src/app/api/match/[userId]/like/route.ts) l. 84-125).
+- [ ] 🟢 **Chat** : message refusé par le serveur effacé sans retour (pas d'ack, [ChatWindow.tsx](matcha/src/components/chat/ChatWindow.tsx) l. 51) ; message reçu pendant le chargement de l'historique possiblement écrasé (à tester, l. 97-132) ; ids des events socket non validés (`isValidUuid`) ; pas de limite de débit sur `chat-msg`.
+- [ ] 🟢 **Reconnexion socket fragile** : `reconnectionAttempts: 10` (~40 s), pas de handler `connect_error`, conversation et `chatUsers` non rechargés à la reconnexion ([SocketContext.tsx](matcha/src/context/SocketContext.tsx) l. 160).
+- [ ] 🟢 Toast « Hi <prénom> » à chaque connexion de socket (chaque onglet / rechargement) + `fetchNotifications` en double → supprimer ([socket.ts](matcha/src/lib/socket/socket.ts)).
+- [ ] 🟢 Une nouvelle visite du même visiteur ne notifie plus si la notif a été supprimée (notif seulement à l'`INSERT`) → notifier aussi à l'`UPDATE` avec un délai minimal ([views.ts](matcha/src/lib/db/views.ts) l. 28-37).
+- [ ] 🟢 **Durcissement** : socket.io `cors: { origin: true }` → restreindre à `NEXT_PUBLIC_BASE_URL` ; pas d'en-têtes de sécurité (CSP, `frame-ancestors` / `X-Frame-Options`, `poweredByHeader: false`) dans nginx / `next.config.ts` ; pas de rate limiting sur login / signup / `password-request` / `change-request` ; `loginUser` répond plus vite si l'utilisateur n'existe pas (comparer à un hash factice) ; `GET /api/chat/[userId]` modifie l'état (marque lu) ; la regex d'email accepte les virgules (`a,b@x.y`, plusieurs destinataires pour nodemailer).
+- [ ] 🟢 **Upload** : seuls les magic bytes sont vérifiés, un fichier tronqué / corrompu est accepté et peut devenir la photo principale (vérifier aussi la fin : `FFD9`, `IEND`) — pas de risque XSS ([imageValidator.ts](matcha/src/lib/validators/imageValidator.ts) l. 17).
+- [ ] 🟢 **Recherche (UI)** : le bouton 🔺 soumet le formulaire (pas de `type="button"`, [SearchForm.tsx](matcha/src/components/forms/SearchForm.tsx) l. 115) ; « 500+ km » filtre en réalité `<= 500` et « 0 km » ne filtre rien ; le résumé replié affiche des critères décochés ; une recherche sans critère vide les résultats au lieu de tout afficher.
+- [ ] 🟢 **HTML** : `<main>` imbriqués dans celui du layout → `div` / `section` ([profile/page.tsx](matcha/src/app/profile/page.tsx) l. 36, [profile/password/page.tsx](matcha/src/app/profile/password/page.tsx) l. 34, [Browse.tsx](matcha/src/components/browse/Browse.tsx) l. 46).
+- [ ] 🟢 **Géoloc** dépendante de services externes (ipwhois, Nominatim, Photon) : à tester en conditions d'éval en refusant la géoloc du navigateur. « Localisation » de la recherche avancée = rayon autour de soi uniquement (probablement accepté).
+
 ## Ordre conseillé
 
 1. Les 🟢 de la section 1 + bugs `params` et try/catch sockets (éliminer les risques de note 0).
 2. Corriger le lint (`make lint`) : hooks React d'abord, puis le reste.
 3. ~~Username.~~
 4. Refonte `matches` + notifications côté serveur.
+5. Audit du 2026-10-26 : §6.1 dans l'ordre (hash en premier), puis le seed (≥ 500 profils, orientations variées), puis §6.2.
