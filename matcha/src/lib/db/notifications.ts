@@ -70,6 +70,19 @@ export async function getNotificationsByUser(userId: string) {
 }
 
 /**
+ * Mark the notifications of a user as read, up to the most recent one they have seen
+ * (a notification created after the bell was opened stays unread).
+ * Returns true when at least one row changed.
+ */
+export async function markNotificationsAsRead(userId: string, upToId: number): Promise<boolean> {
+  const result = await executeQuery(
+    `UPDATE notifications SET is_read = true WHERE target_id = $1 AND id <= $2 AND NOT is_read;`,
+    [userId, upToId]
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+/**
  * Delete all notifications for a given user
  */
 export async function deleteAllNotificationsByUser(userId: string): Promise<void> {

@@ -12,6 +12,7 @@ export interface Notification {
   message: string;
   sender_username?: string;
   sender_picture?: string;
+  is_read: boolean;
   created_at: string;
 }
 

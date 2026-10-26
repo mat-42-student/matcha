@@ -19,6 +19,7 @@ interface SocketContextType {
   refreshNotifications: () => Promise<void>;
   removeNotification: (notificationId: number) => Promise<void>;
   clearNotifications: () => Promise<void>;
+  markNotificationsRead: () => Promise<void>;
   clearUnreadForUser: (userId: string) => void;
   // matches only: the server never tells anyone else
   onlineUsers: string[];
@@ -39,6 +40,7 @@ const SocketContext = createContext<SocketContextType>({
   refreshNotifications: async () => {},
   removeNotification: async () => {},
   clearNotifications: async () => {},
+  markNotificationsRead: async () => {},
   clearUnreadForUser: () => {},
   onlineUsers: [],
   lastSeen: {},
@@ -95,6 +97,25 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error("Failed to delete notifications");
     setNotifications([]);
   }, []);
+
+  // Bell opened: everything shown is read, here and (through the server) in the other tabs
+  const markNotificationsRead = useCallback(async () => {
+    const unread = notifications.filter((n) => !n.is_read);
+    if (unread.length === 0) return;
+    const upTo = Math.max(...unread.map((n) => n.id));
+    setNotifications((prev) => prev.map((n) => (n.id <= upTo ? { ...n, is_read: true } : n)));
+    try {
+      const res = await fetch(`/api/me/notifications`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ upTo }),
+      });
+      if (!res.ok) throw new Error("Failed to mark notifications as read");
+    } catch (err) {
+      console.error("Error marking notifications as read:", err);
+      await fetchNotifications();
+    }
+  }, [notifications, fetchNotifications]);
 
   const handleNotif = useCallback(async (payload: NotifPayload) => {
     switch (payload.msg) {
@@ -175,7 +196,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       s.emit("get-chat-users");
     });
     s.on("notif", handleNotif);
-    // a notification was removed server side (conversation read in any tab)
+    // a notification was removed or read server side (in any tab)
     s.on("notifications-changed", fetchNotifications);
     s.on("like", setLike);
     s.on("match", setMatch);
@@ -232,6 +253,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         refreshNotifications: fetchNotifications,
         removeNotification,
         clearNotifications,
+        markNotificationsRead,
         onlineUsers,
         lastSeen,
       }}

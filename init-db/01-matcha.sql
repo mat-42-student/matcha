@@ -138,6 +138,7 @@ CREATE TABLE "notifications" (
   "sender_id" uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   "message" text NOT NULL,
   "type" notification_type NOT NULL,
+  "is_read" boolean NOT NULL DEFAULT false,
   "created_at" timestamptz DEFAULT (current_timestamp)
 );
 

@@ -12,15 +12,25 @@ import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
 
 export default function NotificationBell() {
-  const { notifications, removeNotification, clearNotifications } = useSocket();
+  const { notifications, removeNotification, clearNotifications, markNotificationsRead } = useSocket();
   const [open, setOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [exitingIds, setExitingIds] = useState<Set<number>>(new Set());
+  // unread when the bell was opened: still highlighted while the list is shown
+  const [freshIds, setFreshIds] = useState<Set<number>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const unreadCount = notifications.length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const toggle = () => {
+    if (!open) {
+      setFreshIds(new Set(notifications.filter((n) => !n.is_read).map((n) => n.id)));
+      markNotificationsRead();
+    }
+    setOpen(!open);
+  };
 
   // Fermer la dropdown si clic en dehors
   useEffect(() => {
@@ -77,7 +87,7 @@ export default function NotificationBell() {
     {/* 🔔 Icon button */}
     <button
       ref={buttonRef}
-      onClick={() => setOpen(!open)}
+      onClick={toggle}
       className="relative p-2 rounded-full hover:bg-pink-700 transition-colors"
     >
       <Bell className="w-6 h-6 text-white" />
@@ -99,6 +109,8 @@ export default function NotificationBell() {
               <div
                 key={notif.id}
                 className={`flex items-start gap-3 p-3 border-b border-gray-100 hover:bg-pink-50 transition-all duration-200 ease-out ${
+                  freshIds.has(notif.id) || !notif.is_read ? "bg-pink-50/60" : ""
+                } ${
                   exitingIds.has(notif.id) ? "opacity-0 -translate-x-2 scale-[0.98]" : "opacity-100 translate-x-0 scale-100"
                 }`}
               >
@@ -122,7 +134,12 @@ export default function NotificationBell() {
                     </div>
                   )}
                   <div className="flex-1 flex flex-col">
-                    <p className="text-sm text-gray-800">{notif.message}</p>
+                    <p className="text-sm text-gray-800">
+                      {(freshIds.has(notif.id) || !notif.is_read) && (
+                        <span className="inline-block w-2 h-2 mr-1.5 rounded-full bg-pink-600 align-middle" aria-label="New" />
+                      )}
+                      {notif.message}
+                    </p>
                     <span className="text-xs text-gray-400">
                       {formatDistanceToNow(new Date(notif.created_at), {
                         addSuffix: true,
