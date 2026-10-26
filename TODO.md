@@ -209,8 +209,9 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
 - [x] 🟢 **Pagination non remise à zéro après une nouvelle recherche** (page 5 + 3 résultats → « Aucun profil »). `key` sur `Browse` dans `Search.tsx`.
   - [matcha/src/components/browse/Browse.tsx](matcha/src/components/browse/Browse.tsx) (l. 17, 41-44)
   - Corrigé : compteur `searchId` incrémenté à chaque recherche réussie, passé en `key` à `Browse` (page 1 et filtres latéraux remis à zéro).
-- [ ] 🟢 **Compteurs de non-lus fusionnés au lieu d'être remplacés** : un `chat-mark-read` d'un autre onglet ne fait pas baisser le badge ; au logout, `unreadMessages` / `chatUsers` ne sont pas vidés (se reconnecter avec un autre compte dans le même onglet affiche les non-lus de l'ancien).
+- [x] 🟢 **Compteurs de non-lus fusionnés au lieu d'être remplacés** : un `chat-mark-read` d'un autre onglet ne fait pas baisser le badge ; au logout, `unreadMessages` / `chatUsers` ne sont pas vidés (se reconnecter avec un autre compte dans le même onglet affiche les non-lus de l'ancien).
   - [matcha/src/context/SocketContext.tsx](matcha/src/context/SocketContext.tsx) (l. 118-124, 193-199)
+  - Corrigé : `chat-unread-count` (liste complète envoyée à tous les onglets) remplace la map au lieu de la fusionner ; le cleanup du socket (logout, changement d'utilisateur, démontage) vide aussi `unreadMessages`, `chatUsers` et `relationChanged`.
 - [ ] 🟢 **Après un unlike, les notifs de cette personne continuent** (visite, nouveau like) ; seul le chat est coupé. Le sujet dit « unlike coupe les notifications de cet utilisateur » → à arbitrer (mémoriser l'unlike et ne plus notifier).
   - [matcha/src/lib/db/views.ts](matcha/src/lib/db/views.ts), [matcha/src/lib/db/likes.ts](matcha/src/lib/db/likes.ts) (l. 63-64)
 - [x] 🟢 **Inscription** : si l'envoi de l'email échoue, le compte reste bloqué 24 h (token inséré avant `sendMail`, le login ne renvoie pas de lien tant que le token est valide) ; aucun message « vérifie tes emails » après le signup ; la page d'erreur de vérification ne dit pas comment obtenir un nouveau lien.

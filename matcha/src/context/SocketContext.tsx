@@ -143,12 +143,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     await fetchNotifications();
   }, [fetchNotifications]);
 
+  // The server always sends the full list: replace it, so a conversation read in another tab drops here too
   const handleChatUnreadMessages = useCallback((payload: UnreadMessages[]) => {
-    setUnreadMessages(prev => {
-      const map = new Map(prev);
-      for (const p of payload) map.set(p.sender_id, Number(p.unread_count));
-      return map;
-    });
+    setUnreadMessages(new Map(payload.map((p) => [p.sender_id, Number(p.unread_count)])));
   }, []);
 
   const clearUnreadForUser = useCallback((userId: string) => {
@@ -236,12 +233,16 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       if (!online) setLastSeen((prev) => ({ ...prev, [userId]: new Date() }));
     });
 
-    // Runs on logout (meId becomes undefined) and on unmount
+    // Runs on logout (meId becomes undefined), on a user change and on unmount:
+    // nothing of the previous user may stay visible to the next one
     return () => {
       s.removeAllListeners();
       s.disconnect();
       setSocket(null);
       setNotifications([]);
+      setUnreadMessages(new Map());
+      setChatUsers([]);
+      setRelationChanged(null);
       setOnlineUsers([]);
       setLastSeen({});
     };
