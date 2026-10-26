@@ -1,6 +1,8 @@
 // matcha/src/lib/mail.ts
 
 import nodemailer from "nodemailer";
+import crypto from "crypto";
+import { createEmailToken } from "./db/emails";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -15,4 +17,22 @@ export async function sendMail(to: string, subject: string, html: string) {
     subject,
     html,
   });
+}
+
+/**
+ * Creates a verify token (valid 24 h) and mails its link to the user.
+ */
+export async function sendVerificationEmail(userId: string, email: string) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24h
+
+  await createEmailToken(userId, "verify", token, expiresAt);
+
+  const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/e-mail/verify?token=${token}`;
+
+  await sendMail(email, "Verify your email", `
+    <h1>Welcome to Matcha 🎉</h1>
+    <p>Click here to verify your account:</p>
+    <a href="${verifyUrl}">${verifyUrl}</a>
+  `);
 }

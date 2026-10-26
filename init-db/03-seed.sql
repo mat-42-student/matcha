@@ -12,7 +12,8 @@ INSERT INTO users (
     gender,
     sex_pref,
     bio,
-    fame
+    fame,
+    is_verified
 )
 VALUES (
     'jdupont',
@@ -28,7 +29,8 @@ VALUES (
     'M',
     'B',
     'Passionné de développement et de bases de données.',
-    50
+    50,
+    true
 );
 
 INSERT INTO user_interests (user_id, interest_id)
@@ -50,7 +52,8 @@ INSERT INTO users (
     gender,
     sex_pref,
     bio,
-    fame
+    fame,
+    is_verified
 )
 VALUES (
     'jduponte',
@@ -66,7 +69,8 @@ VALUES (
     'F',
     'B',
     'I enjoy speedmetal',
-    72
+    72,
+    true
 );
 
 INSERT INTO user_interests (user_id, interest_id)

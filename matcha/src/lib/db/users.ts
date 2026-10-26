@@ -20,6 +20,7 @@ export interface User {
   sex_pref?: string;
   bio?: string;
   fame?: number;
+  is_verified: boolean;
   created_at?: Date;
 }
 
@@ -42,7 +43,7 @@ async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): P
 /**
  * Create a new user
  */
-export async function createUser(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
+export async function createUser(user: Omit<User, 'id' | 'created_at' | 'is_verified'>): Promise<User> {
   const allowedFields: (keyof User)[] = [
     "username","first_name","last_name","email","passwd","country","city",
     "latitude","longitude","birthdate","gender","sex_pref","bio","fame"

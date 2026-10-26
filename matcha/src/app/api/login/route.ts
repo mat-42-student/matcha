@@ -4,6 +4,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { createSession } from "@/lib/db/session";
 import { loginUser } from "@/lib/db/users";
 import { locateUserByIp } from "@/lib/geoip";
+import { hasValidEmailToken } from "@/lib/db/emails";
+import { sendVerificationEmail } from "@/lib/mail";
 
 export async function POST(req: NextRequest) {
 	try {
@@ -18,6 +20,18 @@ export async function POST(req: NextRequest) {
 		const user = await loginUser(identifier, password);
 		if (!user) {
 			return NextResponse.json({ error: "Invalid login" }, { status: 401 });
+		}
+
+		// checked after the password so that it does not tell who has an unverified account
+		if (!user.is_verified) {
+			// the signup link expired: send a new one so that the account is not stuck
+			if (!(await hasValidEmailToken(user.id, "verify"))) {
+				await sendVerificationEmail(user.id, user.email).catch((err) => console.error("Error verification email:", err));
+			}
+			return NextResponse.json(
+				{ error: "Please verify your email first: check your inbox for the verification link" },
+				{ status: 403 }
+			);
 		}
 
 		const sessionId = await createSession(user.id);

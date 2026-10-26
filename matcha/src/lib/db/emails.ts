@@ -41,6 +41,12 @@ export async function getEmailTokenByToken(token: string): Promise<EmailToken | 
   return result.rows[0] || null;
 }
 
+export async function hasValidEmailToken(userId: string, type: EmailTokenType): Promise<boolean> {
+  const query = `SELECT 1 FROM email_tokens WHERE user_id = $1 AND type = $2 AND expires_at > NOW()`;
+  const result = await executeQuery(query, [userId, type]);
+  return result.rows.length > 0;
+}
+
 export async function listEmailTokensForUser(userId: string): Promise<EmailToken[]> {
   const query = `SELECT * FROM email_tokens WHERE user_id = $1`;
   const result = await executeQuery<EmailToken>(query, [userId]);

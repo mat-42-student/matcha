@@ -4,9 +4,7 @@ import { validateSignupData } from '@/lib/validators/serverValidator';
 import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, isEmailUsed, isUsernameUsed } from '@/lib/db/users';
-import { createEmailToken } from '@/lib/db/emails';
-import crypto from 'crypto';
-import { sendMail } from '@/lib/mail';
+import { sendVerificationEmail } from '@/lib/mail';
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,18 +55,7 @@ export async function POST(req: NextRequest) {
       birthdate: birthdate,
     });
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24h
-
-    await createEmailToken(newUser.id, "verify", token, expiresAt);
-
-    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/e-mail/verify?token=${token}`;
-
-    await sendMail(email, "Verify your email", `
-      <h1>Welcome to Matcha 🎉</h1>
-      <p>Click here to verify your account:</p>
-      <a href="${verifyUrl}">${verifyUrl}</a>
-    `);
+    await sendVerificationEmail(newUser.id, email);
 
     return NextResponse.json({ success: true });
   } catch (error) {
