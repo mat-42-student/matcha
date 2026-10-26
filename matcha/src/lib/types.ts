@@ -109,6 +109,7 @@ export interface NotifPayload {
 }
 
 export const MAX_MESSAGE_LENGTH = 1000;
+export const MAX_INTEREST_LENGTH = 30;
 
 // Sent by the client: the sender is always the socket's session user
 export interface ChatMsgEvent {

@@ -79,6 +79,9 @@ CREATE TABLE "interests" (
   "name" varchar(80) UNIQUE NOT NULL
 );
 
+-- Tags are created by users: "Vegan" and "vegan" are the same tag
+CREATE UNIQUE INDEX "interests_name_lower_idx" ON "interests" (lower("name"));
+
 CREATE TABLE "user_interests" (
   "user_id" uuid NOT NULL,
   "interest_id" int NOT NULL

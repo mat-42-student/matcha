@@ -171,7 +171,7 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - [matcha/src/app/verify-email/page.tsx](matcha/src/app/verify-email/page.tsx) (l. 23)
 - [x] 🟡 **Mots anglais courants non refusés** (à tester : `Kitchen123`, `Elephant42`) : seule la liste des 500 pires mots de passe est utilisée. Ajouter une liste de quelques milliers de mots anglais fréquents et refuser un mot de passe dont la partie alphabétique (après normalisation leet) en fait partie. Si le fichier est introuvable, le contrôle est désactivé avec un simple `console.warn` → échouer plutôt.
   - [matcha/src/lib/validators/commonPasswords.ts](matcha/src/lib/validators/commonPasswords.ts) (l. 19-53, 103-109)
-- [ ] 🟡 **Tags non créables** ✔ (interprétation du sujet, « #vegan, #geek… réutilisables ») : 100 tags figés (`02-interests.sql`), `GET /api/interests` uniquement. `POST /api/interests` (nom validé, sans `#`, unique insensible à la casse, `ON CONFLICT DO NOTHING RETURNING id`) + champ « ajouter un tag » dans `ProfileInterests`.
+- [x] 🟡 **Tags non créables** ✔ (interprétation du sujet, « #vegan, #geek… réutilisables ») : 100 tags figés (`02-interests.sql`), `GET /api/interests` uniquement. `POST /api/interests` (nom validé, sans `#`, unique insensible à la casse, `ON CONFLICT DO NOTHING RETURNING id`) + champ « ajouter un tag » dans `ProfileInterests`.
   - [matcha/src/app/api/interests/route.ts](matcha/src/app/api/interests/route.ts), [matcha/src/lib/db/interests.ts](matcha/src/lib/db/interests.ts), [matcha/src/components/profile/ProfileInterests.tsx](matcha/src/components/profile/ProfileInterests.tsx)
 
 ### 6.2 Bugs visibles en soutenance

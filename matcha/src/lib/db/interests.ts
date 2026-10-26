@@ -25,6 +25,35 @@ export async function getAllInterests(): Promise<Interest[]> {
   return result.rows;
 }
 
+async function findInterestByName(name: string): Promise<Interest | null> {
+  const result = await executeQuery<Interest>(
+    `SELECT id, name FROM interests WHERE lower(name) = lower($1)`,
+    [name]
+  );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * Create an interest, or return the existing one with the same name (case-insensitive)
+ */
+export async function createInterest(name: string): Promise<{ interest: Interest; created: boolean }> {
+  const existing = await findInterestByName(name);
+  if (existing) return { interest: existing, created: false };
+
+  const result = await executeQuery<Interest>(
+    `INSERT INTO interests (name) VALUES ($1)
+     ON CONFLICT DO NOTHING
+     RETURNING id, name`,
+    [name]
+  );
+  if (result.rows[0]) return { interest: result.rows[0], created: true };
+
+  // Created by a concurrent request between the SELECT and the INSERT
+  const concurrent = await findInterestByName(name);
+  if (!concurrent) throw new Error(`Interest "${name}" could not be created`);
+  return { interest: concurrent, created: false };
+}
+
 /**
  * Fetch all interests of a given user
  */

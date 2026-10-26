@@ -1,6 +1,7 @@
 // matcha/src/lib/validators/serverValidator.ts
 
 import { isCommonEnglishWord, isCommonPassword } from "./commonPasswords";
+import { MAX_INTEREST_LENGTH } from "@/lib/types";
 
 export function isValidEmail(email: string): boolean {
   return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -159,6 +160,18 @@ export function validateProfileField(
       // email goes through /api/e-mail/change-request
       return { valid: false, error: `Field '${field}' cannot be updated` };
   }
+}
+
+/***
+ * Validate the name of a new interest tag. A leading "#" is dropped and spaces are collapsed.
+ * @returns the cleaned name, or null if it is invalid
+ */
+export function cleanInterestName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const name = value.trim().replace(/^#+/, "").trim().replace(/\s+/g, " ");
+  if (name.length < 2 || name.length > MAX_INTEREST_LENGTH) return null;
+  // Letters (accents included), digits, spaces, ' & -; must start with a letter or a digit
+  return /^[\p{L}\p{N}][\p{L}\p{N} '&-]*$/u.test(name) ? name : null;
 }
 
 // single password policy, shared by signup, password change and password reset
