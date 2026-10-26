@@ -167,7 +167,7 @@ Fait par 6 agents en lecture seule (IV.1, IV.2, IV.3-4, IV.5, IV.6-7, sécurité
   - Chat : `ChatSidebar` en `w-1/6` sans breakpoint (~62 px) → liste plein écran puis conversation sur mobile ([ChatSidebar.tsx](matcha/src/components/chat/ChatSidebar.tsx) l. 40).
   - Accueil / recherche : `FilterBar` ouverte par défaut en `w-72` à côté de cartes `w-72` → cartes rognées ; fermée par défaut sous `md` ([FilterBar.tsx](matcha/src/components/browse/FilterBar.tsx) l. 54, 68, [Browse.tsx](matcha/src/components/browse/Browse.tsx)).
   - `w-96` → `w-full max-w-sm` : [CardUserModal.tsx](matcha/src/components/card-user/CardUserModal.tsx) (l. 84), [SignupForm.tsx](matcha/src/components/forms/SignupForm.tsx) (l. 43).
-- [ ] 🟢 **Page morte `/verify-email`** ✔ : appelle `/api/verify-email` (inexistante) → 404 dans la console + « Erreur réseau ». Le vrai lien pointe vers `/api/e-mail/verify` : supprimer la page.
+- [x] 🟢 **Page morte `/verify-email`** ✔ : appelle `/api/verify-email` (inexistante) → 404 dans la console + « Erreur réseau ». Le vrai lien pointe vers `/api/e-mail/verify` : supprimer la page.
   - [matcha/src/app/verify-email/page.tsx](matcha/src/app/verify-email/page.tsx) (l. 23)
 - [ ] 🟡 **Mots anglais courants non refusés** (à tester : `Kitchen123`, `Elephant42`) : seule la liste des 500 pires mots de passe est utilisée. Ajouter une liste de quelques milliers de mots anglais fréquents et refuser un mot de passe dont la partie alphabétique (après normalisation leet) en fait partie. Si le fichier est introuvable, le contrôle est désactivé avec un simple `console.warn` → échouer plutôt.
   - [matcha/src/lib/validators/commonPasswords.ts](matcha/src/lib/validators/commonPasswords.ts) (l. 19-53, 103-109)
