@@ -1,13 +1,12 @@
 // matcha/src/lib/db/views.ts
 import { executeQuery } from "@/lib/db/db-utils";
 import { PublicUser } from "@/lib/types";
-import { addFame } from "@/lib/db/db-utils";
 import { createNotification } from "@/lib/db/notifications";
 
 /**
  * Record a user profile view.
  * - Inserts or updates a record in the "views" table.
- * - If it's a new view (not an update), increases the viewed user's fame by 1.
+ * - A new view (not an update) notifies the viewed user; their fame counts distinct visitors.
  * - Nothing is recorded (nor notified) if either user blocked the other.
  * - Return true if a new line was created
  */
@@ -24,9 +23,7 @@ export async function recordProfileView(viewedUserId: string, viewerUserId: stri
 
   const result = await executeQuery<{ inserted: boolean }>(insertQuery, [viewedUserId, viewerUserId]);
 
-  // Increase fame only if this was a new view
   if (result.rows[0]?.inserted) {
-    await addFame(1, viewedUserId);
     const viewerNameResult = await executeQuery<{ username: string }>(
       `SELECT username FROM users WHERE id = $1`,
       [viewerUserId]

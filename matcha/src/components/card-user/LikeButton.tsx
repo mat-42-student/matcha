@@ -28,16 +28,7 @@ export default function LikeButton({user}:{user: PublicUser}) {
     if (isSubmitting || disabled) return;
 
     setIsSubmitting(true);
-    let method = '';
-    let deltaFame = 0;
-    if (currentUser.likeStatus === 'isLiked' || currentUser.likeStatus === 'none') {
-      method = 'POST';
-      deltaFame = 5;
-    }
-    else{
-      method = 'DELETE';
-      deltaFame = -5;
-    }
+    const method = currentUser.likeStatus === 'isLiked' || currentUser.likeStatus === 'none' ? 'POST' : 'DELETE';
     try {
       const res = await fetch(`/api/match/${user.id}/like`, { method });
       if (res.status === 204){ // Easter egg
@@ -60,7 +51,8 @@ export default function LikeButton({user}:{user: PublicUser}) {
         if (method === "DELETE") {
           clearUnreadForUser(currentUser.id);
         }
-        const fame = Math.min(Math.max(0, currentUser.fame + deltaFame), 100)
+        // fame recomputed by the server from the new state
+        const fame = typeof data.fame === "number" ? data.fame : currentUser.fame;
         const updated: PublicUser = { ...currentUser, likeStatus: data.newStatus, fame };
         updateUser(updated);
         await refreshNotifications();

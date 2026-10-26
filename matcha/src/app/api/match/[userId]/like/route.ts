@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getMatchStatus, likeUser, unlikeUser } from "@/lib/db/likes";
 import { hasMainPicture } from "@/lib/db/pictures";
+import { getFame } from "@/lib/db/users";
 import { sendUnreadMessagesCount } from "@/lib/socket/chat";
 import { send, toSocketUser } from "@/lib/socket/socket";
 import { LikeStatus, NotifPayload, RelationChangedPayload } from "@/lib/types";
@@ -84,7 +85,8 @@ export async function POST(
     if (res === "match") notifyRelationChange(me, userId, "match", "match");
     else notifyRelationChange(me, userId, "like", "isLiked");
 
-    return NextResponse.json({ success: true, newStatus: res });
+    // fame of the target, recomputed from the new state
+    return NextResponse.json({ success: true, newStatus: res, fame: await getFame(userId) });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -125,7 +127,7 @@ export async function DELETE(
       send<RelationChangedPayload>(userId, "relation-changed", { userId: me.id, likeStatus: "none" });
     }
 
-    return NextResponse.json({ success: true, newStatus: 'none' });
+    return NextResponse.json({ success: true, newStatus: 'none', fame: await getFame(userId) });
   } catch (err) {
     console.error("Error in DELETE /api/match/[userId]/like:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

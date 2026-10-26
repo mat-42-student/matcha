@@ -38,7 +38,8 @@ CREATE TABLE "users" (
   "sex_pref" char(1) NOT NULL DEFAULT 'B' CHECK (sex_pref IN ('M', 'F', 'B')),
 
   "bio" text,
-  "fame" int NOT NULL DEFAULT 0 CHECK (fame BETWEEN 0 AND 100),
+  -- starting popularity given by the seed (0 for real accounts); the fame itself is user_fame()
+  "base_fame" int NOT NULL DEFAULT 0 CHECK (base_fame BETWEEN 0 AND 100),
   -- distinct users who reported this account as fake (see reports)
   "report_count" int NOT NULL DEFAULT 0 CHECK (report_count >= 0),
 
@@ -161,6 +162,19 @@ CREATE TABLE email_tokens (
 
 
 
+-- Fame out of 100, computed from the current state instead of a counter that unlike / block loops could pump:
+-- 5 per like received + 1 per distinct visitor, on top of the seed's base_fame
+CREATE OR REPLACE FUNCTION user_fame(target_id UUID)
+RETURNS INT AS $$
+  SELECT LEAST(100,
+    u.base_fame
+    + 5 * (SELECT count(*) FROM likes l WHERE l.liked_id = u.id)
+    + (SELECT count(*) FROM views v WHERE v.user_id = u.id)
+  )::int
+  FROM users u
+  WHERE u.id = target_id;
+$$ LANGUAGE sql STABLE;
+
 CREATE VIEW "users_with_interests" AS
 SELECT
   u.id,
@@ -172,7 +186,7 @@ SELECT
   u.latitude,
   u.longitude,
   u.bio,
-  u.fame,
+  user_fame(u.id) AS fame,
   u.sex_pref,
   date_part('year', age(current_date, u.birthdate))::int AS age,
   COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests

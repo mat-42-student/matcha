@@ -18,7 +18,6 @@ export interface User {
   gender?: string;
   sex_pref?: string;
   bio?: string;
-  fame?: number;
   is_verified: boolean;
   created_at?: Date;
 }
@@ -46,7 +45,7 @@ async function insertUser(user: Partial<User>, allowedFields: (keyof User)[]): P
 export async function createUser(user: Omit<User, 'id' | 'created_at' | 'is_verified'>): Promise<Pick<User, 'id'>> {
   const allowedFields: (keyof User)[] = [
     "username","first_name","last_name","email","passwd","country","city",
-    "latitude","longitude","birthdate","gender","sex_pref","bio","fame"
+    "latitude","longitude","birthdate","gender","sex_pref","bio"
   ];
   return insertUser(user, allowedFields);
 }
@@ -88,6 +87,14 @@ export async function updateUserEmail(id: string, email: string): Promise<void> 
 export async function getUserById(id: string): Promise<User | null> {
   const result = await executeQuery<User>('SELECT * FROM users WHERE id = $1', [id]);
   return result.rows[0] ?? null;
+}
+
+/**
+ * Current fame of a user (computed from likes and views, see user_fame), null if unknown
+ */
+export async function getFame(id: string): Promise<number | null> {
+  const result = await executeQuery<{ fame: number | null }>('SELECT user_fame($1) AS fame', [id]);
+  return result.rows[0]?.fame ?? null;
 }
 
 /**

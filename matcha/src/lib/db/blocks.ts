@@ -1,7 +1,6 @@
 // matcha/src/lib/db/blocks.ts
 import { PoolClient } from "pg";
 import { executeQuery, pool } from "@/lib/db/db-utils";
-import { addFame } from "@/lib/db/db-utils";
 import { lockUserPair } from "@/lib/db/users";
 import { deleteAllNotificationsBetweenUsers } from "@/lib/db/notifications";
 import { BlockedUser } from "@/lib/types";
@@ -33,8 +32,6 @@ async function insertBlock(client: PoolClient, currentUserId: string, targetUser
   // The relation is over: drop the "liked you" / "viewed your profile"... left in both bells
   await deleteAllNotificationsBetweenUsers(currentUserId, targetUserId, client);
 
-  // Decrease fame score
-  await addFame(-5, targetUserId, client);
   return true;
 }
 
@@ -65,8 +62,7 @@ export async function blockUser(currentUserId: string, targetUserId: string): Pr
 
 /**
  * Remove my block on targetUserId (a block from the other side is kept).
- * Likes removed by the block are not restored. The fame lost at block time is given back,
- * otherwise blocking / unblocking in a loop would drain the target's fame.
+ * Likes removed by the block are not restored (nor the fame they gave, see user_fame).
  * Returns false if I did not block targetUserId.
  */
 export async function unblockUser(currentUserId: string, targetUserId: string): Promise<boolean> {
@@ -82,7 +78,6 @@ export async function unblockUser(currentUserId: string, targetUserId: string): 
       client
     );
     const unblocked = deleted.rowCount === 1;
-    if (unblocked) await addFame(5, targetUserId, client);
 
     await client.query("COMMIT");
     return unblocked;

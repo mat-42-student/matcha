@@ -12,7 +12,7 @@ INSERT INTO users (
     gender,
     sex_pref,
     bio,
-    fame,
+    base_fame,
     is_verified
 )
 VALUES (
@@ -52,7 +52,7 @@ INSERT INTO users (
     gender,
     sex_pref,
     bio,
-    fame,
+    base_fame,
     is_verified
 )
 VALUES (

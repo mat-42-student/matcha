@@ -18,7 +18,7 @@ export default function CardUser({ user }: { user: PublicUser }) {
     try {
       const res = await fetch(`/api/match/${user.id}/views/`, { method: "POST" });
       const data = await res.json();
-      if (data.scored) updateUser({ ...user, fame: user.fame + 1 });
+      if (typeof data.fame === "number" && data.fame !== user.fame) updateUser({ ...user, fame: data.fame });
     } catch (err) {
       console.error(err);
     }

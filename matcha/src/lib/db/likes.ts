@@ -2,7 +2,7 @@
 import { executeQuery } from "./db-utils";
 import { LikeStatus, PublicUser } from "@/lib/types";
 import { createNotification, deleteNotificationsBetweenUsers } from "./notifications";
-import { pool, addFame } from "./db-utils";
+import { pool } from "./db-utils";
 import { lockUserPair } from "./users";
 
 /**
@@ -18,7 +18,7 @@ export async function getMatchStatus(userA: string, userB: string): Promise<Like
 
 /**
  * Like a user (creates a match if reciprocated)
- * Like, notifications and fame are written in a single transaction.
+ * Like and notifications are written in a single transaction.
  * Returns the new status, or null if nothing changed (self, unknown user, already liked, blocked).
  */
 export async function likeUser(meId: string, targetId: string): Promise<"like" | "match" | null> {
@@ -63,7 +63,6 @@ export async function likeUser(meId: string, targetId: string): Promise<"like" |
     } else {
       await createNotification(targetId, meId, "like", `${nameOf(meId)} liked you`, client);
     }
-    await addFame(5, targetId, client);
 
     await client.query("COMMIT");
     return result;
@@ -109,8 +108,6 @@ export async function unlikeUser(meId: string, targetId: string): Promise<"like"
     } else if (removed === "like") {
       await deleteNotificationsBetweenUsers(targetId, meId, ["like"], client);
     }
-    // Diminue la "fame" du user qui s'est fait unliker
-    if (removed) await addFame(-5, targetId, client);
 
     await client.query("COMMIT");
   } catch (err) {

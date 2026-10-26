@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { recordProfileView } from "@/lib/db/views";
+import { getFame } from "@/lib/db/users";
 import { send, toSocketUser } from "@/lib/socket/socket";
 import { NotifPayload } from "@/lib/types";
 import { isValidUuid } from "@/lib/validators/serverValidator";
@@ -35,7 +36,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ scored });
+    return NextResponse.json({ scored, fame: await getFame(userId) });
   } catch (err) {
     console.error("Error in POST /api/match/[userId]/views:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
