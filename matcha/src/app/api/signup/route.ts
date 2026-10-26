@@ -5,9 +5,15 @@ import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createUser, isEmailUsed, isUsernameUsed } from '@/lib/db/users';
 import { sendVerificationEmail } from '@/lib/mail';
+import { clientIp, hitRateLimit, tooManyRequests } from '@/lib/rateLimit';
+
+const SIGNUP_LIMIT = 10;
+const SIGNUP_WINDOW_MS = 60 * 60_000;
 
 export async function POST(req: NextRequest) {
   try {
+    if (hitRateLimit(`signup:${clientIp(req)}`, SIGNUP_LIMIT, SIGNUP_WINDOW_MS)) return tooManyRequests();
+
     const formData = await req.formData().catch(() => null);
     // missing or non-text fields become "" and are rejected by validateSignupData
     const field = (name: string) => {

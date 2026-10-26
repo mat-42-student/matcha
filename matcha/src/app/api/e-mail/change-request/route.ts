@@ -7,6 +7,11 @@ import { isEmailUsed } from "@/lib/db/users";
 import { isValidEmail, normalizeEmail } from "@/lib/validators/serverValidator";
 import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
+import { hitRateLimit, tooManyRequests } from "@/lib/rateLimit";
+
+// Each request sends an email
+const CHANGE_LIMIT = 5;
+const CHANGE_WINDOW_MS = 15 * 60_000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +33,8 @@ export async function POST(req: NextRequest) {
     if (await isEmailUsed(new_email)) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
+
+    if (hitRateLimit(`change-request:${user.id}`, CHANGE_LIMIT, CHANGE_WINDOW_MS)) return tooManyRequests();
 
     // Generate token
     const token = crypto.randomBytes(32).toString("hex");

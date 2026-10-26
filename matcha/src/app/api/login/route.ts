@@ -6,9 +6,19 @@ import { loginUser } from "@/lib/db/users";
 import { locateUserByIp } from "@/lib/geoip";
 import { hasValidEmailToken } from "@/lib/db/emails";
 import { sendVerificationEmail } from "@/lib/mail";
+import { clientIp, hitRateLimit, isRateLimited, recordHit, tooManyRequests } from "@/lib/rateLimit";
+
+// Any attempt, per IP (an evaluator logs into several accounts: kept wide)
+const IP_LIMIT = 30;
+const IP_WINDOW_MS = 5 * 60_000;
+// Failed attempts, per account: slows down password guessing even from many IPs
+const FAIL_LIMIT = 10;
+const FAIL_WINDOW_MS = 15 * 60_000;
 
 export async function POST(req: NextRequest) {
 	try {
+		if (hitRateLimit(`login:${clientIp(req)}`, IP_LIMIT, IP_WINDOW_MS)) return tooManyRequests();
+
 		const formData = await req.formData().catch(() => null);
 		const identifier = formData?.get("identifier");
 		const password = formData?.get("password");
@@ -17,8 +27,12 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 		}
 
+		const failKey = `login-fail:${identifier.trim().toLowerCase()}`;
+		if (isRateLimited(failKey, FAIL_LIMIT, FAIL_WINDOW_MS)) return tooManyRequests();
+
 		const user = await loginUser(identifier, password);
 		if (!user) {
+			recordHit(failKey, FAIL_WINDOW_MS);
 			return NextResponse.json({ error: "Invalid login" }, { status: 401 });
 		}
 
