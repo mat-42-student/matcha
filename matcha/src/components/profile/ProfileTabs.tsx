@@ -62,6 +62,12 @@ export default function ProfileTabs({
         <ProfilePictures userId={user.id} onUpdated={refreshCompletion} />
       </div>
 
+      {/* --- Fame, computed by user_fame (see init-db) --- */}
+      <p className="text-sm text-gray-700">
+        ⭐ <span className="font-semibold">{user.fame}</span> / 100 fame
+        <span className="text-gray-500"> · +5 per link received, +1 per visitor</span>
+      </p>
+
       {/* --- Completion bar --- */}
       <ProfileCompletionBar percentage={completion.percentage} />
       <ProfileMissingElements

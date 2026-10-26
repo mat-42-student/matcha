@@ -209,7 +209,8 @@ SELECT
   u.bio,
   u.sex_pref,
   date_part('year', age(current_date, u.birthdate))::int AS age,
-  COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests
+  COALESCE(json_agg(i.name) FILTER (WHERE i.name IS NOT NULL), '[]') AS interests,
+  user_fame(u.id) AS fame
 FROM users u
 LEFT JOIN user_interests ui ON u.id = ui.user_id
 LEFT JOIN interests i ON ui.interest_id = i.id
