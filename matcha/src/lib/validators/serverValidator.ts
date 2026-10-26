@@ -11,7 +11,7 @@ export function normalizeEmail(email: string): string {
 }
 
 export function isValidEmail(email: string): boolean {
-  return email.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return email.length <= 255 && /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/.test(email);
 }
 
 export function isValidUsername(username: string): boolean {

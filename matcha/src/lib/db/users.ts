@@ -116,6 +116,9 @@ export async function isUsernameUsed(username: string, excludeId?: string): Prom
   return result.rows.length > 0;
 }
 
+// hash compared against when the account does not exist (same cost as signup), computed once
+let dummyHash: Promise<string> | null = null;
+
 /**
  * Try to log user
  */
@@ -126,7 +129,12 @@ export async function loginUser(identifier: string, password: string): Promise<U
     : 'SELECT * FROM users WHERE lower(username) = lower($1)';
   const result = await executeQuery<User>(query, [identifier]);
   const user = result.rows[0];
-  if (!user) return null;
+  if (!user) {
+    // same bcrypt work as a wrong password: the response time does not tell which accounts exist
+    dummyHash ??= bcrypt.hash('matcha-dummy-password', 10);
+    await bcrypt.compare(password, await dummyHash);
+    return null;
+  }
 
   const match = await bcrypt.compare(password, user.passwd);
   if (!match) return null;

@@ -19,7 +19,8 @@ export function validateProfileField(field: string, value: string) {
         return { valid: false, error: "Invalid characters" };
       return { valid: true };
     case "email":
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value))
+      // same regex as isValidEmail (serverValidator.ts): a single address, no comma / quote / space
+      if (!/^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/.test(value))
         return { valid: false, error: "Invalid email" };
       return { valid: true };
     case "bio":
