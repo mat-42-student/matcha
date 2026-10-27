@@ -68,3 +68,18 @@ export async function getViewsForUser(meId: string,): Promise<PublicUser[]> {
   const result = await executeQuery<PublicUser>(query, [meId]);
   return result.rows;
 }
+/**
+ * Get all users I viewed, excluding blocked users
+ */
+export async function getViewedByUser(meId: string): Promise<PublicUser[]> {
+  const query = `
+    SELECT u.*, distance_km($1, u.id) AS distance, like_status($1, u.id) AS "likeStatus"
+    FROM views v
+    JOIN users_with_interests u ON u.id = v.user_id
+    WHERE v.seen_by = $1
+      AND NOT is_blocked($1, u.id)
+    ORDER BY v.created_at DESC;
+  `;
+  const result = await executeQuery<PublicUser>(query, [meId]);
+  return result.rows;
+}

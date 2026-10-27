@@ -12,6 +12,7 @@ const BLOCKED_TAB = "blocked";
 
 const TAB_URLS: Record<LikeTabsTypes, string> = {
   visitors: "/api/match/getViews",
+  visited: "/api/match/getVisited",
   liked: "/api/match/getLikes",
   likeMe: "/api/match/getLikeMe",
   matches: "/api/match/getMatches",
@@ -40,6 +41,7 @@ export default function LikeTabs() {
     <div className="max-w-3xl mx-auto mt-8">
       <div className="flex border-b border-pink-300 text-pink-100">
         <LButton tab="visitors" activeTab={activeTab} setActiveTab={setActiveTab}>Visitors</LButton>
+        <LButton tab="visited" activeTab={activeTab} setActiveTab={setActiveTab}>Visited</LButton>
         <LButton tab="liked" activeTab={activeTab} setActiveTab={setActiveTab}>People I like</LButton>
         <LButton tab="likeMe" activeTab={activeTab} setActiveTab={setActiveTab}>People who likes me</LButton>
         <LButton tab="matches" activeTab={activeTab} setActiveTab={setActiveTab}>Matches</LButton>

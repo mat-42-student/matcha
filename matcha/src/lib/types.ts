@@ -90,7 +90,7 @@ export type FameRange = {
   max?: number;
 };
 
-export type LikeTabsTypes = "visitors" | "liked" | "likeMe" | "matches"
+export type LikeTabsTypes = "visitors" | "visited" | "liked" | "likeMe" | "matches"
 
 export function notificationTypeToTab(notificationType: string): LikeTabsTypes {
   switch (notificationType) {
