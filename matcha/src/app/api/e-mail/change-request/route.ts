@@ -9,7 +9,7 @@ import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
 import { hitRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
-// Each request sends an email
+// Each request may send an email, and tells whether an address is taken: every attempt counts
 const CHANGE_LIMIT = 5;
 const CHANGE_WINDOW_MS = 15 * 60_000;
 
@@ -30,11 +30,13 @@ export async function POST(req: NextRequest) {
     if (new_email === normalizeEmail(user.email)) {
       return NextResponse.json({ error: "This is already your email address" }, { status: 400 });
     }
+
+    // before the lookup: otherwise addresses could be tested without limit
+    if (hitRateLimit(`change-request:${user.id}`, CHANGE_LIMIT, CHANGE_WINDOW_MS)) return tooManyRequests();
+
     if (await isEmailUsed(new_email)) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
-
-    if (hitRateLimit(`change-request:${user.id}`, CHANGE_LIMIT, CHANGE_WINDOW_MS)) return tooManyRequests();
 
     // Generate token
     const token = crypto.randomBytes(32).toString("hex");
