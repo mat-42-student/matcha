@@ -100,6 +100,16 @@ export function closeSessionSockets(userId: string, sessionId?: string) {
   }
 }
 
+/***
+ * Close the sockets of every session of the user but keepSessionId (password change)
+ */
+export function closeOtherSessionSockets(userId: string, keepSessionId: string) {
+  // copy: each disconnect removes the socket from the registry
+  for (const socket of [...(connectedUsers.get(userId) ?? [])]) {
+    if (socket.data.sessionId !== keepSessionId) socket.disconnect(true);
+  }
+}
+
 export function isUserActivelyChattingWith(userId: string, otherUserId: string) {
   const targetSockets = connectedUsers.get(userId);
   if (!targetSockets || targetSockets.size === 0) return false;

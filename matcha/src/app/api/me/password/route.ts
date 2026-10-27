@@ -1,7 +1,10 @@
 // matcha/src/app/api/me/password/route.ts
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { changeUserPassword } from "@/lib/db/users";
+import { deleteOtherSessionsForUser } from "@/lib/db/session";
+import { closeOtherSessionSockets } from "@/lib/socket/socket";
 import { validatePassword } from "@/lib/validators/serverValidator";
 
 export async function POST(req: Request) {
@@ -26,6 +29,12 @@ export async function POST(req: Request) {
     if (!success) {
       return NextResponse.json({ error: "Incorrect password" }, { status: 400 });
     }
+
+    // the other devices are logged out, sockets included; this one stays logged in
+    // (requireUser succeeded, so the cookie holds a valid session)
+    const sessionId = (await cookies()).get("session_id")!.value;
+    await deleteOtherSessionsForUser(user.id, sessionId);
+    closeOtherSessionSockets(user.id, sessionId);
 
     return NextResponse.json({ success: true });
   } catch (err) {

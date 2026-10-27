@@ -32,6 +32,13 @@ export async function deleteSessionsForUser(userId: string) {
 }
 
 /**
+ * Delete every session of the user except keepSessionId (password change: the current device stays logged in)
+ */
+export async function deleteOtherSessionsForUser(userId: string, keepSessionId: string) {
+  await executeQuery(`DELETE FROM sessions WHERE user_id = $1 AND id <> $2`, [userId, keepSessionId]);
+}
+
+/**
  * Expiry date of a valid session, null if it does not exist or has expired
  */
 export async function getSessionExpiry(sessionId: string): Promise<Date | null> {
