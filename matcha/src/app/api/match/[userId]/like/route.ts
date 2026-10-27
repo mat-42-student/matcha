@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getMatchStatus, likeUser, unlikeUser } from "@/lib/db/likes";
+import { hasBlocked } from "@/lib/db/blocks";
 import { hasMainPicture } from "@/lib/db/pictures";
 import { getFame } from "@/lib/db/users";
 import { sendUnreadMessagesCount } from "@/lib/socket/chat";
@@ -34,6 +35,16 @@ function sendRelationChange(myId: string, targetId: string, targetLikeStatus: Li
 }
 
 /**
+ * Status between the session user and userId, as the session user may see it:
+ * being blocked by userId looks like an unknown user ("none"), the block is never revealed
+ */
+async function visibleMatchStatus(meId: string, userId: string): Promise<LikeStatus> {
+  const status = await getMatchStatus(meId, userId);
+  if (status === "block" && !(await hasBlocked(meId, userId))) return "none";
+  return status;
+}
+
+/**
  * GET /api/match/[userId]/like
  * Returns match status between the current user and target user.
  */
@@ -50,7 +61,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
     }
 
-    const status = await getMatchStatus(me.id, userId);
+    const status = await visibleMatchStatus(me.id, userId);
     return NextResponse.json({ status });
   } catch (err) {
     console.error("Error in GET /api/match/[userId]/like:", err);
@@ -80,8 +91,8 @@ export async function POST(
       );
     }
 
-    // block in either direction, or already liked / matched
-    const status = await getMatchStatus(me.id, userId);
+    // blocked by me, or already liked / matched (blocked by them reads "none": likeUser refuses it below)
+    const status = await visibleMatchStatus(me.id, userId);
     if (status === "block") {
       return NextResponse.json({ error: "You cannot like this user" }, { status: 403 });
     }
@@ -91,8 +102,8 @@ export async function POST(
 
     const res = await likeUser(me.id, userId);
     if (!res) {
-      // relation changed concurrently (already liked, matched or blocked)
-      return NextResponse.json({ success: false, newStatus: await getMatchStatus(me.id, userId) });
+      // unknown user, blocked by them, or relation changed concurrently: same answer for all
+      return NextResponse.json({ success: false, newStatus: await visibleMatchStatus(me.id, userId) });
     }
     if (res.status === "match") notifyRelationChange(me, userId, "match", "match", "match", res.notified);
     else notifyRelationChange(me, userId, "like", "isLiked", "like", res.notified);
@@ -124,7 +135,7 @@ export async function DELETE(
 
     const removed = await unlikeUser(me.id, userId);
     if (!removed) {
-      const status = await getMatchStatus(me.id, userId);
+      const status = await visibleMatchStatus(me.id, userId);
       return NextResponse.json({ success: false, newStatus: status });
     }
     if (removed === "match") {

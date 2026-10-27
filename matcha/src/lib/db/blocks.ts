@@ -91,6 +91,17 @@ export async function unblockUser(currentUserId: string, targetUserId: string): 
 }
 
 /**
+ * True if blockerId blocked blockedId (one direction only, unlike is_blocked)
+ */
+export async function hasBlocked(blockerId: string, blockedId: string): Promise<boolean> {
+  const result = await executeQuery(
+    `SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2`,
+    [blockerId, blockedId]
+  );
+  return result.rowCount === 1;
+}
+
+/**
  * Users blocked by userId, most recent first
  */
 export async function getBlockedUsers(userId: string): Promise<BlockedUser[]> {
