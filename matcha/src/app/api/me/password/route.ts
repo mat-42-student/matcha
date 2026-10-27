@@ -5,7 +5,12 @@ import { requireUser } from "@/lib/auth";
 import { changeUserPassword } from "@/lib/db/users";
 import { deleteOtherSessionsForUser } from "@/lib/db/session";
 import { closeOtherSessionSockets } from "@/lib/socket/socket";
+import { isRateLimited, recordHit, tooManyRequests } from "@/lib/rateLimit";
 import { validatePassword } from "@/lib/validators/serverValidator";
+
+// Wrong current passwords, per account: a stolen session cannot guess the password
+const FAIL_LIMIT = 5;
+const FAIL_WINDOW_MS = 15 * 60_000;
 
 export async function POST(req: Request) {
   try {
@@ -25,8 +30,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ field: "new_password", errors: passwordErrors }, { status: 400 });
     }
 
+    const failKey = `password-change-fail:${user.id}`;
+    if (isRateLimited(failKey, FAIL_LIMIT, FAIL_WINDOW_MS)) return tooManyRequests();
+
     const success = await changeUserPassword(user.id, current_password, new_password);
     if (!success) {
+      recordHit(failKey, FAIL_WINDOW_MS);
       return NextResponse.json({ error: "Incorrect password" }, { status: 400 });
     }
 
